@@ -46,7 +46,7 @@ export interface IWalletContext {
   walletId: string | undefined;
 
   isLoading: boolean;
-  connect: () => Promise<void>;
+  connect: (handleSuccess: (success: boolean) => void) => Promise<void>;
   disconnect: () => void;
   clearLastTx: () => void;
   restore: (sim: SorobanRpc.Api.SimulateTransactionRestoreResponse) => Promise<void>;
@@ -164,37 +164,41 @@ export const WalletProvider = ({ children = null as any }) => {
   /**
    * Connect a wallet to the application via the walletKit
    */
-  async function handleSetWalletAddress() {
+  async function handleSetWalletAddress(): Promise<boolean> {
     try {
       const publicKey = await walletKit.getPublicKey();
+      if (publicKey === '' || publicKey == undefined) {
+        console.error('Unable to load wallet key: ', publicKey);
+        return false;
+      }
       setWalletAddress(publicKey);
       setConnected(true);
       await loadUserData(publicKey);
-      setLoading(false);
+      return true;
     } catch (e: any) {
-      setLoading(false);
       console.error('Unable to load wallet information: ', e);
+      return false;
     }
   }
 
   /**
    * Open up a modal to connect the user's browser wallet
    */
-  async function connect() {
+  async function connect(handleSuccess: (success: boolean) => void) {
     try {
       setLoading(true);
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
-          await handleSetWalletAddress();
-        },
-        onClosed: () => {
-          setLoading(false);
+          let result = await handleSetWalletAddress();
+          handleSuccess(result);
         },
       });
+      setLoading(false);
     } catch (e: any) {
       setLoading(false);
+      handleSuccess(false);
       console.error('Unable to connect wallet: ', e);
     }
   }
