@@ -15,9 +15,19 @@ export const WalletWarning = () => {
   const loadUserData = useStore((state) => state.loadUserData);
 
   const [openCon, setOpenCon] = React.useState(false);
+  const [openError, setOpenError] = React.useState(false);
+
+  const handleConnectWallet = (successful: boolean) => {
+    if (successful) {
+      setOpenCon(true);
+    } else {
+      setOpenError(true);
+    }
+  };
 
   const handleSnackClose = () => {
     setOpenCon(false);
+    setOpenError(false);
   };
 
   useEffect(() => {
@@ -59,8 +69,7 @@ export const WalletWarning = () => {
       ) : (
         <OpaqueButton
           onClick={() => {
-            connect();
-            setOpenCon(true);
+            connect(handleConnectWallet);
           }}
           palette={theme.palette.warning}
           sx={{
@@ -102,6 +111,27 @@ export const WalletWarning = () => {
           }}
         >
           Wallet connected.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={openError}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleSnackClose}
+          severity="error"
+          sx={{
+            backgroundColor: theme.palette.error.opaque,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          Unable to connect wallet.
         </Alert>
       </Snackbar>
     </>

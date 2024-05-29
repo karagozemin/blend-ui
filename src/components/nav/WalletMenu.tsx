@@ -23,10 +23,19 @@ export const WalletMenu = () => {
   const theme = useTheme();
   const { connect, disconnect, connected, walletAddress, isLoading } = useWallet();
 
-  //snackbars
+  // snackbars
   const [openCon, setOpenCon] = React.useState(false);
   const [openDis, setOpenDis] = React.useState(false);
   const [openCopy, setOpenCopy] = React.useState(false);
+  const [openError, setOpenError] = React.useState(false);
+
+  const handleConnectWallet = (successful: boolean) => {
+    if (successful) {
+      setOpenCon(true);
+    } else {
+      setOpenError(true);
+    }
+  };
 
   const handleDisconnectWallet = () => {
     disconnect();
@@ -42,6 +51,7 @@ export const WalletMenu = () => {
     setOpenCon(false);
     setOpenDis(false);
     setOpenCopy(false);
+    setOpenError(false);
   };
 
   const [anchorElDropdown, setAnchorElDropdown] = React.useState<null | HTMLElement>(null);
@@ -52,10 +62,11 @@ export const WalletMenu = () => {
   };
 
   const handleClickConnect = () => {
-    connect();
+    connect(handleConnectWallet);
   };
 
   const handleClose = () => {
+    handleSnackClose();
     setAnchorElDropdown(null);
   };
 
@@ -186,6 +197,27 @@ export const WalletMenu = () => {
           }}
         >
           Wallet address copied to clipboard.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={openError}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity="error"
+          sx={{
+            backgroundColor: theme.palette.error.opaque,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          Unable to connect wallet.
         </Alert>
       </Snackbar>
     </>
