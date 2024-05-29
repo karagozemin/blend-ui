@@ -22,10 +22,10 @@ jobs:
         run: npm install
 
       - name: Run build script
-        run: npm run build:mainnet
+        run: npm run build-static:mainnet
 
       - name: Create tarball
-        run: tar -czf app.tar.gz out/
+        run: tar -czf app.tar.gz ./out/
 
       - name: pinata
         id: pinata
