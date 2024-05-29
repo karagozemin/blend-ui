@@ -43,8 +43,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.event.payload.tag }}
-          release_name: ${{ github.event.payload.tag }}
-          body: '## Blend UI Release\n\nThis release contains the latest build of the Blend UI.\n\n IPFS CID: ${{ steps.pinata.outputs.hash }}'
+          name: ipfs-${{ github.event.payload.tag }}
+          body: |
+            '## Blend UI Release
+
+            This release contains the latest build of the Blend UI.
+
+            IPFS CID: `${{ steps.pinata.outputs.hash }}`'
           draft: false
           prerelease: false
           files: app.tar.gz
