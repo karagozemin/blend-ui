@@ -1,6 +1,5 @@
 import { Reserve } from '@blend-capital/blend-sdk';
 import { Horizon, StellarToml } from '@stellar/stellar-sdk';
-import { STELLAR_TOML_MAX_SIZE } from '@stellar/stellar-sdk/lib/stellartoml';
 import toml from 'toml';
 
 export type StellarTokenMetadata = {
@@ -90,7 +89,7 @@ export async function getTokenMetadataFromTOML(
           })
           .catch((err: Error) => {
             if (err.message.match(/^maxContentLength size/)) {
-              throw new Error(`stellar.toml file exceeds allowed size of ${STELLAR_TOML_MAX_SIZE}`);
+              throw new Error(`stellar.toml file exceeds allowed size`);
             } else {
               throw err;
             }

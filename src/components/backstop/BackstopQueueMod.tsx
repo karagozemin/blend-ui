@@ -16,8 +16,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   if (
     !poolBackstopUserData ||
     !poolBackstopUserEst ||
-    poolBackstopUserData.q4w == undefined ||
-    poolBackstopUserData.q4w.length == 0
+    (poolBackstopUserData.totalQ4W == BigInt(0) && poolBackstopUserData.unlockedQ4W == BigInt(0))
   ) {
     return <></>;
   }
