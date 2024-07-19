@@ -1,5 +1,7 @@
 import { Reserve } from '@blend-capital/blend-sdk';
 import { Horizon, StellarToml } from '@stellar/stellar-sdk';
+import { STELLAR_TOML_MAX_SIZE } from '@stellar/stellar-sdk/lib/stellartoml';
+import toml from 'toml';
 
 export type StellarTokenMetadata = {
   assetId: string;
@@ -25,7 +27,7 @@ export async function getTokenMetadataFromTOML(
     image: code ? `/icons/tokens/${code.toLowerCase()}.svg` : undefined,
     issuer: '',
   };
-  let toml;
+  let stellarToml: any;
 
   if (!reserve.tokenMetadata.asset) {
     // set soroban token defaults
@@ -62,11 +64,44 @@ export async function getTokenMetadataFromTOML(
           issuer: assetIssuer,
         };
       }
-      /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-      toml = await StellarToml.Resolver.resolve(tokenAccountHomeDomain || '');
-      if (toml.CURRENCIES) {
+      if (tokenAccountHomeDomain === 'stellar.org') {
+        // If the account is stellar.org, we can return the default stellar asset token metadata values
+        return {
+          ...iconData,
+          assetId,
+          code: assetCode,
+          issuer: assetIssuer,
+        };
+      }
+      if (tokenAccountHomeDomain === 'circle.com') {
+        stellarToml = await fetch('https://www.circle.com/hubfs/stellar.toml.txt')
+          .then((response) => response.text())
+          .then(async (text) => {
+            try {
+              const tomlObject = toml.parse(text);
+              return Promise.resolve(tomlObject);
+            } catch (e: any) {
+              return Promise.reject(
+                new Error(
+                  `stellar.toml is invalid - Parsing error on line ${e.line}, column ${e.column}: ${e.message}`
+                )
+              );
+            }
+          })
+          .catch((err: Error) => {
+            if (err.message.match(/^maxContentLength size/)) {
+              throw new Error(`stellar.toml file exceeds allowed size of ${STELLAR_TOML_MAX_SIZE}`);
+            } else {
+              throw err;
+            }
+          });
+      } else {
+        /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
+        stellarToml = await StellarToml.Resolver.resolve(tokenAccountHomeDomain || '', {});
+      }
+      if (stellarToml.CURRENCIES) {
         /* If we find some currencies listed, check to see if they have the currency we're looking for listed */
-        for (const { code: currencyCode, issuer, image } of toml.CURRENCIES) {
+        for (const { code: currencyCode, issuer, image } of stellarToml.CURRENCIES) {
           // Check if all necessary fields are available
           if (
             currencyCode &&
