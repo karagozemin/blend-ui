@@ -53,64 +53,64 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
 
   return (
     <>
-      {viewType === ViewType.REGULAR && (
-        <Row>
-          <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
-            {timeLeft > 0 ? (
-              <Box
+      <Row>
+        <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
+          {timeLeft > 0 ? (
+            <Box
+              sx={{
+                position: 'relative',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '50px',
+              }}
+            >
+              <CircularProgress
                 sx={{
-                  position: 'relative',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '50px',
+                  color: theme.palette.positive.main,
+                  marginLeft: '6px',
+                  marginRight: '12px',
+                  position: 'absolte',
                 }}
-              >
-                <CircularProgress
-                  sx={{
-                    color: theme.palette.positive.main,
-                    marginLeft: '6px',
-                    marginRight: '12px',
-                    position: 'absolte',
-                  }}
-                  size="30px"
-                  thickness={4.5}
-                  variant="determinate"
-                  value={timeWaitedPercentage * 100}
-                />
-                <CircularProgress
-                  sx={{
-                    color: theme.palette.positive.opaque,
-                    marginLeft: '6px',
-                    marginRight: '12px',
-                    position: 'absolute',
-                  }}
-                  size="30px"
-                  thickness={4.5}
-                  variant="determinate"
-                  value={100}
-                />
-              </Box>
-            ) : (
-              <CheckCircleOutlineIcon
-                sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
+                size="30px"
+                thickness={4.5}
+                variant="determinate"
+                value={timeWaitedPercentage * 100}
               />
-            )}
-            <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-            <Box>
-              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                  {toBalance(inTokens)}
-                </Typography>
-                <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                  BLND-USDC LP
-                </Typography>
-              </Box>
+              <CircularProgress
+                sx={{
+                  color: theme.palette.positive.opaque,
+                  marginLeft: '6px',
+                  marginRight: '12px',
+                  position: 'absolute',
+                }}
+                size="30px"
+                thickness={4.5}
+                variant="determinate"
+                value={100}
+              />
+            </Box>
+          ) : (
+            <CheckCircleOutlineIcon
+              sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
+            />
+          )}
+          <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
+          <Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
               <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                {timeLeft > 0 ? toTimeSpan(timeLeft) : 'Unlocked'}
+                {toBalance(inTokens)}
+              </Typography>
+              <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                BLND-USDC LP
               </Typography>
             </Box>
+            <Typography variant="h4" sx={{ marginRight: '6px' }}>
+              {timeLeft > 0 ? toTimeSpan(timeLeft) : 'Unlocked'}
+            </Typography>
           </Box>
+        </Box>
+        {viewType === ViewType.REGULAR && (
           <OpaqueButton
             onClick={() => handleClick(q4w.amount)}
             palette={theme.palette.positive}
@@ -118,78 +118,18 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
           >
             {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
           </OpaqueButton>
-        </Row>
-      )}
+        )}
+      </Row>
       {viewType !== ViewType.REGULAR && (
-        <>
-          <Row>
-            <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
-              {timeLeft > 0 ? (
-                <Box
-                  sx={{
-                    position: 'relative',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '50px',
-                  }}
-                >
-                  <CircularProgress
-                    sx={{
-                      color: theme.palette.positive.main,
-                      marginLeft: '6px',
-                      marginRight: '12px',
-                      position: 'absolte',
-                    }}
-                    size="30px"
-                    thickness={4.5}
-                    variant="determinate"
-                    value={timeWaitedPercentage * 100}
-                  />
-                  <CircularProgress
-                    sx={{
-                      color: theme.palette.positive.opaque,
-                      marginLeft: '6px',
-                      marginRight: '12px',
-                      position: 'absolute',
-                    }}
-                    size="30px"
-                    thickness={4.5}
-                    variant="determinate"
-                    value={100}
-                  />
-                </Box>
-              ) : (
-                <CheckCircleOutlineIcon
-                  sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
-                />
-              )}
-              <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-              <Box>
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    {toBalance(inTokens)}
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    BLND-USDC LP
-                  </Typography>
-                </Box>
-                <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                  {timeLeft > 0 ? toTimeSpan(timeLeft) : 'Unlocked'}
-                </Typography>
-              </Box>
-            </Box>
-          </Row>
-          <Row>
-            <OpaqueButton
-              onClick={() => handleClick(q4w.amount)}
-              palette={theme.palette.positive}
-              sx={{ height: '35px', width: '100%', margin: '12px', padding: '6px' }}
-            >
-              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
-            </OpaqueButton>
-          </Row>
-        </>
+        <Row>
+          <OpaqueButton
+            onClick={() => handleClick(q4w.amount)}
+            palette={theme.palette.positive}
+            sx={{ height: '35px', width: '100%', margin: '12px', padding: '6px' }}
+          >
+            {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
+          </OpaqueButton>
+        </Row>
       )}
     </>
   );
