@@ -1,6 +1,6 @@
 {
   "name": "blend-ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -28,6 +28,7 @@
     "react": "^18.2.0",
     "react-countdown": "^2.3.5",
     "react-dom": "^18.2.0",
+    "toml": "^3.0.0",
     "@stellar/stellar-sdk": "12.1.0",
     "zustand": "^4.3.7"
   },

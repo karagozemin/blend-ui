@@ -36,7 +36,7 @@ export const BackstopAPY: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
       }}
     >
       <Tooltip
-        title="Estimated APY based on backstop emissions and pool interest sharing."
+        title="Estimated APY based on pool interest sharing."
         placement="top"
         enterTouchDelay={0}
         enterDelay={500}
