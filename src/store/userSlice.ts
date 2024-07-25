@@ -14,7 +14,9 @@ export interface UserSlice {
   balances: Map<string, bigint>;
   backstopUserData: BackstopUser | undefined;
   userPoolData: Map<string, PoolUser>;
+  loadUserLock: boolean;
   loadUserData: (id: string) => Promise<void>;
+  loadAccount: (id: string) => Promise<void>;
   clearUserData: () => void;
 }
 
@@ -24,12 +26,24 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
   balances: new Map<string, bigint>(),
   backstopUserData: undefined,
   userPoolData: new Map<string, PoolUser>(),
+  loadUserLock: false,
 
   loadUserData: async (id: string) => {
     try {
+      if (get().loadUserLock) {
+        return;
+      }
+      set({ loadUserLock: true });
       const network = get().network;
       const rpc = get().rpcServer();
       const networkPassphrase = network.passphrase;
+
+      // load horizon account
+      await get().loadAccount(id);
+      const account = get().account;
+      if (account == undefined) {
+        throw new Error('Unable to fetch account data');
+      }
 
       if (get().latestLedgerTimestamp == 0) {
         await get().loadBlendData(true);
@@ -40,18 +54,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
 
       if (backstop == undefined || pools.size == 0) {
         throw new Error('Unable to fetch backstop or pool data');
-      }
-
-      // load horizon account
-      let account: Horizon.AccountResponse;
-      let horizonServer;
-      try {
-        horizonServer = get().horizonServer();
-        account = await horizonServer.loadAccount(id);
-      } catch (e) {
-        console.error('Account does not exist.');
-        set({ isFunded: false });
-        throw e;
       }
 
       // load user data for backstop
@@ -133,6 +135,19 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
     } catch (e) {
       console.error('Unable to load user data');
       console.error(e);
+    } finally {
+      set({ loadUserLock: false });
+    }
+  },
+  loadAccount: async (id: string) => {
+    let account: Horizon.AccountResponse;
+    try {
+      let horizonServer = get().horizonServer();
+      account = await horizonServer.loadAccount(id);
+      set({ isFunded: true, account });
+    } catch (e) {
+      console.error('Unable to load account', e);
+      set({ isFunded: false, account: undefined });
     }
   },
   clearUserData: () => {

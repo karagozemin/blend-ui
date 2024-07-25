@@ -12,7 +12,7 @@ export const WalletWarning = () => {
   const theme = useTheme();
   const { connect, connected, walletAddress } = useWallet();
   const isFunded = useStore((state) => state.isFunded);
-  const loadUserData = useStore((state) => state.loadUserData);
+  const loadAccount = useStore((state) => state.loadAccount);
 
   const [openCon, setOpenCon] = React.useState(false);
   const [openError, setOpenError] = React.useState(false);
@@ -31,14 +31,14 @@ export const WalletWarning = () => {
   };
 
   useEffect(() => {
-    if (connected && !isFunded) {
-      loadUserData(walletAddress);
+    if (connected && isFunded === false) {
+      loadAccount(walletAddress);
       const refreshInterval = setInterval(async () => {
-        await loadUserData(walletAddress);
+        await loadAccount(walletAddress);
       }, 3 * 1000);
       return () => clearInterval(refreshInterval);
     }
-  }, [loadUserData, connected, isFunded, walletAddress]);
+  }, [loadAccount, connected, isFunded, walletAddress]);
 
   return (
     <>
