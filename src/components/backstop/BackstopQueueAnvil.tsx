@@ -37,6 +37,8 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
+  const userBackstopBalacne = userBackstopData?.balances.get(poolId);
+  const userShares = userBackstopBalacne?.shares ?? BigInt(0);
   const backstopTokenPrice = backstop?.backstopToken.lpTokenPrice ?? 1;
   const decimals = 7;
   const sharesToTokens =
@@ -45,6 +47,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     1e7;
 
   const [toQueue, setToQueue] = useState<string>('');
+  const [toQueueShares, setToQueueShares] = useState<BigInt>();
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Q4W>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
@@ -66,13 +69,25 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     [simResponse, toQueue, userBackstopData, loading]
   );
 
+  const handleInputChange = (input: string) => {
+    setToQueue(input);
+    const tokensToShares =
+      Number(backstopPoolData?.poolBalance.shares) /
+      Number(backstopPoolData?.poolBalance.tokens) /
+      1e7;
+    const as_shares = Number(input) * tokensToShares;
+    const as_bigint = BigInt(Math.floor(as_shares * 1e7));
+    setToQueueShares(as_bigint); // -> this state change should be the one to trigger the simulation
+  };
+
   const handleQueueMax = () => {
     if (userPoolBackstopEst && userPoolBackstopEst.tokens > 0) {
       setToQueue(userPoolBackstopEst.tokens.toFixed(7));
+      setToQueueShares(userShares);
     }
   };
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toQueue && connected) {
+    if (toQueueShares && connected) {
       let depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
@@ -120,7 +135,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               symbol={'BLND-USDC LP'}
               value={toQueue}
               onValueChange={(v) => {
-                setToQueue(v);
+                handleInputChange(v);
                 setLoadingEstimate(true);
               }}
               palette={theme.palette.backstop}
