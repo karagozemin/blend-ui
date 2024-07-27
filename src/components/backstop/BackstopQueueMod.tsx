@@ -55,16 +55,18 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
             poolId={poolId}
             q4w={{ exp: BigInt(0), amount: poolBackstopUserData.unlockedQ4W }}
             inTokens={poolBackstopUserEst.totalUnlockedQ4W}
+            first={true}
           />
         )}
         {poolBackstopUserData.q4w
           .sort((a, b) => Number(a.exp) - Number(b.exp))
-          .map((q4w) => (
+          .map((q4w, index) => (
             <BackstopQueueItem
               key={Number(q4w.exp)}
               poolId={poolId}
               q4w={q4w}
               inTokens={toTokens(q4w.amount)}
+              first={poolBackstopUserData.unlockedQ4W == BigInt(0) && index == 0}
             />
           ))}
       </Section>

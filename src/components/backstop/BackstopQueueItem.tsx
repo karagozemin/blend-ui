@@ -1,7 +1,7 @@
 import { PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Box, CircularProgress, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
+import { ReactNode, useEffect, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import theme from '../../theme';
@@ -14,8 +14,14 @@ import { TokenIcon } from '../common/TokenIcon';
 export interface BackstopQueueItemProps extends PoolComponentProps {
   q4w: Q4W;
   inTokens: number;
+  first: boolean;
 }
-export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTokens, poolId }) => {
+export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
+  q4w,
+  inTokens,
+  first,
+  poolId,
+}) => {
   const { connected, walletAddress, backstopDequeueWithdrawal, backstopWithdraw } = useWallet();
 
   const { viewType } = useSettings();
@@ -49,6 +55,22 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
         await backstopWithdraw(actionArgs, false);
       }
     }
+  };
+
+  const wrapButtonTooptip = (condition: boolean, children: ReactNode) => {
+    return condition ? (
+      <Tooltip
+        title="You can only unqueue the oldest withdrawal"
+        placement="top"
+        enterTouchDelay={0}
+        enterDelay={500}
+        leaveTouchDelay={3000}
+      >
+        <span>{children}</span>
+      </Tooltip>
+    ) : (
+      children
+    );
   };
 
   return (
@@ -110,25 +132,32 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
             </Typography>
           </Box>
         </Box>
-        {viewType === ViewType.REGULAR && (
-          <OpaqueButton
-            onClick={() => handleClick(q4w.amount)}
-            palette={theme.palette.positive}
-            sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
-          >
-            {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
-          </OpaqueButton>
-        )}
+        {viewType === ViewType.REGULAR &&
+          wrapButtonTooptip(
+            !first,
+            <OpaqueButton
+              onClick={() => handleClick(q4w.amount)}
+              palette={theme.palette.positive}
+              disabled={!first}
+              sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
+            >
+              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
+            </OpaqueButton>
+          )}
       </Row>
       {viewType !== ViewType.REGULAR && (
         <Row>
-          <OpaqueButton
-            onClick={() => handleClick(q4w.amount)}
-            palette={theme.palette.positive}
-            sx={{ height: '35px', width: '100%', margin: '12px', padding: '6px' }}
-          >
-            {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
-          </OpaqueButton>
+          {wrapButtonTooptip(
+            !first,
+            <OpaqueButton
+              onClick={() => handleClick(q4w.amount)}
+              palette={theme.palette.positive}
+              disabled={!first}
+              sx={{ height: '35px', width: '100%', margin: '12px', padding: '6px' }}
+            >
+              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
+            </OpaqueButton>
+          )}
         </Row>
       )}
     </>

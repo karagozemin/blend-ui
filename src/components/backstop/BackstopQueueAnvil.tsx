@@ -13,8 +13,7 @@ import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { scaleInputToBigInt } from '../../utils/scval';
-import { getErrorFromSim } from '../../utils/txSim';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { InputButton } from '../common/InputButton';
@@ -37,14 +36,17 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
+  const userBackstopBalacne = userBackstopData?.balances.get(poolId);
+  const userShares = userBackstopBalacne?.shares ?? BigInt(0);
   const backstopTokenPrice = backstop?.backstopToken.lpTokenPrice ?? 1;
   const decimals = 7;
   const sharesToTokens =
-    Number(backstopPoolData?.poolBalance.tokens) /
-    Number(backstopPoolData?.poolBalance.shares) /
-    1e7;
+    Number(backstopPoolData?.poolBalance.tokens) / Number(backstopPoolData?.poolBalance.shares);
+  const tokensToShares =
+    Number(backstopPoolData?.poolBalance.shares) / Number(backstopPoolData?.poolBalance.tokens);
 
   const [toQueue, setToQueue] = useState<string>('');
+  const [toQueueShares, setToQueueShares] = useState<bigint>(BigInt(0));
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Q4W>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
@@ -61,22 +63,46 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     setToQueue('');
   }
 
-  const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(
-    () => getErrorFromSim(toQueue, decimals, loading, simResponse, undefined),
-    [simResponse, toQueue, userBackstopData, loading]
-  );
+  const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } =
+    useMemo(() => {
+      if (toQueue !== '' && toQueueShares === BigInt(0)) {
+        return {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: false,
+          reason: 'Please enter a valid number of tokens to queue for withdrawal.',
+          disabledType: 'warning',
+          extraContent: undefined,
+        } as SubmitError;
+      }
+      return getErrorFromSim(toQueue, decimals, loading, simResponse, undefined);
+    }, [simResponse, toQueue, userBackstopData, loading]);
+
+  const handleInputChange = (input: string) => {
+    const as_number = Number(input);
+    if (!Number.isNaN(as_number)) {
+      const as_shares = as_number * tokensToShares;
+      const as_bigint = BigInt(Math.floor(as_shares * 1e7));
+      setToQueueShares(as_bigint);
+    } else {
+      setToQueueShares(BigInt(0));
+    }
+    setToQueue(input);
+  };
 
   const handleQueueMax = () => {
     if (userPoolBackstopEst && userPoolBackstopEst.tokens > 0) {
       setToQueue(userPoolBackstopEst.tokens.toFixed(7));
+      setToQueueShares(userShares);
     }
   };
+
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toQueue && connected) {
+    if (connected && toQueueShares !== BigInt(0)) {
       let depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
-        amount: scaleInputToBigInt(toQueue, 7),
+        amount: toQueueShares,
       };
       let response = await backstopQueueWithdrawal(depositArgs, sim);
       if (response) {
@@ -119,10 +145,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             <InputBar
               symbol={'BLND-USDC LP'}
               value={toQueue}
-              onValueChange={(v) => {
-                setToQueue(v);
-                setLoadingEstimate(true);
-              }}
+              onValueChange={handleInputChange}
               palette={theme.palette.backstop}
               sx={{ width: '100%', display: 'flex' }}
             >
@@ -193,7 +216,8 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
                 curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
                 newValue={`${toBalance(
                   userPoolBackstopEst && parsedSimResult
-                    ? userPoolBackstopEst.totalQ4W + Number(parsedSimResult.amount) * sharesToTokens
+                    ? userPoolBackstopEst.totalQ4W +
+                        (Number(parsedSimResult.amount) / 1e7) * sharesToTokens
                     : 0
                 )} BLND-USDC LP`}
               />
