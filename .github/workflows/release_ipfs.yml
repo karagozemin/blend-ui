@@ -43,7 +43,7 @@ jobs:
         with:
           name: ipfs-${{ github.ref_name }}
           body: |
-            '## Blend UI Release
+            ## Blend UI Release
 
             This release contains the latest build of the Blend UI.
 
