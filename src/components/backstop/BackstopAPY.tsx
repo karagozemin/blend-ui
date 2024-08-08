@@ -17,11 +17,17 @@ export const BackstopAPY: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
           poolData.estimates.totalBorrow) /
         backstopPoolData.estimates.totalSpotValue
       : 0;
+  const sharesToTokens = backstopPoolData
+    ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)
+    : 1;
   const backstopEmissionsPerDayPerLPToken =
     backstopPoolData && backstopPoolData.emissions
       ? getEmissionsPerYearPerUnit(
           backstopPoolData.emissions.config.eps,
-          Number(backstopPoolData.poolBalance.shares - backstopPoolData.poolBalance.q4w) / 1e7,
+          ((Number(backstopPoolData.poolBalance.shares) -
+            Number(backstopPoolData.poolBalance.q4w)) /
+            1e7) *
+            sharesToTokens,
           7
         )
       : 0;
