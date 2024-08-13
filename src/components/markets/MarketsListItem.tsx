@@ -33,7 +33,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
       }}
       onClick={() => {
         const link = getTokenLinkFromReserve(reserveData);
-        window.open(link, '_blank')
+        window.open(link, '_blank');
       }}
       {...props}
     >
@@ -107,8 +107,8 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
               }}
             >
               <StackedApr
-                aprLend={formatter.toPercentage(reserveData.estimates.supplyApy)}
-                aprBorrow={formatter.toPercentage(reserveData.estimates.apy)}
+                aprLend={formatter.toPercentage(reserveData.estimates.supplyApr)}
+                aprBorrow={formatter.toPercentage(reserveData.estimates.apr)}
               ></StackedApr>
             </Box>
           </>

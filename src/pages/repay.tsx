@@ -68,10 +68,10 @@ const Repay: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Borrow APY"
+            title="Borrow APR"
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.estimates.apy)}{' '}
+                {toPercentage(reserve?.estimates.apr)}{' '}
                 <FlameIcon
                   width={22}
                   height={22}

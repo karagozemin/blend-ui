@@ -78,7 +78,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         }}
       >
         <Typography variant="body1">
-          {formatter.toPercentage(reserve.estimates.supplyApy)}
+          {formatter.toPercentage(reserve.estimates.supplyApr)}
         </Typography>
         {!!reserve.supplyEmissions && (
           <FlameIcon

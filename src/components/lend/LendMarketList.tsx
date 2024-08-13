@@ -54,7 +54,7 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
           align="center"
           sx={{ width: headerWidth }}
         >
-          APY
+          APR
         </Typography>
 
         {viewType !== ViewType.MOBILE && (

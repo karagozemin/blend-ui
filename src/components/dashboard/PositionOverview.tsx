@@ -25,8 +25,8 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const userAccount = useStore((state) => state.account);
   const hasBLNDTrustline = !requiresTrustline(userAccount, BLND_ASSET);
   const borrow_capacity = userPoolData?.positionEstimates?.borrowCap;
-  const net_apy = Number.isFinite(userPoolData?.positionEstimates?.netApy)
-    ? userPoolData?.positionEstimates?.netApy
+  const net_apr = Number.isFinite(userPoolData?.positionEstimates?.netApr)
+    ? userPoolData?.positionEstimates?.netApr
     : 0;
 
   const handleSubmitTransaction = async () => {
@@ -154,9 +154,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               }}
             >
               <StackedText
-                title="Net APY"
+                title="Net APR"
                 titleColor="inherit"
-                text={toPercentage(net_apy)}
+                text={toPercentage(net_apr)}
                 textColor="inherit"
                 type="large"
               />
@@ -216,9 +216,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               }}
             >
               <StackedText
-                title="Net APY"
+                title="Net APR"
                 titleColor="inherit"
-                text={toPercentage(net_apy)}
+                text={toPercentage(net_apr)}
                 textColor="inherit"
                 type="large"
               />

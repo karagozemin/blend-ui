@@ -6,14 +6,14 @@ import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { FlameIcon } from '../common/FlameIcon';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 
-export const BackstopAPY: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
+export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const poolData = useStore((state) => state.pools.get(poolId));
 
-  const estBackstopApy =
+  const estBackstopApr =
     backstopPoolData && poolData
       ? ((poolData.config.backstopRate / 1e7) *
-          poolData.estimates.totalBorrowApy *
+          poolData.estimates.avgBorrowApr *
           poolData.estimates.totalBorrow) /
         backstopPoolData.estimates.totalSpotValue
       : 0;
@@ -42,7 +42,7 @@ export const BackstopAPY: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
       }}
     >
       <Tooltip
-        title="Estimated APY based on pool interest sharing."
+        title="Estimated APR based on pool interest sharing."
         placement="top"
         enterTouchDelay={0}
         enterDelay={500}
@@ -58,7 +58,7 @@ export const BackstopAPY: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
           }}
         >
           <Typography variant="body2" color={'text.secondary'}>
-            {'Backstop APY'}
+            {'Backstop APR'}
           </Typography>
           <HelpOutline sx={{ marginLeft: '6px', width: '15px', color: 'text.secondary' }} />
         </Box>
@@ -73,7 +73,7 @@ export const BackstopAPY: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
         }}
       >
         <Typography variant="h4" color={'text.primary'}>
-          {toPercentage(estBackstopApy)}
+          {toPercentage(estBackstopApr)}
         </Typography>
         {backstopEmissionsPerDayPerLPToken > 0 && (
           <FlameIcon

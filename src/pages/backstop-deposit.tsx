@@ -2,7 +2,7 @@ import { HelpOutline } from '@mui/icons-material';
 import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { BackstopAPY } from '../components/backstop/BackstopAPY';
+import { BackstopAPR } from '../components/backstop/BackstopAPR';
 import { BackstopDepositAnvil } from '../components/backstop/BackstopDepositAnvil';
 import { BackstopDropdown } from '../components/backstop/BackstopDropdown';
 import { GoBackHeader } from '../components/common/GoBackHeader';
@@ -22,14 +22,6 @@ const BackstopDeposit: NextPage = () => {
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
   const poolData = useStore((state) => state.pools.get(safePoolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
-
-  const estBackstopApy =
-    backstopPoolData && poolData
-      ? ((poolData.config.backstopRate / 1e7) *
-          poolData.estimates.totalBorrowApy *
-          poolData.estimates.totalBorrow) /
-        backstopPoolData.estimates.totalSpotValue
-      : 0;
 
   return (
     <>
@@ -70,7 +62,7 @@ const BackstopDeposit: NextPage = () => {
       </Row>
       <Row>
         <Section width={SectionSize.THIRD} sx={{ alignItems: 'center' }}>
-          <BackstopAPY poolId={safePoolId} />
+          <BackstopAPR poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
           <Tooltip
