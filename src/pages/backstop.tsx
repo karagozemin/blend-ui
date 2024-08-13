@@ -6,7 +6,7 @@ import { SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { BackstopAPY } from '../components/backstop/BackstopAPY';
+import { BackstopAPR } from '../components/backstop/BackstopAPR';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
@@ -110,7 +110,7 @@ const Backstop: NextPage = () => {
       <Divider />
       <Row>
         <Section width={SectionSize.THIRD} sx={{ alignItems: 'center' }}>
-          <BackstopAPY poolId={safePoolId} />
+          <BackstopAPR poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
           <Tooltip

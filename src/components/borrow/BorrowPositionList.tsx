@@ -53,7 +53,7 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
           align="center"
           sx={{ width: headerWidth }}
         >
-          APY
+          APR
         </Typography>
 
         <Box sx={{ flexGrow: '2', width: viewType === ViewType.MOBILE ? '24px' : headerWidth }} />

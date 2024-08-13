@@ -86,10 +86,10 @@ const Supply: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Supply APY"
+            title="Supply APR"
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.estimates.supplyApy)}{' '}
+                {toPercentage(reserve?.estimates.supplyApr)}{' '}
                 <FlameIcon
                   width={22}
                   height={22}

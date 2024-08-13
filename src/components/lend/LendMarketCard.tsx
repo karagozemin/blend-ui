@@ -77,7 +77,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toPercentage(reserve.estimates.supplyApy)}
+              {formatter.toPercentage(reserve.estimates.supplyApr)}
             </Typography>
             {reserve.supplyEmissions && (
               <FlameIcon

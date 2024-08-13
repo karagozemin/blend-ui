@@ -77,7 +77,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apy)}</Typography>
+        <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apr)}</Typography>
         {!!reserve.borrowEmissions && (
           <FlameIcon
             width={22}

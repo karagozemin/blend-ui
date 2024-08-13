@@ -28,9 +28,9 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const estBackstopApy =
+  const estBackstopApr =
     ((poolData.config.backstopRate / 1e7) *
-      poolData.estimates.totalBorrowApy *
+      poolData.estimates.avgBorrowApr *
       poolData.estimates.totalBorrow) /
     backstopPoolData.estimates.totalSpotValue;
   return (
@@ -201,8 +201,8 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
               </Row>
               <Row>
                 <StackedTextBox
-                  name="APY"
-                  text={toPercentage(estBackstopApy)}
+                  name="APR"
+                  text={toPercentage(estBackstopApr)}
                   sx={{ width: '50%' }}
                 />
                 <StackedTextBox
