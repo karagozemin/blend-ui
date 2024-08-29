@@ -1,9 +1,9 @@
-import { PoolClaimArgs } from '@blend-capital/blend-sdk';
+import { PoolClaimArgs, PositionsEstimate } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, useTheme } from '@mui/material';
+import { Box, SxProps, Theme, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
-import { useStore } from '../../store/store';
+import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { BLND_ASSET } from '../../utils/token_display';
@@ -12,6 +12,7 @@ import { FlameIcon } from '../common/FlameIcon';
 import { Icon } from '../common/Icon';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
+import { Skeleton } from '../common/Skeleton';
 import { StackedText } from '../common/StackedText';
 import { BorrowCapRing } from './BorrowCapRing';
 
@@ -20,26 +21,32 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const { connected, walletAddress, poolClaim, createTrustline } = useWallet();
 
-  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const loadBlendData = useStore((state) => state.loadBlendData);
-  const userAccount = useStore((state) => state.account);
-  const hasBLNDTrustline = !requiresTrustline(userAccount, BLND_ASSET);
-  const borrow_capacity = userPoolData?.positionEstimates?.borrowCap;
-  const net_apr = Number.isFinite(userPoolData?.positionEstimates?.netApr)
-    ? userPoolData?.positionEstimates?.netApr
-    : 0;
+  const { data: account, refetch: refechAccount } = useHorizonAccount();
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: userPoolData, refetch: refetchPoolUser } = usePoolUser(pool);
+
+  if (pool === undefined || userPoolData === undefined) {
+    return <Skeleton />;
+  }
+
+  const { emissions, claimedTokens } = userPoolData.estimateEmissions(pool);
+  const hasBLNDTrustline = !requiresTrustline(account, BLND_ASSET);
+
+  const userEst = poolOracle
+    ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions)
+    : undefined;
 
   const handleSubmitTransaction = async () => {
     if (connected && userPoolData) {
-      let reserves_to_claim = userPoolData.emissionEstimates?.tokenIdsToClaim ?? [];
-      if (reserves_to_claim.length > 0) {
+      if (claimedTokens.length > 0) {
         let claimArgs: PoolClaimArgs = {
           from: walletAddress,
-          reserve_token_ids: reserves_to_claim,
+          reserve_token_ids: claimedTokens,
           to: walletAddress,
         };
         await poolClaim(poolId, claimArgs, false);
-        await loadBlendData(true, poolId, walletAddress);
+        refetchPoolUser();
       }
     }
   };
@@ -47,6 +54,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   async function handleCreateTrustlineClick() {
     if (connected) {
       await createTrustline(BLND_ASSET);
+      refechAccount();
     }
   }
 
@@ -70,7 +78,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
             <StackedText
               title="Claim Pool Emissions"
               titleColor="inherit"
-              text={`${toBalance(userPoolData?.emissionEstimates?.totalEmissions ?? 0)} BLND`}
+              text={`${toBalance(emissions)} BLND`}
               textColor="inherit"
               type="large"
             />
@@ -134,121 +142,69 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       );
     }
   }
+
+  const isRegularViewType = viewType === ViewType.REGULAR;
+  const rowSX: SxProps<Theme> = isRegularViewType
+    ? { padding: '0px 12px' }
+    : {
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '0px 12px',
+        gap: '12px',
+        alignItems: 'center',
+      };
   return (
-    <>
-      {viewType === ViewType.REGULAR && (
-        <Row sx={{ padding: '0px 12px' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              width: '50%',
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <StackedText
-                title="Net APR"
-                titleColor="inherit"
-                text={toPercentage(net_apr)}
-                textColor="inherit"
-                type="large"
-              />
-              <Icon
-                src={'/icons/dashboard/net_apr.svg'}
-                alt={`backstop size icon`}
-                isCircle={false}
-                sx={{ marginLeft: '18px' }}
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginLeft: 'auto',
-              }}
-            >
-              <StackedText
-                title="Borrow Capacity"
-                titleColor="inherit"
-                text={`$${toBalance(borrow_capacity)}`}
-                textColor="inherit"
-                type="large"
-              />
-              <BorrowCapRing poolId={poolId} />
-            </Box>
-          </Box>
-          <Box sx={{ width: '45%', display: 'flex' }}>{renderClaimButton()}</Box>
-        </Row>
-      )}
-      {viewType !== ViewType.REGULAR && (
-        <Row
+    <Row sx={rowSX}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          width: isRegularViewType ? '50%' : '100%',
+        }}
+      >
+        <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
-            padding: '0px 12px',
-            gap: '12px',
+            justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <Box
-            sx={{
-              margin: '12px 0px',
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-around',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <StackedText
-                title="Net APR"
-                titleColor="inherit"
-                text={toPercentage(net_apr)}
-                textColor="inherit"
-                type="large"
-              />
-              <Icon
-                src={'/icons/dashboard/net_apr.svg'}
-                alt={`backstop size icon`}
-                isCircle={false}
-                sx={{ marginLeft: '18px' }}
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <StackedText
-                title="Borrow Capacity"
-                titleColor="inherit"
-                text={`$${toBalance(borrow_capacity)}`}
-                textColor="inherit"
-                type="large"
-              />
-              <BorrowCapRing poolId={poolId} />
-            </Box>
-          </Box>
-          <Box sx={{ width: '100%' }}>{renderClaimButton()}</Box>
-        </Row>
-      )}
-    </>
+          <StackedText
+            title="Net APR"
+            titleColor="inherit"
+            text={toPercentage(userEst?.netApr)}
+            textColor="inherit"
+            type="large"
+          />
+          <Icon
+            src={'/icons/dashboard/net_apr.svg'}
+            alt={`backstop size icon`}
+            isCircle={false}
+            sx={{ marginLeft: '18px' }}
+          />
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginLeft: isRegularViewType ? 'auto' : undefined,
+          }}
+        >
+          <StackedText
+            title="Borrow Capacity"
+            titleColor="inherit"
+            text={`$${toBalance(userEst?.borrowCap)}`}
+            textColor="inherit"
+            type="large"
+          />
+          <BorrowCapRing borrowLimit={userEst?.borrowLimit} />
+        </Box>
+      </Box>
+      <Box sx={{ width: isRegularViewType ? '45%' : '100%', display: 'flex' }}>
+        {renderClaimButton()}
+      </Box>
+    </Row>
   );
 };

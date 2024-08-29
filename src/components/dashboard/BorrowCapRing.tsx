@@ -2,17 +2,15 @@ import { HelpOutline } from '@mui/icons-material';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { Box, BoxProps, CircularProgress, Tooltip, useTheme } from '@mui/material';
 import React from 'react';
-import { useStore } from '../../store/store';
+
 export interface BorrowCapRingProps extends BoxProps {
-  poolId: string;
+  borrowLimit: number | undefined;
 }
 
-export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }) => {
+export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ borrowLimit }) => {
   const theme = useTheme();
 
-  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const borrowLimit = userPoolData?.positionEstimates?.borrowLimit;
-  const capacityPercentage = Math.round(Number(((borrowLimit || 0) * 100).toFixed(2)));
+  const capacityPercentage = Math.round(Number(((borrowLimit ?? 0) * 100).toFixed(2)));
 
   function getIconByCapacity(capacity: number) {
     if (capacity > 80) {

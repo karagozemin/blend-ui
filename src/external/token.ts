@@ -24,13 +24,8 @@ export async function getTokenBalance(
   const result: SorobanRpc.Api.SimulateTransactionResponse = await stellar_rpc.simulateTransaction(
     tx_builder.build()
   );
-  const scval_result = result;
-  if (scval_result == undefined) {
-    console.error(`Error: unable to fetch balance for token: ${token_id}`);
-  }
   if (SorobanRpc.Api.isSimulationSuccess(result)) {
-    let resultScVal = (scval_result as SorobanRpc.Api.SimulateTransactionSuccessResponse).result
-      ?.retval;
+    let resultScVal = (result as SorobanRpc.Api.SimulateTransactionSuccessResponse).result?.retval;
     if (resultScVal == undefined) {
       console.error(`Error: unable to fetch balance for token: ${token_id}`);
       return BigInt(0);

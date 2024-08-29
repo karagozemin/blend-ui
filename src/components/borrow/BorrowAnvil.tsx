@@ -1,10 +1,12 @@
 import {
+  FixedMath,
   parseResult,
   PoolContract,
-  PositionEstimates,
+  PoolUser,
+  Positions,
+  PositionsEstimate,
   RequestType,
   SubmitArgs,
-  UserPositions,
 } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
@@ -12,8 +14,8 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
+import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -25,7 +27,9 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { Skeleton } from '../common/Skeleton';
 import { TxOverview } from '../common/TxOverview';
+import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -36,104 +40,23 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline, isLoading } =
     useWallet();
 
-  const poolData = useStore((state) => state.pools.get(poolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const userAccount = useStore((state) => state.account);
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolUser } = usePoolUser(pool);
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const { data: horizonAccount } = useHorizonAccount();
 
   const [toBorrow, setToBorrow] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
-  const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
+  const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const loading = isLoading || loadingEstimate;
 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toBorrow) != 0) {
     setToBorrow('');
   }
-
-  useDebouncedState(toBorrow, RPC_DEBOUNCE_DELAY, txType, async () => {
-    setSimResponse(undefined);
-    setParsedSimResult(undefined);
-    let response = await handleSubmitTransaction(true);
-    if (response) {
-      setSimResponse(response);
-      if (SorobanRpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-      }
-    }
-    setLoadingEstimate(false);
-  });
-
-  let newPositionEstimate =
-    poolData && parsedSimResult ? PositionEstimates.build(poolData, parsedSimResult) : undefined;
-
-  const reserve = poolData?.reserves.get(assetId);
-
-  const assetToBase = reserve?.oraclePrice ?? 1;
-  const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.tokenMetadata?.symbol ?? '';
-
-  const assetToEffectiveLiability = reserve
-    ? assetToBase * reserve.getLiabilityFactor()
-    : undefined;
-  const curBorrowCap =
-    userPoolData && assetToEffectiveLiability
-      ? userPoolData.positionEstimates.borrowCap / assetToEffectiveLiability
-      : undefined;
-  const nextBorrowCap =
-    newPositionEstimate && assetToEffectiveLiability
-      ? newPositionEstimate.borrowCap / assetToEffectiveLiability
-      : undefined;
-  const curBorrowLimit =
-    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-      ? userPoolData?.positionEstimates?.borrowLimit
-      : 0;
-  const nextBorrowLimit =
-    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
-      ? newPositionEstimate?.borrowLimit
-      : 0;
-  const AddTrustlineButton = (
-    <OpaqueButton
-      onClick={handleAddAssetTrustline}
-      palette={theme.palette.warning}
-      sx={{ padding: '6px 24px', margin: '12px auto' }}
-    >
-      Add {reserve?.tokenMetadata.asset?.code} Trustline
-    </OpaqueButton>
-  );
-
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
-    useMemo(() => {
-      const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
-      if (!hasTokenTrustline) {
-        let submitError: SubmitError = {
-          isSubmitDisabled: true,
-          isError: true,
-          isMaxDisabled: true,
-          reason: 'You need a trustline for this asset in order to borrow it.',
-          disabledType: 'warning',
-          extraContent: AddTrustlineButton,
-        };
-        return submitError;
-      } else {
-        return getErrorFromSim(toBorrow, decimals, loading, simResponse, undefined);
-      }
-    }, [toBorrow, simResponse, userPoolData?.positionEstimates]);
-
-  const handleBorrowMax = () => {
-    if (reserve && userPoolData) {
-      let to_bounded_hf =
-        (userPoolData.positionEstimates.totalEffectiveCollateral -
-          userPoolData.positionEstimates.totalEffectiveLiabilities * 1.02) /
-        1.02;
-      let to_borrow = Math.min(
-        to_bounded_hf / (assetToBase * reserve.getLiabilityFactor()),
-        reserve.estimates.supplied * (reserve.config.max_util / 1e7 - 0.01) -
-          reserve.estimates.borrowed
-      );
-      setToBorrow(Math.max(to_borrow, 0).toFixed(7));
-      setLoadingEstimate(true);
-    }
-  };
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (toBorrow && connected && reserve) {
@@ -150,6 +73,99 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         ],
       };
       return await poolSubmit(poolId, submitArgs, sim);
+    }
+  };
+
+  useDebouncedState(toBorrow, RPC_DEBOUNCE_DELAY, txType, async () => {
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+      }
+    }
+    setLoadingEstimate(false);
+  });
+
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
+    useMemo(() => {
+      const hasTokenTrustline = !requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset);
+      if (!hasTokenTrustline) {
+        let submitError: SubmitError = {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: true,
+          reason: 'You need a trustline for this asset in order to borrow it.',
+          disabledType: 'warning',
+          extraContent: AddTrustlineButton,
+        };
+        return submitError;
+      } else {
+        return getErrorFromSim(toBorrow, decimals, loading, simResponse, undefined);
+      }
+    }, [toBorrow, simResponse, poolUser]);
+
+  if (pool === undefined || reserve === undefined) {
+    return <Skeleton />;
+  }
+
+  const curPositionEstimate =
+    pool && poolOracle && poolUser
+      ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
+      : undefined;
+  const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());
+  const newPositionEstimate =
+    pool && poolOracle && parsedSimResult
+      ? PositionsEstimate.build(pool, poolOracle, parsedSimResult)
+      : undefined;
+
+  const assetToBase = poolOracle?.getPriceFloat(assetId);
+
+  const assetToEffectiveLiability = assetToBase
+    ? assetToBase * reserve.getLiabilityFactor()
+    : undefined;
+  const curBorrowCap =
+    curPositionEstimate && assetToEffectiveLiability
+      ? curPositionEstimate.borrowCap / assetToEffectiveLiability
+      : undefined;
+  const nextBorrowCap =
+    newPositionEstimate && assetToEffectiveLiability
+      ? newPositionEstimate.borrowCap / assetToEffectiveLiability
+      : undefined;
+  const curBorrowLimit =
+    curPositionEstimate && Number.isFinite(curPositionEstimate.borrowLimit)
+      ? curPositionEstimate.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
+      ? newPositionEstimate?.borrowLimit
+      : 0;
+  const AddTrustlineButton = (
+    <OpaqueButton
+      onClick={handleAddAssetTrustline}
+      palette={theme.palette.warning}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Add {reserve?.tokenMetadata.asset?.code} Trustline
+    </OpaqueButton>
+  );
+
+  const handleBorrowMax = () => {
+    if (reserve && assetToBase && curPositionEstimate) {
+      let to_bounded_hf =
+        (curPositionEstimate.totalEffectiveCollateral -
+          curPositionEstimate.totalEffectiveLiabilities * 1.02) /
+        1.02;
+      let to_borrow = Math.min(
+        to_bounded_hf / (assetToBase * reserve.getLiabilityFactor()),
+        reserve.totalSupplyFloat() *
+          (FixedMath.toFloat(BigInt(reserve.config.max_util), 7) - 0.01) -
+          reserve.totalLiabilitiesFloat()
+      );
+      setToBorrow(Math.max(to_borrow, 0).toFixed(7));
+      setLoadingEstimate(true);
     }
   };
 
@@ -218,7 +234,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </Box>
           <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toBorrow ?? 0) * assetToBase, decimals)}`}
+              {`${toUSDBalance(assetToBase, Number(toBorrow ?? 0))}`}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
@@ -251,13 +267,9 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
                 />
                 <ValueChange
                   title="Your total borrowed"
-                  curValue={`${toBalance(
-                    userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
-                    decimals
-                  )} ${symbol}`}
+                  curValue={`${toBalance(poolUser?.getLiabilitiesFloat(reserve) ?? 0)} ${symbol}`}
                   newValue={`${toBalance(
-                    newPositionEstimate?.liabilities.get(assetId) ?? 0,
-                    decimals
+                    newPoolUser?.getLiabilitiesFloat(reserve) ?? 0
                   )} ${symbol}`}
                 />
                 <ValueChange

@@ -1,10 +1,9 @@
-import { PoolUser, Reserve } from '@blend-capital/blend-sdk';
+import { Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
-import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -13,13 +12,13 @@ import { TokenHeader } from '../common/TokenHeader';
 
 export interface LendPositionCardProps extends PoolComponentProps {
   reserve: Reserve;
-  userPoolData: PoolUser;
+  bTokens: bigint;
 }
 
 export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   poolId,
   reserve,
-  userPoolData,
+  bTokens,
   sx,
   ...props
 }) => {
@@ -27,13 +26,13 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const { viewType } = useSettings();
   const router = useRouter();
 
-  const userSupplyEst = userPoolData.positionEstimates.supply.get(reserve.assetId);
-  const userCollatEst = userPoolData.positionEstimates.collateral.get(reserve.assetId);
-  const totalSupplyEst = userSupplyEst ?? 0 + (userCollatEst ?? 0);
+  const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
+
+  const viewTypeIsMobile = viewType === ViewType.MOBILE;
   return (
     <Box
       sx={{
@@ -41,15 +40,15 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         display: 'flex',
         '&:hover': {
           // color: viewType == ViewType.MOBILE ? theme.palette.lend.main : 'inherit',
-          cursor: viewType == ViewType.MOBILE ? 'pointer' : 'inherit',
+          cursor: viewTypeIsMobile ? 'pointer' : 'inherit',
         },
-        backgroundColor: viewType == ViewType.MOBILE ? theme.palette.background.paper : 'inherit',
-        padding: viewType == ViewType.MOBILE ? '1rem' : '0px',
-        borderRadius: viewType == ViewType.MOBILE ? '6px' : '0px',
-        boxShadow: viewType === ViewType.MOBILE ? '0px 4px 4px rgba(0, 0, 0, 0.25)' : 'none',
+        backgroundColor: viewTypeIsMobile ? theme.palette.background.paper : 'inherit',
+        padding: viewTypeIsMobile ? '1rem' : '0px',
+        borderRadius: viewTypeIsMobile ? '6px' : '0px',
+        boxShadow: viewTypeIsMobile ? '0px 4px 4px rgba(0, 0, 0, 0.25)' : 'none',
       }}
       onClick={() => {
-        if (viewType === ViewType.MOBILE) {
+        if (viewTypeIsMobile) {
           router.push({
             pathname: '/withdraw',
             query: { poolId: poolId, assetId: reserve.assetId },
@@ -57,7 +56,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         }
       }}
     >
-      <TokenHeader iconSize="24px" hideDomain id={reserve.assetId} sx={{ width: tableWidth }} />
+      <TokenHeader iconSize="24px" hideDomain reserve={reserve} sx={{ width: tableWidth }} />
       <Box
         sx={{
           width: tableWidth,
@@ -66,7 +65,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1">{formatter.toBalance(totalSupplyEst)}</Typography>
+        <Typography variant="body1">{formatter.toBalance(assetFloat)}</Typography>
       </Box>
 
       <Box
@@ -77,26 +76,18 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1">
-          {formatter.toPercentage(reserve.estimates.supplyApr)}
-        </Typography>
-        {!!reserve.supplyEmissions && (
+        <Typography variant="body1">{formatter.toPercentage(reserve.supplyApr)}</Typography>
+        {reserve.supplyEmissions && (
           <FlameIcon
             width={22}
             height={22}
             title={formatter.getEmissionTextFromValue(
-              getEmissionsPerYearPerUnit(
-                reserve.supplyEmissions?.config.eps || BigInt(0),
-                reserve.estimates.supplied,
-                reserve.config.decimals
-              ),
+              reserve.emissionsPerYearPerSuppliedAsset(),
               reserve.tokenMetadata.symbol
             )}
           />
         )}
       </Box>
-
-      {/* {tableNum >= 5 && <Box sx={{ width: tableWidth }} />} */}
       {viewType !== ViewType.MOBILE && (
         <LinkBox
           to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}

@@ -2,8 +2,10 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Box, Menu, MenuItem, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { useStore } from '../../store/store';
+import { usePool } from '../../hooks/api';
+import { toCompactAddress } from '../../utils/formatter';
 import { CustomButton } from './CustomButton';
+import { LetterIcon } from './LetterIcon';
 import { PoolComponentProps } from './PoolComponentProps';
 import { TokenIcon } from './TokenIcon';
 
@@ -17,8 +19,8 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
   const theme = useTheme();
   const router = useRouter();
 
-  const reserves = useStore((state) => state.pools.get(poolId)?.reserves);
-  const activeReserve = reserves?.get(activeReserveId);
+  const { data: pool } = usePool(poolId);
+  const activeReserve = pool?.reserves?.get(activeReserveId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -55,14 +57,21 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
             paddingLeft: '6px',
           }}
         >
-          <TokenIcon
-            symbol={activeReserve?.tokenMetadata?.symbol ?? 'unknown'}
-            assetId={activeReserveId}
-            sx={{ height: '30px', width: '30px' }}
-          />
-          <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-            {`${capitalizedAction} ${activeReserve?.tokenMetadata?.symbol ?? 'unknown'}`}
-          </Typography>
+          {activeReserve ? (
+            <>
+              <TokenIcon reserve={activeReserve} sx={{ height: '30px', width: '30px' }} />
+              <Typography variant="h3" sx={{ marginLeft: '12px' }}>
+                {`${capitalizedAction} ${activeReserve?.tokenMetadata?.symbol ?? 'unknown'}`}
+              </Typography>
+            </>
+          ) : (
+            <>
+              <LetterIcon text={'?'} sx={{ height: '30px', width: '30px' }} />
+              <Typography variant="h3" sx={{ marginLeft: '12px' }}>
+                {toCompactAddress(activeReserveId)}
+              </Typography>
+            </>
+          )}
         </Box>
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
@@ -76,7 +85,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
           sx: { width: anchorEl && anchorEl.offsetWidth },
         }}
       >
-        {Array.from(reserves?.values() ?? []).map((reserve) => (
+        {Array.from(pool?.reserves.values() ?? []).map((reserve) => (
           <MenuItem
             key={reserve.assetId}
             onClick={() => handleClickReserve(reserve.assetId)}
@@ -89,11 +98,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
               paddingLeft: '6px',
             }}
           >
-            <TokenIcon
-              symbol={reserve?.tokenMetadata?.symbol ?? 'unknown'}
-              assetId={reserve.assetId}
-              sx={{ height: '30px', width: '30px' }}
-            />
+            <TokenIcon reserve={reserve} sx={{ height: '30px', width: '30px' }} />
             <Typography variant="h3" sx={{ marginLeft: '12px' }}>
               {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
             </Typography>

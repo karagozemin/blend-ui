@@ -3,7 +3,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Alert, Box, Snackbar, Typography, useTheme } from '@mui/material';
 import React, { useEffect } from 'react';
 import { useWallet } from '../../contexts/wallet';
-import { useStore } from '../../store/store';
+import { useHorizonAccount } from '../../hooks/api';
 import { toCompactAddress } from '../../utils/formatter';
 import { OpaqueButton } from './OpaqueButton';
 import { Row } from './Row';
@@ -11,11 +11,11 @@ import { Row } from './Row';
 export const WalletWarning = () => {
   const theme = useTheme();
   const { connect, connected, walletAddress } = useWallet();
-  const isFunded = useStore((state) => state.isFunded);
-  const loadAccount = useStore((state) => state.loadAccount);
 
   const [openCon, setOpenCon] = React.useState(false);
   const [openError, setOpenError] = React.useState(false);
+
+  const { refetch: refetchAccount, isError: isError } = useHorizonAccount();
 
   const handleConnectWallet = (successful: boolean) => {
     if (successful) {
@@ -31,19 +31,19 @@ export const WalletWarning = () => {
   };
 
   useEffect(() => {
-    if (connected && isFunded === false) {
-      loadAccount(walletAddress);
+    if (connected && isError === true) {
+      refetchAccount();
       const refreshInterval = setInterval(async () => {
-        await loadAccount(walletAddress);
+        await refetchAccount();
       }, 3 * 1000);
       return () => clearInterval(refreshInterval);
     }
-  }, [loadAccount, connected, isFunded, walletAddress]);
+  }, [refetchAccount, connected, isError, walletAddress]);
 
   return (
     <>
       {connected ? (
-        isFunded === false ? (
+        isError === true ? (
           <Row
             sx={{
               background: theme.palette.warning.opaque,

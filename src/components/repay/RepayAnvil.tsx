@@ -1,10 +1,12 @@
 import {
+  FixedMath,
   parseResult,
   PoolContract,
-  PositionEstimates,
+  PoolUser,
+  Positions,
+  PositionsEstimate,
   RequestType,
   SubmitArgs,
-  UserPositions,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
@@ -12,8 +14,14 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
+import {
+  useHorizonAccount,
+  usePool,
+  usePoolOracle,
+  usePoolUser,
+  useTokenBalance,
+} from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -25,7 +33,9 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { Skeleton } from '../common/Skeleton';
 import { TxOverview } from '../common/TxOverview';
+import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -35,78 +45,30 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
-  const account = useStore((state) => state.account);
-  const poolData = useStore((state) => state.pools.get(poolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolUser } = usePoolUser(pool);
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: tokenBalance } = useTokenBalance(
+    assetId,
+    reserve?.tokenMetadata?.asset,
+    horizonAccount
+  );
 
   const [toRepay, setToRepay] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
-  const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
+  const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const loading = isLoading || loadingEstimate;
 
-  useDebouncedState(toRepay, RPC_DEBOUNCE_DELAY, txType, async () => {
-    setSimResponse(undefined);
-    setParsedSimResult(undefined);
-    let response = await handleSubmitTransaction(true);
-    if (response) {
-      setSimResponse(response);
-      if (SorobanRpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-      }
-    }
-    setLoadingEstimate(false);
-  });
-  let newPositionEstimate =
-    poolData && parsedSimResult ? PositionEstimates.build(poolData, parsedSimResult) : undefined;
-
-  const reserve = poolData?.reserves.get(assetId);
-  const assetToBase = reserve?.oraclePrice ?? 1;
-  const decimals = reserve?.config.decimals ?? 7;
-  const scalar = 10 ** decimals;
-  const symbol = reserve?.tokenMetadata?.symbol ?? '';
-
-  const curBorrowCap = userPoolData ? userPoolData.positionEstimates.borrowCap : undefined;
-  const nextBorrowCap = newPositionEstimate ? newPositionEstimate.borrowCap : undefined;
-  const curBorrowLimit =
-    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-      ? userPoolData?.positionEstimates?.borrowLimit
-      : 0;
-  const nextBorrowLimit =
-    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
-      ? newPositionEstimate?.borrowLimit
-      : 0;
-
   // calculate current wallet state
-  let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
-  const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
-
-  let returnedTokens =
-    toRepay != undefined &&
-    userPoolData &&
-    Number(toRepay) > (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
-      ? Number(toRepay) - (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
-      : 0;
-  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toRepay) != 0) {
-    setToRepay('');
-  }
-  // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
-    () => getErrorFromSim(toRepay, decimals, loading, simResponse),
-    [freeUserBalanceScaled, toRepay, simResponse, loading]
-  );
-
-  const handleRepayMax = () => {
-    if (userPoolData) {
-      let dustProofRepay =
-        (userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0) * 1.005;
-      let maxRepay =
-        freeUserBalanceScaled < dustProofRepay ? freeUserBalanceScaled : dustProofRepay;
-      setToRepay(maxRepay.toFixed(decimals));
-      setLoadingEstimate(true);
-    }
-  };
+  const stellar_reserve_amount = getAssetReserve(horizonAccount, reserve?.tokenMetadata?.asset);
+  const freeUserBalanceScaled =
+    FixedMath.toFloat(tokenBalance ?? BigInt(0), reserve?.config?.decimals) -
+    stellar_reserve_amount;
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (toRepay && connected && reserve) {
@@ -123,6 +85,68 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
         ],
       };
       return await poolSubmit(poolId, submitArgs, sim);
+    }
+  };
+
+  useDebouncedState(toRepay, RPC_DEBOUNCE_DELAY, txType, async () => {
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+      }
+    }
+    setLoadingEstimate(false);
+  });
+
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
+    () => getErrorFromSim(toRepay, decimals, loading, simResponse, undefined),
+    [freeUserBalanceScaled, toRepay, simResponse, loading]
+  );
+
+  if (pool === undefined || reserve === undefined) {
+    return <Skeleton />;
+  }
+
+  const curPositionsEstimate =
+    pool && poolOracle && poolUser
+      ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
+      : undefined;
+  const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());
+  const newPositionsEstimate =
+    pool && poolOracle && parsedSimResult
+      ? PositionsEstimate.build(pool, poolOracle, parsedSimResult)
+      : undefined;
+
+  const assetToBase = poolOracle?.getPriceFloat(reserve.assetId);
+
+  const curBorrowCap = curPositionsEstimate?.borrowCap;
+  const nextBorrowCap = newPositionsEstimate?.borrowCap;
+  const curBorrowLimit =
+    curPositionsEstimate && Number.isFinite(curPositionsEstimate?.borrowLimit)
+      ? curPositionsEstimate.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionsEstimate && Number.isFinite(newPositionsEstimate?.borrowLimit)
+      ? newPositionsEstimate?.borrowLimit
+      : 0;
+
+  const returnedTokens =
+    toRepay != undefined && poolUser && Number(toRepay) > poolUser.getLiabilitiesFloat(reserve)
+      ? Number(toRepay) - poolUser.getLiabilitiesFloat(reserve)
+      : 0;
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toRepay) != 0) {
+    setToRepay('');
+  }
+
+  const handleRepayMax = () => {
+    if (poolUser) {
+      let dustProofRepay = poolUser.getLiabilitiesFloat(reserve) * 1.005;
+      let maxRepay = Math.min(freeUserBalanceScaled, dustProofRepay);
+      setToRepay(maxRepay.toFixed(decimals));
+      setLoadingEstimate(true);
     }
   };
 
@@ -184,7 +208,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
           <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toRepay ?? 0) * assetToBase, decimals)}`}
+              {toUSDBalance(assetToBase, Number(toRepay ?? 0))}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
@@ -219,14 +243,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
               />
               <ValueChange
                 title="Your total borrowed"
-                curValue={`${toBalance(
-                  userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
-                  decimals
-                )} ${symbol}`}
-                newValue={`${toBalance(
-                  Math.max(newPositionEstimate?.liabilities.get(assetId) ?? 0, 0),
-                  decimals
-                )} ${symbol}`}
+                curValue={`${toBalance(poolUser?.getLiabilitiesFloat(reserve))} ${symbol}`}
+                newValue={`${toBalance(newPoolUser?.getLiabilitiesFloat(reserve))} ${symbol}`}
               />
               <ValueChange
                 title="Borrow capacity"

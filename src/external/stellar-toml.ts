@@ -7,7 +7,7 @@ export type StellarTokenMetadata = {
   code: string;
   domain?: string;
   image?: string;
-  issuer: string;
+  issuer?: string;
 };
 /**
  * based on an implementation from the freighter api https://github.com/stellar/freighter/blob/8cc2db65c2fcb0a1ce515431bc1c9212a06f682a/%40shared/api/helpers/getIconUrlFromIssuer.ts
@@ -22,9 +22,7 @@ export async function getTokenMetadataFromTOML(
   let iconData: StellarTokenMetadata = {
     assetId,
     code,
-    domain: '',
     image: code ? `/icons/tokens/${code.toLowerCase()}.svg` : undefined,
-    issuer: '',
   };
   let stellarToml: any;
 
@@ -45,6 +43,8 @@ export async function getTokenMetadataFromTOML(
   } else {
     const assetCode = reserve.tokenMetadata.asset.code;
     const assetIssuer = reserve.tokenMetadata.asset.issuer;
+    iconData.code = assetCode;
+    iconData.issuer = assetIssuer;
     try {
       const cachedData = localStorage.getItem(assetIssuer);
       if (cachedData) {

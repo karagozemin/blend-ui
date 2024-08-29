@@ -33,8 +33,9 @@ import {
 } from '@stellar/stellar-sdk';
 import React, { useContext, useEffect, useState } from 'react';
 import { useLocalStorageState } from '../hooks';
-import { useStore } from '../store/store';
+import { useQueryClientCacheCleaner } from '../hooks/api';
 import { CometClient, CometLiquidityArgs, CometSingleSidedDepositArgs } from '../utils/comet';
+import { useSettings } from './settings';
 
 export interface IWalletContext {
   connected: boolean;
@@ -119,11 +120,12 @@ export enum TxType {
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
-  const network = useStore((state) => state.network);
-  const rpc = useStore((state) => state.rpcServer());
-  const loadBlendData = useStore((state) => state.loadBlendData);
-  const loadUserData = useStore((state) => state.loadUserData);
-  const clearUserData = useStore((state) => state.clearUserData);
+  const { network } = useSettings();
+
+  const { cleanWalletCache, cleanBackstopCache, cleanPoolCache, cleanBackstopPoolCache } =
+    useQueryClientCacheCleaner();
+
+  const rpc = new SorobanRpc.Server(network.rpc, network.opts);
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useLocalStorageState('autoConnectWallet', 'false');
@@ -173,7 +175,6 @@ export const WalletProvider = ({ children = null as any }) => {
       }
       setWalletAddress(publicKey);
       setConnected(true);
-      await loadUserData(publicKey);
       return true;
     } catch (e: any) {
       console.error('Unable to load wallet information: ', e);
@@ -204,10 +205,10 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   function disconnect() {
-    clearUserData();
     setWalletAddress('');
     setConnected(false);
     setAutoConnect('false');
+    cleanWalletCache();
   }
 
   /**
@@ -327,14 +328,7 @@ export const WalletProvider = ({ children = null as any }) => {
       const assembled_tx = SorobanRpc.assembleTransaction(transaction, simResponse).build();
       const signedTx = await sign(assembled_tx.toXDR());
       const tx = new Transaction(signedTx, network.passphrase);
-      const result = await sendTransaction(tx);
-      if (result) {
-        try {
-          await loadBlendData(true, poolId, walletAddress);
-        } catch {
-          console.error('Failed reloading blend data for account: ', walletAddress);
-        }
-      }
+      await sendTransaction(tx);
     } catch (e: any) {
       console.error('Failed submitting transaction: ', e);
       setFailureMessage(e?.message);
@@ -370,6 +364,7 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation<Positions>(operation, poolId);
+      cleanPoolCache(poolId);
     }
   }
 
@@ -392,6 +387,7 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation(operation, poolId);
+      cleanPoolCache(poolId);
     }
   }
 
@@ -414,6 +410,11 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation(operation);
+      if (typeof args.pool_address === 'string') {
+        cleanBackstopPoolCache(args.pool_address);
+      } else {
+        cleanBackstopPoolCache(args.pool_address.toString());
+      }
     }
   }
 
@@ -434,6 +435,11 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation(operation);
+      if (typeof args.pool_address === 'string') {
+        cleanBackstopPoolCache(args.pool_address);
+      } else {
+        cleanBackstopPoolCache(args.pool_address.toString());
+      }
     }
   }
 
@@ -454,6 +460,11 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation(operation);
+      if (typeof args.pool_address === 'string') {
+        cleanBackstopPoolCache(args.pool_address);
+      } else {
+        cleanBackstopPoolCache(args.pool_address.toString());
+      }
     }
   }
 
@@ -474,6 +485,11 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation(operation);
+      if (typeof args.pool_address === 'string') {
+        cleanBackstopPoolCache(args.pool_address);
+      } else {
+        cleanBackstopPoolCache(args.pool_address.toString());
+      }
     }
   }
 
@@ -494,6 +510,11 @@ export const WalletProvider = ({ children = null as any }) => {
         return await simulateOperation(operation);
       }
       await invokeSorobanOperation(operation);
+      if (typeof claimArgs.pool_addresses[0] === 'string') {
+        cleanBackstopPoolCache(claimArgs.pool_addresses[0]);
+      } else {
+        cleanBackstopPoolCache(claimArgs.pool_addresses[0].toString());
+      }
     }
   }
 
@@ -517,6 +538,7 @@ export const WalletProvider = ({ children = null as any }) => {
           return await simulateOperation(operation);
         }
         await invokeSorobanOperation(operation);
+        cleanBackstopCache();
       }
     } catch (e) {
       throw e;
@@ -574,23 +596,16 @@ export const WalletProvider = ({ children = null as any }) => {
         );
 
         let signedTx = new Transaction(await sign(transaction.toXDR()), network.passphrase);
-        await sendTransaction(signedTx);
-        try {
-          // reload Horizon account after submission
-          try {
-            await loadUserData(walletAddress);
-          } catch {
-            console.error('Failed loading account: ', walletAddress);
-          }
-
-          return;
-        } catch (e: any) {
-          console.error('Failed submitting transaction: ', e);
-          setFailureMessage(e?.message);
-          setTxStatus(TxStatus.FAIL);
-          return undefined;
+        const result = await sendTransaction(signedTx);
+        if (result) {
+          // loadAccount().catch((e) => console.error('Failed reloading account data: ', e));
         }
-      } catch (e) {}
+      } catch (e: any) {
+        console.error('Failed submitting transaction: ', e);
+        setFailureMessage(e?.message);
+        setTxStatus(TxStatus.FAIL);
+        return undefined;
+      }
     }
   }
 
@@ -612,11 +627,7 @@ export const WalletProvider = ({ children = null as any }) => {
         setTxType(TxType.PREREQ);
         const result = await sendTransaction(tx);
         if (result) {
-          try {
-            await loadUserData(walletAddress);
-          } catch {
-            console.error('Failed reloading blend data for account: ', walletAddress);
-          }
+          // loadAccount().catch((e) => console.error('Failed reloading account data: ', e));
         }
       }
     } catch (e) {

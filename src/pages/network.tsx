@@ -4,14 +4,13 @@ import { useState } from 'react';
 import { Divider } from '../components/common/Divider';
 import { OpaqueButton } from '../components/common/OpaqueButton';
 import { Row } from '../components/common/Row';
+import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
-import { useStore } from '../store/store';
 import theme from '../theme';
 
 export default function NetworkPage() {
   const { getNetworkDetails, walletId } = useWallet();
-  const { network, setNetwork } = useStore((state) => state);
-  const loadBlendData = useStore((state) => state.loadBlendData);
+  const { network, setNetwork } = useSettings();
 
   const [newNetworkRPCUrl, setNewNetworkRPCUrl] = useState<string>('');
   const [newHorizonUrl, setNewHorizonUrl] = useState<string>('');
@@ -32,7 +31,6 @@ export default function NetworkPage() {
       setNewHorizonUrl('');
       setNewNetworkRPCUrl('');
       setNewOpts(undefined);
-      loadBlendData(true);
     }
   }
 
