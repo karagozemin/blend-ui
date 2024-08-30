@@ -158,7 +158,9 @@ export const WalletProvider = ({ children = null as any }) => {
       // some contract failures include diagnostic information. If so, try and remove it.
       let substrings = message.split('Event log (newest first):');
       if (substrings.length > 1) {
-        setTxFailure(substrings[0].trimEnd());
+        setTxFailure(`Contract Error: ${substrings[0].trimEnd()}`);
+      } else {
+        setTxFailure(`Stellar Error: ${message}`);
       }
     }
   }
@@ -269,8 +271,10 @@ export const WalletProvider = ({ children = null as any }) => {
     }
     if (send_tx_response.status !== 'PENDING') {
       let error = parseError(send_tx_response);
+      console.error('Failed to send transaction: ', send_tx_response.hash, error);
       setFailureMessage(ContractErrorType[error.type]);
       setTxStatus(TxStatus.FAIL);
+      return false;
     }
 
     let get_tx_response = await rpc.getTransaction(send_tx_response.hash);
@@ -283,11 +287,13 @@ export const WalletProvider = ({ children = null as any }) => {
     setTxHash(hash);
     if (get_tx_response.status === 'SUCCESS') {
       console.log('Successfully submitted transaction: ', hash);
+      // stall for a bit to ensure data propagates to horizon
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setTxStatus(TxStatus.SUCCESS);
       return true;
     } else {
-      console.log('Failed Transaction Hash: ', hash);
       let error = parseError(get_tx_response);
+      console.error(`Transaction failed: `, hash, error);
       setFailureMessage(ContractErrorType[error.type]);
       setTxStatus(TxStatus.FAIL);
       return false;
@@ -330,7 +336,7 @@ export const WalletProvider = ({ children = null as any }) => {
       const tx = new Transaction(signedTx, network.passphrase);
       await sendTransaction(tx);
     } catch (e: any) {
-      console.error('Failed submitting transaction: ', e);
+      console.error('Unkown error submitting transaction: ', e);
       setFailureMessage(e?.message);
       setTxStatus(TxStatus.FAIL);
     }
@@ -365,6 +371,7 @@ export const WalletProvider = ({ children = null as any }) => {
       }
       await invokeSorobanOperation<Positions>(operation, poolId);
       cleanPoolCache(poolId);
+      cleanWalletCache();
     }
   }
 
@@ -388,6 +395,7 @@ export const WalletProvider = ({ children = null as any }) => {
       }
       await invokeSorobanOperation(operation, poolId);
       cleanPoolCache(poolId);
+      cleanWalletCache();
     }
   }
 
@@ -415,6 +423,7 @@ export const WalletProvider = ({ children = null as any }) => {
       } else {
         cleanBackstopPoolCache(args.pool_address.toString());
       }
+      cleanWalletCache();
     }
   }
 
@@ -440,6 +449,7 @@ export const WalletProvider = ({ children = null as any }) => {
       } else {
         cleanBackstopPoolCache(args.pool_address.toString());
       }
+      cleanWalletCache();
     }
   }
 
@@ -515,6 +525,7 @@ export const WalletProvider = ({ children = null as any }) => {
       } else {
         cleanBackstopPoolCache(claimArgs.pool_addresses[0].toString());
       }
+      cleanWalletCache();
     }
   }
 
@@ -539,6 +550,7 @@ export const WalletProvider = ({ children = null as any }) => {
         }
         await invokeSorobanOperation(operation);
         cleanBackstopCache();
+        cleanWalletCache();
       }
     } catch (e) {
       throw e;
@@ -558,6 +570,8 @@ export const WalletProvider = ({ children = null as any }) => {
           return await simulateOperation(operation);
         }
         await invokeSorobanOperation(operation);
+        cleanBackstopCache();
+        cleanWalletCache();
       }
     } catch (e) {
       throw e;
@@ -577,6 +591,8 @@ export const WalletProvider = ({ children = null as any }) => {
           return await simulateOperation(operation);
         }
         await invokeSorobanOperation(operation);
+        cleanBackstopCache();
+        cleanWalletCache();
       }
     } catch (e) {
       throw e;
@@ -598,7 +614,7 @@ export const WalletProvider = ({ children = null as any }) => {
         let signedTx = new Transaction(await sign(transaction.toXDR()), network.passphrase);
         const result = await sendTransaction(signedTx);
         if (result) {
-          // loadAccount().catch((e) => console.error('Failed reloading account data: ', e));
+          cleanWalletCache();
         }
       } catch (e: any) {
         console.error('Failed submitting transaction: ', e);
@@ -627,7 +643,7 @@ export const WalletProvider = ({ children = null as any }) => {
         setTxType(TxType.PREREQ);
         const result = await sendTransaction(tx);
         if (result) {
-          // loadAccount().catch((e) => console.error('Failed reloading account data: ', e));
+          cleanWalletCache();
         }
       }
     } catch (e) {

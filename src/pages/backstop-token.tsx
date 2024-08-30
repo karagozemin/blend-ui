@@ -26,7 +26,11 @@ const BackstopToken: NextPage = () => {
   const { data: horizonAccount } = useHorizonAccount();
   const { data: blndBalanceRes } = useTokenBalance(BLND_CONTRACT_ID, BLND_ASSET, horizonAccount);
   const { data: usdcBalanceRes } = useTokenBalance(USDC_CONTRACT_ID, USDC_ASSET, horizonAccount);
-  const { data: lpBalanceRes } = useTokenBalance(backstop?.backstopToken?.id ?? '');
+  const { data: lpBalanceRes } = useTokenBalance(
+    backstop?.backstopToken?.id ?? '',
+    undefined,
+    horizonAccount
+  );
 
   const blndBalance = blndBalanceRes ?? BigInt(0);
   const usdcBalance = usdcBalanceRes ?? BigInt(0);

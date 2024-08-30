@@ -26,7 +26,13 @@ import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useWallet } from '../contexts/wallet';
-import { useBackstop, useBackstopPool, useBackstopPoolUser, useTokenBalance } from '../hooks/api';
+import {
+  useBackstop,
+  useBackstopPool,
+  useBackstopPoolUser,
+  useHorizonAccount,
+  useTokenBalance,
+} from '../hooks/api';
 import theme from '../theme';
 import { toBalance, toPercentage } from '../utils/formatter';
 
@@ -42,7 +48,12 @@ const Backstop: NextPage = () => {
   const { data: backstop } = useBackstop();
   const { data: backstopPoolData } = useBackstopPool(safePoolId);
   const { data: userBackstopPoolData } = useBackstopPoolUser(safePoolId);
-  const { data: lpBalance } = useTokenBalance(backstop?.backstopToken?.id ?? '');
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: lpBalance } = useTokenBalance(
+    backstop?.backstopToken?.id ?? '',
+    undefined,
+    horizonAccount
+  );
 
   const backstopPoolEst =
     backstop !== undefined && backstopPoolData !== undefined
@@ -103,12 +114,12 @@ const Backstop: NextPage = () => {
           backstop.id
         );
         setLpTokenEmissions(lp_tokens_emitted);
-      } else {
+      } else if (lpTokenEmissions !== BigInt(0)) {
         setLpTokenEmissions(BigInt(0));
       }
     };
     update();
-  }, [userBackstopPoolData, safePoolId]);
+  }, [userBackstopPoolData]);
 
   return (
     <>

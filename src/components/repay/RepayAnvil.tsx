@@ -144,7 +144,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const handleRepayMax = () => {
     if (poolUser) {
       let dustProofRepay = poolUser.getLiabilitiesFloat(reserve) * 1.005;
-      let maxRepay = Math.min(freeUserBalanceScaled, dustProofRepay);
+      let maxRepay = Math.max(Math.min(freeUserBalanceScaled, dustProofRepay), 0);
       setToRepay(maxRepay.toFixed(decimals));
       setLoadingEstimate(true);
     }

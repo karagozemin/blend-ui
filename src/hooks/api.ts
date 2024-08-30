@@ -32,10 +32,7 @@ export function useQueryClientCacheCleaner(): {
 
   const cleanWalletCache = () => {
     queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'balance',
-    });
-    queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'account',
+      predicate: (query) => query.queryKey[0] === 'balance' || query.queryKey[0] === 'account',
     });
   };
 
@@ -47,23 +44,18 @@ export function useQueryClientCacheCleaner(): {
 
   const cleanPoolCache = (poolId: string) => {
     queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'pool' && query.queryKey[1] === poolId,
-    });
-    queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'poolPositions' && query.queryKey[1] === poolId,
+      predicate: (query) =>
+        (query.queryKey[0] === 'pool' || query.queryKey[0] === 'poolPositions') &&
+        query.queryKey[1] === poolId,
     });
   };
 
   const cleanBackstopPoolCache = (poolId: string) => {
-    queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'backstop',
-    });
-    queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'backstopPool' && query.queryKey[1] === poolId,
-    });
+    cleanBackstopCache();
     queryClient.invalidateQueries({
       predicate: (query) =>
-        query.queryKey[0] === 'backstopPoolUser' && query.queryKey[1] === poolId,
+        (query.queryKey[0] === 'backstopPool' || query.queryKey[0] === 'backstopPoolUser') &&
+        query.queryKey[1] === poolId,
     });
   };
 
@@ -244,12 +236,13 @@ export function useHorizonAccount(
   return useQuery({
     staleTime: USER_STALE_TIME,
     queryKey: ['account', walletAddress],
-    enabled: enabled && connected,
+    enabled: enabled && connected && walletAddress !== '',
     queryFn: async () => {
-      if (walletAddress !== '') {
-        let horizon = new Horizon.Server(network.horizonUrl, network.opts);
-        return await horizon.loadAccount(walletAddress);
+      if (walletAddress === '') {
+        throw new Error('No wallet address');
       }
+      let horizon = new Horizon.Server(network.horizonUrl, network.opts);
+      return await horizon.loadAccount(walletAddress);
     },
   });
 }
@@ -258,48 +251,50 @@ export function useHorizonAccount(
  * Fetch the token balance for the given token ID and connected wallet.
  * Will use the Horizon account data if available.
  * @param tokenId - The token ID
- * @param asset - The Stellar asset
+ * @param asset - The Stellar asset (or undefined if a soroban token)
  * @param account - The Horizon account data
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the token balance.
  */
 export function useTokenBalance(
   tokenId: string | undefined,
-  asset?: Asset | undefined,
-  account?: Horizon.AccountResponse | undefined,
+  asset: Asset | undefined,
+  account: Horizon.AccountResponse | undefined,
   enabled: boolean = true
 ): UseQueryResult<bigint> {
   const { walletAddress, connected } = useWallet();
   const { network } = useSettings();
   return useQuery({
     staleTime: USER_STALE_TIME,
-    queryKey: ['balance', tokenId, walletAddress],
-    enabled: enabled && connected,
+    queryKey: ['balance', tokenId, walletAddress, account?.last_modified_ledger],
+    enabled: enabled && connected && !!account && walletAddress !== '',
     queryFn: async () => {
-      if (walletAddress !== '') {
-        if (tokenId === undefined || tokenId === '') {
-          return BigInt(0);
-        }
-        if (account !== undefined && asset !== undefined) {
-          let balance_line = account.balances.find((balance) => {
-            if (balance.asset_type == 'native') {
-              // @ts-ignore
-              return asset.isNative();
-            }
-            return (
-              // @ts-ignore
-              balance.asset_code === asset.getCode() &&
-              // @ts-ignore
-              balance.asset_issuer === asset.getIssuer()
-            );
-          });
-          if (balance_line !== undefined) {
-            return BigInt(balance_line.balance.replace('.', ''));
-          }
-        }
-        let rpc = new SorobanRpc.Server(network.rpc, network.opts);
-        return await getTokenBalance(rpc, network.passphrase, tokenId, new Address(walletAddress));
+      if (walletAddress === '') {
+        throw new Error('No wallet address');
       }
+      if (tokenId === undefined || tokenId === '') {
+        return BigInt(0);
+      }
+
+      if (account !== undefined && asset !== undefined) {
+        let balance_line = account.balances.find((balance) => {
+          if (balance.asset_type == 'native') {
+            // @ts-ignore
+            return asset.isNative();
+          }
+          return (
+            // @ts-ignore
+            balance.asset_code === asset.getCode() &&
+            // @ts-ignore
+            balance.asset_issuer === asset.getIssuer()
+          );
+        });
+        if (balance_line !== undefined) {
+          return BigInt(balance_line.balance.replace('.', ''));
+        }
+      }
+      let rpc = new SorobanRpc.Server(network.rpc, network.opts);
+      return await getTokenBalance(rpc, network.passphrase, tokenId, new Address(walletAddress));
     },
   });
 }

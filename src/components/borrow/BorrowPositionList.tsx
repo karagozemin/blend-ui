@@ -13,7 +13,7 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
 
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: poolUserData, isLoading } = usePoolUser(pool);
+  const { data: poolUserData } = usePoolUser(pool);
 
   if (
     pool === undefined ||
