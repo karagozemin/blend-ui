@@ -10,7 +10,14 @@ import { GoBackHeader } from '../components/common/GoBackHeader';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useBackstop, useBackstopPool, useBackstopPoolUser, usePool } from '../hooks/api';
+import {
+  useBackstop,
+  useBackstopPool,
+  useBackstopPoolUser,
+  useHorizonAccount,
+  usePool,
+  useTokenBalance,
+} from '../hooks/api';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const BackstopDeposit: NextPage = () => {
@@ -24,6 +31,12 @@ const BackstopDeposit: NextPage = () => {
   const { data: backstop } = useBackstop();
   const { data: backstopPoolData } = useBackstopPool(safePoolId);
   const { data: userBackstopPoolData } = useBackstopPoolUser(safePoolId);
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: lpBalance } = useTokenBalance(
+    backstop?.backstopToken?.id ?? '',
+    undefined,
+    horizonAccount
+  );
 
   const backstopPoolEst =
     backstop !== undefined && backstopPoolData !== undefined
@@ -61,7 +74,7 @@ const BackstopDeposit: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.backstop.main }}>
-                {toBalance(backstopUserEst?.tokens)}
+                {toBalance(lpBalance, 7)}
               </Typography>
             </Box>
             <Box>

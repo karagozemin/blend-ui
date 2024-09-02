@@ -234,7 +234,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </Box>
           <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`${toUSDBalance(assetToBase, Number(toBorrow ?? 0))}`}
+              {toUSDBalance(assetToBase, Number(toBorrow ?? 0))}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
