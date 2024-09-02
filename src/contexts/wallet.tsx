@@ -336,7 +336,7 @@ export const WalletProvider = ({ children = null as any }) => {
       const tx = new Transaction(signedTx, network.passphrase);
       await sendTransaction(tx);
     } catch (e: any) {
-      console.error('Unkown error submitting transaction: ', e);
+      console.error('Unknown error submitting transaction: ', e);
       setFailureMessage(e?.message);
       setTxStatus(TxStatus.FAIL);
     }

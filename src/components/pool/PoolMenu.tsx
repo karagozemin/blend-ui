@@ -16,7 +16,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const curName = trackedPools.find((pool) => pool.id === poolId)?.name ?? 'Unkown Pool';
+  const curName = trackedPools.find((pool) => pool.id === poolId)?.name ?? 'Unknown Pool';
 
   const handleClickDropdown = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
