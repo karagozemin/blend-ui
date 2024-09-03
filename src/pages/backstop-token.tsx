@@ -11,20 +11,30 @@ import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { ToggleButton } from '../components/common/ToggleButton';
 import { ViewType, useSettings } from '../contexts';
-import { useStore } from '../store/store';
+import { useBackstop, useHorizonAccount, useTokenBalance } from '../hooks/api';
 import { toBalance } from '../utils/formatter';
+import { BLND_ASSET, USDC_ASSET } from '../utils/token_display';
 
 const BackstopToken: NextPage = () => {
   const theme = useTheme();
-  const { showJoinPool, setShowJoinPool, viewType } = useSettings();
+  const { showJoinPool, setShowJoinPool, viewType, network } = useSettings();
 
-  const backstopData = useStore((state) => state.backstop);
-  const balancesByAddress = useStore((state) => state.balances);
-  const userBackstopData = useStore((state) => state.backstopUserData);
+  const BLND_CONTRACT_ID = BLND_ASSET.contractId(network.passphrase);
+  const USDC_CONTRACT_ID = USDC_ASSET.contractId(network.passphrase);
 
-  const blndBalance = balancesByAddress.get(backstopData?.config.blndTkn ?? '') ?? BigInt(0);
-  const usdcBalance = balancesByAddress.get(backstopData?.config.usdcTkn ?? '') ?? BigInt(0);
-  const lpBalance = userBackstopData?.tokens ?? BigInt(0);
+  const { data: backstop } = useBackstop();
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: blndBalanceRes } = useTokenBalance(BLND_CONTRACT_ID, BLND_ASSET, horizonAccount);
+  const { data: usdcBalanceRes } = useTokenBalance(USDC_CONTRACT_ID, USDC_ASSET, horizonAccount);
+  const { data: lpBalanceRes } = useTokenBalance(
+    backstop?.backstopToken?.id ?? '',
+    undefined,
+    horizonAccount
+  );
+
+  const blndBalance = blndBalanceRes ?? BigInt(0);
+  const usdcBalance = usdcBalanceRes ?? BigInt(0);
+  const lpBalance = lpBalanceRes ?? BigInt(0);
 
   const handleJoinPoolClick = () => {
     if (!showJoinPool) {
@@ -54,7 +64,7 @@ const BackstopToken: NextPage = () => {
         <IconButton
           onClick={() =>
             window.open(
-              `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${backstopData?.config?.backstopTkn}`,
+              `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${backstop?.config?.backstopTkn}`,
               '_blank'
             )
           }

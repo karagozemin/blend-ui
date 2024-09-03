@@ -9,39 +9,32 @@ import { Row } from '../components/common/Row';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { NavBar } from '../components/nav/NavBar';
 import { useSettings, ViewType } from '../contexts';
-import { useWallet } from '../contexts/wallet';
-import { useStore } from '../store/store';
+import { useBackstop, usePool } from '../hooks/api';
 
 export default function DefaultLayout({ children }: { children: ReactNode }) {
-  const { viewType, lastPool, setLastPool } = useSettings();
-  const { connected, walletAddress } = useWallet();
+  const { viewType, setLastPool, trackPool } = useSettings();
   const router = useRouter();
   const { poolId } = router.query;
   const safePoolId =
     typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : undefined;
 
-  const loadBlendData = useStore((state) => state.loadBlendData);
-  const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
-
   const isTestnet = process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET;
 
-  useEffect(() => {
-    const update = async () => {
-      await loadBlendData(false, undefined, connected ? walletAddress : undefined);
-    };
-    update();
-    const refreshInterval = setInterval(async () => {
-      await update();
-    }, 25 * 1000);
-    return () => clearInterval(refreshInterval);
-  }, [loadBlendData, connected, walletAddress]);
+  const { data: backstop } = useBackstop();
+  const { data: pool } = usePool(safePoolId as string, safePoolId !== undefined);
 
   // get the last (oldest) pool in the reward zone
-  const faucet_pool = rewardZone.length > 0 ? rewardZone[rewardZone.length - 1] : undefined;
+  const faucet_pool =
+    backstop !== undefined && backstop.config.rewardZone.length > 0
+      ? backstop.config.rewardZone[backstop.config.rewardZone.length - 1]
+      : undefined;
 
-  if (safePoolId && safePoolId !== lastPool) {
-    setLastPool(safePoolId);
-  }
+  useEffect(() => {
+    if (pool !== undefined) {
+      trackPool(pool.id, pool.config.name);
+      setLastPool(pool.id);
+    }
+  }, [pool, trackPool]);
 
   const mainWidth = viewType <= ViewType.COMPACT ? '100%' : '886px';
   const mainMargin = viewType <= ViewType.COMPACT ? '0px' : '62px';

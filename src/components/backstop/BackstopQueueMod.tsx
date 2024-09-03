@@ -1,5 +1,6 @@
+import { FixedMath } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useStore } from '../../store/store';
+import { useBackstop, useBackstopPool, useBackstopPoolUser } from '../../hooks/api';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -8,29 +9,22 @@ import { BackstopQueueItem } from './BackstopQueueItem';
 export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
 
-  const backstopUserData = useStore((state) => state.backstopUserData);
-  const poolBackstopData = useStore((state) => state.backstop?.pools.get(poolId));
-  const poolBackstopUserData = backstopUserData?.balances?.get(poolId);
-  const poolBackstopUserEst = backstopUserData?.estimates?.get(poolId);
+  const { data: backstop } = useBackstop();
+  const { data: backstopPoolData } = useBackstopPool(poolId);
+  const { data: backstopUserData } = useBackstopPoolUser(poolId);
 
   if (
-    !poolBackstopUserData ||
-    !poolBackstopUserEst ||
-    (poolBackstopUserData.totalQ4W == BigInt(0) && poolBackstopUserData.unlockedQ4W == BigInt(0))
+    backstop === undefined ||
+    backstopUserData === undefined ||
+    backstopPoolData === undefined ||
+    (backstopUserData.balance.totalQ4W == BigInt(0) &&
+      backstopUserData.balance.unlockedQ4W == BigInt(0))
   ) {
     return <></>;
   }
 
-  const toTokens = (amount: bigint) => {
-    let sharesAsNumber = Number(amount) / 1e7;
-    if (poolBackstopData == undefined) {
-      return sharesAsNumber;
-    } else {
-      let rate =
-        Number(poolBackstopData.poolBalance.tokens) / Number(poolBackstopData.poolBalance.shares);
-      return sharesAsNumber * rate;
-    }
-  };
+  const sharesToTokens =
+    Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares);
 
   return (
     <Row>
@@ -49,24 +43,24 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
             <Typography sx={{ padding: '6px' }}>Queued for withdrawal (Q4W)</Typography>
           </Box>
         </Row>
-        {poolBackstopUserData.unlockedQ4W != BigInt(0) && (
+        {backstopUserData.balance.unlockedQ4W != BigInt(0) && (
           <BackstopQueueItem
             key={0}
             poolId={poolId}
-            q4w={{ exp: BigInt(0), amount: poolBackstopUserData.unlockedQ4W }}
-            inTokens={poolBackstopUserEst.totalUnlockedQ4W}
+            q4w={{ exp: BigInt(0), amount: backstopUserData.balance.unlockedQ4W }}
+            inTokens={FixedMath.toFloat(backstopUserData.balance.unlockedQ4W) * sharesToTokens}
             first={true}
           />
         )}
-        {poolBackstopUserData.q4w
+        {backstopUserData.balance.q4w
           .sort((a, b) => Number(a.exp) - Number(b.exp))
           .map((q4w, index) => (
             <BackstopQueueItem
               key={Number(q4w.exp)}
               poolId={poolId}
               q4w={q4w}
-              inTokens={toTokens(q4w.amount)}
-              first={poolBackstopUserData.unlockedQ4W == BigInt(0) && index == 0}
+              inTokens={FixedMath.toFloat(q4w.amount) * sharesToTokens}
+              first={backstopUserData.balance.unlockedQ4W == BigInt(0) && index == 0}
             />
           ))}
       </Section>

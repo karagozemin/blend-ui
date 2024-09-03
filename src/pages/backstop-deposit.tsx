@@ -1,3 +1,4 @@
+import { BackstopPoolEst, BackstopPoolUserEst } from '@blend-capital/blend-sdk';
 import { HelpOutline } from '@mui/icons-material';
 import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
@@ -9,7 +10,14 @@ import { GoBackHeader } from '../components/common/GoBackHeader';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useStore } from '../store/store';
+import {
+  useBackstop,
+  useBackstopPool,
+  useBackstopPoolUser,
+  useHorizonAccount,
+  usePool,
+  useTokenBalance,
+} from '../hooks/api';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const BackstopDeposit: NextPage = () => {
@@ -19,14 +27,31 @@ const BackstopDeposit: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
-  const poolData = useStore((state) => state.pools.get(safePoolId));
-  const userBackstopData = useStore((state) => state.backstopUserData);
+  const { data: pool } = usePool(safePoolId);
+  const { data: backstop } = useBackstop();
+  const { data: backstopPoolData } = useBackstopPool(safePoolId);
+  const { data: userBackstopPoolData } = useBackstopPoolUser(safePoolId);
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: lpBalance } = useTokenBalance(
+    backstop?.backstopToken?.id ?? '',
+    undefined,
+    horizonAccount
+  );
+
+  const backstopPoolEst =
+    backstop !== undefined && backstopPoolData !== undefined
+      ? BackstopPoolEst.build(backstop.backstopToken, backstopPoolData.poolBalance)
+      : undefined;
+
+  const backstopUserEst =
+    userBackstopPoolData !== undefined && backstop !== undefined && backstopPoolData !== undefined
+      ? BackstopPoolUserEst.build(backstop, backstopPoolData, userBackstopPoolData)
+      : undefined;
 
   return (
     <>
       <Row>
-        <GoBackHeader name={poolData?.config.name} />
+        <GoBackHeader name={pool?.config?.name} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
@@ -49,7 +74,7 @@ const BackstopDeposit: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.backstop.main }}>
-                {toBalance(userBackstopData?.tokens, 7)}
+                {toBalance(lpBalance, 7)}
               </Typography>
             </Box>
             <Box>
@@ -75,7 +100,7 @@ const BackstopDeposit: NextPage = () => {
             <Box sx={{ display: 'flex', flexDirection: 'row' }}>
               <StackedText
                 title="Q4W"
-                text={toPercentage(backstopPoolData?.estimates?.q4wPercentage)}
+                text={toPercentage(backstopPoolEst?.q4wPercentage)}
                 sx={{ width: '100%', padding: '6px' }}
               ></StackedText>
               <HelpOutline
@@ -92,7 +117,7 @@ const BackstopDeposit: NextPage = () => {
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Total deposited"
-            text={`$${toBalance(backstopPoolData?.estimates?.totalSpotValue)}`}
+            text={`$${toBalance(backstopPoolEst?.totalSpotValue)}`}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>

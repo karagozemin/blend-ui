@@ -6,10 +6,10 @@ import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import theme from '../../theme';
 import { toBalance, toTimeSpan } from '../../utils/formatter';
+import { Icon } from '../common/Icon';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
-import { TokenIcon } from '../common/TokenIcon';
 
 export interface BackstopQueueItemProps extends PoolComponentProps {
   q4w: Q4W;
@@ -117,7 +117,11 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
               sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
             />
           )}
-          <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
+          <Icon
+            src={`/icons/tokens/blndusdclp.svg`}
+            alt={`blndusdclp`}
+            sx={{ height: '30px', width: '30px', marginRight: '12px' }}
+          />
           <Box>
             <Box sx={{ display: 'flex', flexDirection: 'row' }}>
               <Typography variant="h4" sx={{ marginRight: '6px' }}>

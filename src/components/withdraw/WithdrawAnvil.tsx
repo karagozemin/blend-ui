@@ -1,10 +1,11 @@
 import {
   parseResult,
   PoolContract,
-  PositionEstimates,
+  PoolUser,
+  Positions,
+  PositionsEstimate,
   RequestType,
   SubmitArgs,
-  UserPositions,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
@@ -12,8 +13,8 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
+import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -25,7 +26,9 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { Skeleton } from '../common/Skeleton';
 import { TxOverview } from '../common/TxOverview';
+import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -36,112 +39,24 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline, isLoading } =
     useWallet();
 
-  const poolData = useStore((state) => state.pools.get(poolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const userAccount = useStore((state) => state.account);
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolUser } = usePoolUser(pool);
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const { data: horizonAccount } = useHorizonAccount();
+
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
   const [toWithdraw, setToWithdraw] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
-  const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
+  const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const loading = isLoading || loadingEstimate;
-
-  useDebouncedState(toWithdrawSubmit, RPC_DEBOUNCE_DELAY, txType, async () => {
-    setSimResponse(undefined);
-    setParsedSimResult(undefined);
-    let response = await handleSubmitTransaction(true);
-    if (response) {
-      setSimResponse(response);
-      if (SorobanRpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-      }
-    }
-    setLoadingEstimate(false);
-  });
-
-  let newPositionEstimate =
-    poolData && parsedSimResult ? PositionEstimates.build(poolData, parsedSimResult) : undefined;
-
-  const reserve = poolData?.reserves.get(assetId);
-  const assetToBase = reserve?.oraclePrice ?? 1;
-  const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.tokenMetadata?.symbol ?? '';
-
-  const curBorrowCap = userPoolData ? userPoolData.positionEstimates.borrowCap : undefined;
-  const nextBorrowCap = newPositionEstimate ? newPositionEstimate.borrowCap : undefined;
-  const curBorrowLimit =
-    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-      ? userPoolData?.positionEstimates?.borrowLimit
-      : 0;
-  const nextBorrowLimit =
-    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
-      ? newPositionEstimate?.borrowLimit
-      : 0;
 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toWithdraw) != 0) {
     setToWithdraw('');
   }
-  const AddTrustlineButton = (
-    <OpaqueButton
-      onClick={handleAddAssetTrustline}
-      palette={theme.palette.warning}
-      sx={{ padding: '6px 24px', margin: '12px auto' }}
-    >
-      Add {reserve?.tokenMetadata.asset?.code} Trustline
-    </OpaqueButton>
-  );
-
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
-    useMemo(() => {
-      const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
-      if (!hasTokenTrustline) {
-        let submitError: SubmitError = {
-          isSubmitDisabled: true,
-          isError: true,
-          isMaxDisabled: true,
-          reason: 'You need a trustline for this asset in order to borrow it.',
-          disabledType: 'warning',
-          extraContent: AddTrustlineButton,
-        };
-        return submitError;
-      } else {
-        return getErrorFromSim(toWithdraw, decimals, loading, simResponse, undefined);
-      }
-    }, [toWithdraw, simResponse, loading]);
-
-  const handleWithdrawAmountChange = (withdrawInput: string) => {
-    if (reserve && userPoolData?.positionEstimates.collateral.get(assetId)) {
-      let curSupplied = userPoolData.positionEstimates.collateral.get(assetId) ?? 0;
-      let realWithdraw = withdrawInput;
-      let num_withdraw = Number(withdrawInput);
-      if (num_withdraw > curSupplied) {
-        // truncate to supplied, but store full amount to avoid dust
-        // and allow contract to pull down to real supplied amount
-        realWithdraw = curSupplied.toFixed(decimals);
-        num_withdraw = Number(realWithdraw);
-      }
-      setToWithdraw(realWithdraw);
-      setToWithdrawSubmit(withdrawInput);
-    }
-  };
-
-  const handleWithdrawMax = () => {
-    if (reserve && userPoolData) {
-      let curSupplied = userPoolData.positionEstimates.collateral.get(assetId) ?? 0;
-      if (userPoolData.positionEstimates.totalEffectiveLiabilities == 0) {
-        handleWithdrawAmountChange((curSupplied * 1.05).toFixed(decimals));
-      } else {
-        let to_bounded_hf =
-          (userPoolData.positionEstimates.totalEffectiveCollateral -
-            userPoolData.positionEstimates.totalEffectiveLiabilities * 1.02) /
-          1.02;
-        let to_wd = to_bounded_hf / (assetToBase * reserve.getCollateralFactor());
-        let withdrawAmount = Math.min(to_wd, curSupplied) + 1 / 10 ** decimals;
-        handleWithdrawAmountChange(Math.max(withdrawAmount, 0).toFixed(decimals));
-      }
-      setLoadingEstimate(true);
-    }
-  };
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (toWithdrawSubmit && connected && reserve) {
@@ -158,6 +73,108 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         ],
       };
       return await poolSubmit(poolId, submitArgs, sim);
+    }
+  };
+
+  useDebouncedState(toWithdrawSubmit, RPC_DEBOUNCE_DELAY, txType, async () => {
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+      }
+    }
+    setLoadingEstimate(false);
+  });
+
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
+    useMemo(() => {
+      const hasTokenTrustline = !requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset);
+      if (!hasTokenTrustline) {
+        let submitError: SubmitError = {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: true,
+          reason: 'You need a trustline for this asset in order to borrow it.',
+          disabledType: 'warning',
+          extraContent: AddTrustlineButton,
+        };
+        return submitError;
+      } else {
+        return getErrorFromSim(toWithdraw, decimals, loading, simResponse, undefined);
+      }
+    }, [toWithdraw, simResponse, loading]);
+
+  if (pool === undefined || reserve === undefined) {
+    return <Skeleton />;
+  }
+
+  const curPositionsEstimate =
+    pool && poolOracle && poolUser
+      ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
+      : undefined;
+  const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());
+  const newPositionsEstimate =
+    pool && poolOracle && parsedSimResult
+      ? PositionsEstimate.build(pool, poolOracle, parsedSimResult)
+      : undefined;
+
+  const assetToBase = poolOracle?.getPriceFloat(assetId);
+
+  const curBorrowCap = curPositionsEstimate?.borrowCap;
+  const nextBorrowCap = newPositionsEstimate?.borrowCap;
+  const curBorrowLimit =
+    curPositionsEstimate && Number.isFinite(curPositionsEstimate?.borrowLimit)
+      ? curPositionsEstimate.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionsEstimate && Number.isFinite(newPositionsEstimate?.borrowLimit)
+      ? newPositionsEstimate?.borrowLimit
+      : 0;
+
+  const AddTrustlineButton = (
+    <OpaqueButton
+      onClick={handleAddAssetTrustline}
+      palette={theme.palette.warning}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Add {reserve?.tokenMetadata.asset?.code} Trustline
+    </OpaqueButton>
+  );
+
+  const handleWithdrawAmountChange = (withdrawInput: string) => {
+    if (reserve && poolUser) {
+      let curSupplied = poolUser.getCollateralFloat(reserve);
+      let realWithdraw = withdrawInput;
+      let num_withdraw = Number(withdrawInput);
+      if (num_withdraw > curSupplied) {
+        // truncate to supplied, but store full amount to avoid dust
+        // and allow contract to pull down to real supplied amount
+        realWithdraw = curSupplied.toFixed(decimals);
+        num_withdraw = Number(realWithdraw);
+      }
+      setToWithdraw(realWithdraw);
+      setToWithdrawSubmit(withdrawInput);
+      setLoadingEstimate(true);
+    }
+  };
+
+  const handleWithdrawMax = () => {
+    if (reserve && poolUser) {
+      let curSupplied = poolUser.getCollateralFloat(reserve);
+      if (poolUser.positions.liabilities.size === 0) {
+        handleWithdrawAmountChange((curSupplied * 1.005).toFixed(decimals));
+      } else if (curPositionsEstimate && assetToBase) {
+        let to_bounded_hf =
+          (curPositionsEstimate.totalEffectiveCollateral -
+            curPositionsEstimate.totalEffectiveLiabilities * 1.02) /
+          1.02;
+        let to_wd = to_bounded_hf / (assetToBase * reserve.getCollateralFactor());
+        let withdrawAmount = Math.min(to_wd, curSupplied) + 1 / 10 ** decimals;
+        handleWithdrawAmountChange(Math.max(withdrawAmount, 0).toFixed(decimals));
+      }
     }
   };
 
@@ -226,7 +243,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           </Box>
           <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toWithdraw ?? 0) * assetToBase, decimals)}`}
+              {toUSDBalance(assetToBase, Number(toWithdraw ?? 0))}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
@@ -258,14 +275,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
               />
               <ValueChange
                 title="Your total supplied"
-                curValue={`${toBalance(
-                  userPoolData?.positionEstimates.collateral.get(assetId) ?? 0,
-                  decimals
-                )} ${symbol}`}
-                newValue={`${toBalance(
-                  newPositionEstimate?.collateral.get(assetId) ?? 0,
-                  decimals
-                )} ${symbol}`}
+                curValue={`${toBalance(poolUser?.getCollateralFloat(reserve))} ${symbol}`}
+                newValue={`${toBalance(newPoolUser?.getCollateralFloat(reserve))} ${symbol}`}
               />
               <ValueChange
                 title="Borrow capacity"

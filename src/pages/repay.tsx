@@ -8,27 +8,33 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { RepayAnvil } from '../components/repay/RepayAnvil';
-import { useStore } from '../store/store';
+import { useHorizonAccount, usePool, usePoolUser, useTokenBalance } from '../hooks/api';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerYearPerUnit } from '../utils/token';
 
 const Repay: NextPage = () => {
   const theme = useTheme();
-
   const router = useRouter();
   const { poolId, assetId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const poolData = useStore((state) => state.pools.get(safePoolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
-  const userBalance = useStore((state) => state.balances.get(safeAssetId));
-  const reserve = poolData?.reserves.get(safeAssetId);
+  const { data: pool } = usePool(safePoolId);
+  const { data: poolUser } = usePoolUser(pool);
+  const reserve = pool?.reserves.get(safeAssetId);
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: tokenBalance } = useTokenBalance(
+    reserve?.assetId,
+    reserve?.tokenMetadata?.asset,
+    horizonAccount,
+    reserve !== undefined
+  );
+
+  const currentDebt = reserve && poolUser ? poolUser.getLiabilitiesFloat(reserve) : undefined;
 
   return (
     <>
       <Row>
-        <GoBackHeader name={poolData?.config.name} />
+        <GoBackHeader name={pool?.config.name} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
@@ -51,10 +57,7 @@ const Repay: NextPage = () => {
                 Debt
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(
-                  userPoolData?.positionEstimates?.liabilities?.get(safeAssetId) ?? 0,
-                  reserve?.config.decimals
-                )}
+                {toBalance(currentDebt)}
               </Typography>
             </Box>
             <Box>
@@ -71,19 +74,17 @@ const Repay: NextPage = () => {
             title="Borrow APR"
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.estimates.apr)}{' '}
-                <FlameIcon
-                  width={22}
-                  height={22}
-                  title={getEmissionTextFromValue(
-                    getEmissionsPerYearPerUnit(
-                      reserve?.borrowEmissions?.config.eps || BigInt(0),
-                      reserve?.estimates.borrowed || 0,
-                      reserve?.config.decimals
-                    ),
-                    reserve?.tokenMetadata?.symbol || 'token'
-                  )}
-                />
+                {toPercentage(reserve?.borrowApr)}{' '}
+                {reserve?.borrowEmissions && (
+                  <FlameIcon
+                    width={22}
+                    height={22}
+                    title={getEmissionTextFromValue(
+                      reserve.emissionsPerYearPerBorrowedAsset(),
+                      reserve.tokenMetadata?.symbol || 'token'
+                    )}
+                  />
+                )}
               </div>
             }
             sx={{ width: '100%', padding: '6px' }}
@@ -99,7 +100,7 @@ const Repay: NextPage = () => {
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Wallet balance"
-            text={toBalance(userBalance, reserve?.config.decimals)}
+            text={toBalance(tokenBalance, reserve?.config.decimals)}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>

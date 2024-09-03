@@ -2,9 +2,8 @@ import { Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
-import { useStore } from '../../store/store';
+import { useHorizonAccount, useTokenBalance } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
-import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { CustomButton } from '../common/CustomButton';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
@@ -25,8 +24,12 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const userBalanceBigInt = useStore((state) => state.balances.get(reserve.assetId)) ?? BigInt(0);
-  const useBalanceAsNum = Number(userBalanceBigInt) / 10 ** reserve.config.decimals;
+  const { data: userAccount } = useHorizonAccount();
+  const { data: userTokenBalance } = useTokenBalance(
+    reserve.assetId,
+    reserve.tokenMetadata.asset,
+    userAccount
+  );
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -54,7 +57,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             },
           }}
         >
-          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
+          <TokenHeader reserve={reserve} sx={{ width: tableWidth }} />
           <Box
             sx={{
               width: tableWidth,
@@ -64,7 +67,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toBalance(useBalanceAsNum, reserve.config.decimals)}
+              {formatter.toBalance(userTokenBalance, reserve.config.decimals)}
             </Typography>
           </Box>
 
@@ -76,19 +79,13 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">
-              {formatter.toPercentage(reserve.estimates.supplyApr)}
-            </Typography>
+            <Typography variant="body1">{formatter.toPercentage(reserve.supplyApr)}</Typography>
             {reserve.supplyEmissions && (
               <FlameIcon
                 width={22}
                 height={22}
                 title={formatter.getEmissionTextFromValue(
-                  getEmissionsPerYearPerUnit(
-                    reserve.supplyEmissions?.config.eps || BigInt(0),
-                    reserve.estimates.supplied,
-                    reserve.config.decimals
-                  ),
+                  reserve.emissionsPerYearPerSuppliedAsset(),
                   reserve.tokenMetadata?.symbol
                 )}
               />

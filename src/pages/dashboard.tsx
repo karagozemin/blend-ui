@@ -1,19 +1,20 @@
+import { PoolEstimate } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
-import { BorrowPositions } from '../components/borrow/BorrowPositions';
+import { BorrowPositionList } from '../components/borrow/BorrowPositionList';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { ToggleButton } from '../components/common/ToggleButton';
 import { PositionOverview } from '../components/dashboard/PositionOverview';
 import { LendMarketList } from '../components/lend/LendMarketList';
-import { LendPositions } from '../components/lend/LendPositions';
+import { LendPositionList } from '../components/lend/LendPositionList';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings } from '../contexts';
-import { useStore } from '../store/store';
+import { usePool, usePoolOracle } from '../hooks/api';
 import { toBalance } from '../utils/formatter';
 
 const Dashboard: NextPage = () => {
@@ -24,7 +25,13 @@ const Dashboard: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const poolData = useStore((state) => state.pools.get(safePoolId));
+  const { data: pool } = usePool(safePoolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+
+  const marketSize =
+    poolOracle !== undefined && pool !== undefined
+      ? PoolEstimate.build(pool.reserves, poolOracle).totalSupply
+      : 0;
 
   const handleLendClick = () => {
     if (!showLend) {
@@ -52,8 +59,8 @@ const Dashboard: NextPage = () => {
         </Box>
       </Row>
       <PositionOverview poolId={safePoolId} />
-      <LendPositions poolId={safePoolId} />
-      <BorrowPositions poolId={safePoolId} />
+      <LendPositionList poolId={safePoolId} />
+      <BorrowPositionList poolId={safePoolId} />
       <Divider />
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
@@ -87,9 +94,7 @@ const Dashboard: NextPage = () => {
           <Typography variant="body2" mr={1}>
             Market size:
           </Typography>
-          <Typography variant="body1">{`$${toBalance(
-            poolData?.estimates?.totalSupply ?? 0
-          )}`}</Typography>
+          <Typography variant="body1">{`$${toBalance(marketSize)}`}</Typography>
         </Box>
       </Row>
       <Divider />

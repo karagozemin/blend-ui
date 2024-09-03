@@ -1,16 +1,17 @@
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ViewType, useSettings } from '../../contexts';
-import { useStore } from '../../store/store';
+import { useBackstop } from '../../hooks/api';
 import { NavItem } from './NavItem';
 
 export const NavMenu = () => {
   const theme = useTheme();
   const { viewType, lastPool } = useSettings();
 
-  const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
+  const { data: backstop } = useBackstop();
+  const poolId = (lastPool ? lastPool : backstop?.config?.rewardZone[0]) ?? '';
 
   const [openCon, setOpenCon] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -28,22 +29,6 @@ export const NavMenu = () => {
   const handleSnackClose = () => {
     setOpenCon(false);
   };
-
-  const [poolId, setPoolId] = useState<string | undefined>(lastPool);
-
-  useEffect(() => {
-    if (!poolId || poolId !== lastPool) {
-      if (lastPool) {
-        setPoolId(lastPool);
-      } else if (rewardZone.length != 0) {
-        // get the last (oldest) pool in the reward zone
-        const rewardPoolId = rewardZone[rewardZone.length - 1];
-        if (rewardPoolId !== poolId) {
-          setPoolId(rewardPoolId);
-        }
-      }
-    }
-  }, [lastPool, rewardZone]);
 
   return (
     <>

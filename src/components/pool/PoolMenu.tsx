@@ -2,7 +2,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Menu, MenuItem, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { useStore } from '../../store/store';
+import { useSettings } from '../../contexts';
 import { CustomButton } from '../common/CustomButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { PoolHeader } from './PoolHeader';
@@ -10,13 +10,13 @@ import { PoolHeader } from './PoolHeader';
 export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const router = useRouter();
+  const { trackedPools } = useSettings();
   const pathname = router.pathname;
-
-  const trackedPools = useStore((state) => state.pools);
-  const curPool = trackedPools.get(poolId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+
+  const curName = trackedPools.find((pool) => pool.id === poolId)?.name ?? 'Unknown Pool';
 
   const handleClickDropdown = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -38,7 +38,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         onClick={handleClickDropdown}
         sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
       >
-        <PoolHeader name={curPool?.config?.name ?? 'Unknown'} />
+        <PoolHeader name={curName} />
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
       <Menu
@@ -51,10 +51,10 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
           sx: { width: anchorEl && anchorEl.offsetWidth },
         }}
       >
-        {trackedPools.size > 0 &&
+        {trackedPools.length > 0 &&
           Array.from(trackedPools.values()).map((pool) => (
             <MenuItem onClick={() => handleClickMenuItem(pool.id)} key={pool.id}>
-              <PoolHeader name={pool.config.name} />
+              <PoolHeader name={pool.name} />
             </MenuItem>
           ))}
       </Menu>

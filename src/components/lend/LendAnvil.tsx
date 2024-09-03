@@ -1,10 +1,12 @@
 import {
+  FixedMath,
   parseResult,
   PoolContract,
-  PositionEstimates,
+  PoolUser,
+  Positions,
+  PositionsEstimate,
   RequestType,
   SubmitArgs,
-  UserPositions,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
@@ -12,8 +14,15 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
+import {
+  useHorizonAccount,
+  usePool,
+  usePoolOracle,
+  usePoolUser,
+  useQueryClientCacheCleaner,
+  useTokenBalance,
+} from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -25,81 +34,52 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { Skeleton } from '../common/Skeleton';
 import { TxOverview } from '../common/TxOverview';
+import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
 export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+  const { cleanPoolCache } = useQueryClientCacheCleaner();
 
   const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
-  const account = useStore((state) => state.account);
-  const poolData = useStore((state) => state.pools.get(poolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolUser } = usePoolUser(pool);
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: tokenBalance } = useTokenBalance(
+    assetId,
+    reserve?.tokenMetadata?.asset,
+    horizonAccount
+  );
 
   const [toLend, setToLend] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
-  const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
+  const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const loading = isLoading || loadingEstimate;
-
-  useDebouncedState(toLend, RPC_DEBOUNCE_DELAY, txType, async () => {
-    setSimResponse(undefined);
-    setParsedSimResult(undefined);
-    let response = await handleSubmitTransaction(true);
-    if (response) {
-      setSimResponse(response);
-      if (SorobanRpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-      }
-    }
-    setLoadingEstimate(false);
-  });
-
-  let newPositionEstimate =
-    poolData && parsedSimResult ? PositionEstimates.build(poolData, parsedSimResult) : undefined;
-
-  const reserve = poolData?.reserves.get(assetId);
-  const assetToBase = reserve?.oraclePrice ?? 1;
-  const decimals = reserve?.config.decimals ?? 7;
-  const scalar = 10 ** decimals;
-  const symbol = reserve?.tokenMetadata?.symbol ?? '';
-
-  const curBorrowCap = userPoolData ? userPoolData.positionEstimates.borrowCap : undefined;
-  const nextBorrowCap = newPositionEstimate ? newPositionEstimate.borrowCap : undefined;
-  const curBorrowLimit =
-    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-      ? userPoolData?.positionEstimates?.borrowLimit
-      : 0;
-  const nextBorrowLimit =
-    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
-      ? newPositionEstimate?.borrowLimit
-      : 0;
-
-  // calculate current wallet state
-  let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
-  const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toLend) != 0) {
     setToLend('');
   }
 
+  // calculate current wallet state
+  const stellar_reserve_amount = getAssetReserve(horizonAccount, reserve?.tokenMetadata?.asset);
+  const freeUserBalanceScaled =
+    FixedMath.toFloat(tokenBalance ?? BigInt(0), reserve?.config?.decimals) -
+    stellar_reserve_amount;
+
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
     () => getErrorFromSim(toLend, decimals, loading, simResponse, undefined),
     [freeUserBalanceScaled, toLend, simResponse, loading]
   );
-
-  const handleLendMax = () => {
-    if (userPoolData) {
-      if (freeUserBalanceScaled > 0) {
-        setToLend(freeUserBalanceScaled.toFixed(decimals));
-        setLoadingEstimate(true);
-      }
-    }
-  };
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (toLend && connected && reserve) {
@@ -116,6 +96,55 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
         ],
       };
       return await poolSubmit(poolId, submitArgs, sim);
+    }
+  };
+
+  useDebouncedState(toLend, RPC_DEBOUNCE_DELAY, txType, async () => {
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+      }
+    }
+    setLoadingEstimate(false);
+  });
+
+  if (pool === undefined || reserve === undefined) {
+    return <Skeleton />;
+  }
+
+  const curPositionsEstimate =
+    pool && poolOracle && poolUser
+      ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
+      : undefined;
+  const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());
+  const newPositionsEstimate =
+    pool && poolOracle && parsedSimResult
+      ? PositionsEstimate.build(pool, poolOracle, parsedSimResult)
+      : undefined;
+
+  const assetToBase = poolOracle?.getPriceFloat(assetId);
+
+  const curBorrowCap = curPositionsEstimate?.borrowCap;
+  const nextBorrowCap = newPositionsEstimate?.borrowCap;
+  const curBorrowLimit =
+    curPositionsEstimate && Number.isFinite(curPositionsEstimate?.borrowLimit)
+      ? curPositionsEstimate.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionsEstimate && Number.isFinite(newPositionsEstimate?.borrowLimit)
+      ? newPositionsEstimate?.borrowLimit
+      : 0;
+
+  const handleLendMax = () => {
+    if (poolUser) {
+      if (freeUserBalanceScaled > 0) {
+        setToLend(freeUserBalanceScaled.toFixed(decimals));
+        setLoadingEstimate(true);
+      }
     }
   };
 
@@ -177,7 +206,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           </Box>
           <Box sx={{ marginLeft: '6px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toLend ?? 0) * assetToBase, decimals)}`}
+              {toUSDBalance(assetToBase, Number(toLend ?? 0))}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
@@ -209,12 +238,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               />
               <ValueChange
                 title="Your total supplied"
-                curValue={`${toBalance(
-                  userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
-                  decimals
-                )} ${symbol}`}
+                curValue={`${toBalance(poolUser?.getCollateralFloat(reserve), decimals)} ${symbol}`}
                 newValue={`${toBalance(
-                  newPositionEstimate?.collateral.get(assetId) ?? 0,
+                  newPoolUser?.getCollateralFloat(reserve),
                   decimals
                 )} ${symbol}`}
               />

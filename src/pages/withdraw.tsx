@@ -8,9 +8,8 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
-import { useStore } from '../store/store';
+import { usePool, usePoolUser } from '../hooks/api';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerYearPerUnit } from '../utils/token';
 
 const Withdraw: NextPage = () => {
   const theme = useTheme();
@@ -20,14 +19,16 @@ const Withdraw: NextPage = () => {
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const poolData = useStore((state) => state.pools.get(safePoolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
-  const reserve = poolData?.reserves.get(safeAssetId);
+  const { data: pool } = usePool(safePoolId);
+  const { data: poolUser } = usePoolUser(pool);
+  const reserve = pool?.reserves.get(safeAssetId);
+
+  const currentDeposit = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
 
   return (
     <>
       <Row>
-        <GoBackHeader name={poolData?.config.name} />
+        <GoBackHeader name={pool?.config.name} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
@@ -50,10 +51,7 @@ const Withdraw: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
-                {toBalance(
-                  userPoolData?.positionEstimates?.collateral?.get(safeAssetId) ?? 0,
-                  reserve?.config.decimals
-                )}
+                {toBalance(currentDeposit)}
               </Typography>
             </Box>
             <Box>
@@ -70,19 +68,20 @@ const Withdraw: NextPage = () => {
             title="Supply APR"
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.estimates.supplyApr)}{' '}
-                <FlameIcon
-                  width={22}
-                  height={22}
-                  title={getEmissionTextFromValue(
-                    getEmissionsPerYearPerUnit(
-                      reserve?.supplyEmissions?.config.eps || BigInt(0),
-                      reserve?.estimates.supplied || 0,
-                      reserve?.config.decimals
-                    ),
-                    reserve?.tokenMetadata?.symbol || 'token'
-                  )}
-                />
+                {toPercentage(reserve?.supplyApr)}
+                {reserve?.supplyApr && (
+                  <>
+                    {' '}
+                    <FlameIcon
+                      width={22}
+                      height={22}
+                      title={getEmissionTextFromValue(
+                        reserve.emissionsPerYearPerSuppliedAsset(),
+                        reserve.tokenMetadata?.symbol || 'token'
+                      )}
+                    />
+                  </>
+                )}
               </div>
             }
             sx={{ width: '100%', padding: '6px' }}
@@ -98,7 +97,7 @@ const Withdraw: NextPage = () => {
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Total supplied"
-            text={toBalance(reserve?.estimates?.supplied)}
+            text={toBalance(reserve?.totalSupplyFloat())}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>

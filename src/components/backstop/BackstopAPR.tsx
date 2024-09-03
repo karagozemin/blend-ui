@@ -1,36 +1,40 @@
+import { BackstopPoolEst, FixedMath, PoolEstimate } from '@blend-capital/blend-sdk';
 import { HelpOutline } from '@mui/icons-material';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { useStore } from '../../store/store';
+import { useBackstop, useBackstopPool, usePool, usePoolOracle } from '../../hooks/api';
 import { getEmissionTextFromValue, toPercentage } from '../../utils/formatter';
-import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { FlameIcon } from '../common/FlameIcon';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 
 export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
-  const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
-  const poolData = useStore((state) => state.pools.get(poolId));
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: backstop } = useBackstop();
+  const { data: backstopPoolData } = useBackstopPool(poolId);
 
-  const estBackstopApr =
-    backstopPoolData && poolData
-      ? ((poolData.config.backstopRate / 1e7) *
-          poolData.estimates.avgBorrowApr *
-          poolData.estimates.totalBorrow) /
-        backstopPoolData.estimates.totalSpotValue
+  let estBackstopApr: number | undefined = undefined;
+  let backstopEmissionsPerDayPerLpToken: number | undefined = undefined;
+  if (
+    pool !== undefined &&
+    poolOracle !== undefined &&
+    backstop !== undefined &&
+    backstopPoolData !== undefined
+  ) {
+    const poolEst = PoolEstimate.build(pool.reserves, poolOracle);
+    const backstopPoolEst = BackstopPoolEst.build(
+      backstop.backstopToken,
+      backstopPoolData.poolBalance
+    );
+    estBackstopApr =
+      (FixedMath.toFloat(BigInt(pool.config.backstopRate), 7) *
+        poolEst.avgBorrowApr *
+        poolEst.totalBorrowed) /
+      backstopPoolEst.totalSpotValue;
+    backstopEmissionsPerDayPerLpToken = backstopPoolData.emissions
+      ? backstopPoolData.emissionPerYearPerBackstopToken()
       : 0;
-  const sharesToTokens = backstopPoolData
-    ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)
-    : 1;
-  const backstopEmissionsPerDayPerLPToken =
-    backstopPoolData && backstopPoolData.emissions
-      ? getEmissionsPerYearPerUnit(
-          backstopPoolData.emissions.config.eps,
-          ((Number(backstopPoolData.poolBalance.shares) -
-            Number(backstopPoolData.poolBalance.q4w)) /
-            1e7) *
-            sharesToTokens,
-          7
-        )
-      : 0;
+  }
+
   return (
     <Box
       sx={{
@@ -75,11 +79,11 @@ export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
         <Typography variant="h4" color={'text.primary'}>
           {toPercentage(estBackstopApr)}
         </Typography>
-        {backstopEmissionsPerDayPerLPToken > 0 && (
+        {backstopEmissionsPerDayPerLpToken && backstopEmissionsPerDayPerLpToken > 0 && (
           <FlameIcon
             height={22}
             width={22}
-            title={getEmissionTextFromValue(backstopEmissionsPerDayPerLPToken, 'BLND-USDC LP')}
+            title={getEmissionTextFromValue(backstopEmissionsPerDayPerLpToken, 'BLND-USDC LP')}
           />
         )}
       </Box>

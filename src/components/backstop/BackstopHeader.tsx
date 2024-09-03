@@ -1,5 +1,5 @@
 import { Box, BoxProps, Typography } from '@mui/material';
-import { TokenIcon } from '../common/TokenIcon';
+import { Icon } from '../common/Icon';
 
 export interface BackstopHeaderProps extends BoxProps {
   type: 'deposit' | 'q4w';
@@ -21,7 +21,11 @@ export const BackstopHeader: React.FC<BackstopHeaderProps> = ({ type, sx, ...pro
       }}
       {...props}
     >
-      <TokenIcon symbol={'blndusdclp'} sx={{ height: '30px', width: '30px' }} />
+      <Icon
+        src={`/icons/tokens/blndusdclp.svg`}
+        alt={`blndusdclp`}
+        sx={{ height: '30px', width: '30px' }}
+      />
       <Typography variant="h3" sx={{ marginLeft: '12px' }}>
         {headerText}
       </Typography>

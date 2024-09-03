@@ -7,10 +7,10 @@ import { TokenHeader } from '../common/TokenHeader';
 import { StackedApr } from './StackedApr';
 
 export interface MarketsListItemProps extends BoxProps {
-  reserveData: Reserve;
+  reserve: Reserve;
 }
 
-export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, sx, ...props }) => {
+export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserve, sx, ...props }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
 
@@ -32,7 +32,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
         ...sx,
       }}
       onClick={() => {
-        const link = getTokenLinkFromReserve(reserveData);
+        const link = getTokenLinkFromReserve(reserve);
         window.open(link, '_blank');
       }}
       {...props}
@@ -47,7 +47,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
           type: 'alt',
         }}
       >
-        <TokenHeader id={reserveData.assetId} sx={{ width: tableWidth, marginRight: '12px' }} />
+        <TokenHeader reserve={reserve} sx={{ width: tableWidth, marginRight: '12px' }} />
         <Box
           sx={{
             width: tableWidth,
@@ -56,9 +56,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
             alignItems: 'center',
           }}
         >
-          <Typography variant="body1">
-            {formatter.toBalance(reserveData.estimates.supplied)}
-          </Typography>
+          <Typography variant="body1">{formatter.toBalance(reserve.totalSupplyFloat())}</Typography>
         </Box>
         <Box
           sx={{
@@ -69,7 +67,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
           }}
         >
           <Typography variant="body1">
-            {formatter.toBalance(reserveData.estimates.borrowed)}
+            {formatter.toBalance(reserve.totalLiabilitiesFloat())}
           </Typography>
         </Box>
         {tableNum >= 6 && (
@@ -83,7 +81,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
               }}
             >
               <Typography variant="body1">
-                {formatter.toPercentage(reserveData.config.c_factor / 1e7)}
+                {formatter.toPercentage(reserve.config.c_factor / 1e7)}
               </Typography>
             </Box>
             <Box
@@ -95,7 +93,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
               }}
             >
               <Typography variant="body1">
-                {formatter.toPercentage(1 / (reserveData.config.l_factor / 1e7))}
+                {formatter.toPercentage(1 / (reserve.config.l_factor / 1e7))}
               </Typography>
             </Box>
             <Box
@@ -107,8 +105,8 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
               }}
             >
               <StackedApr
-                aprLend={formatter.toPercentage(reserveData.estimates.supplyApr)}
-                aprBorrow={formatter.toPercentage(reserveData.estimates.apr)}
+                aprLend={formatter.toPercentage(reserve.supplyApr)}
+                aprBorrow={formatter.toPercentage(reserve.borrowApr)}
               ></StackedApr>
             </Box>
           </>

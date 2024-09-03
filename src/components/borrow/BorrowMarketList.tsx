@@ -1,17 +1,18 @@
 import HelpOutline from '@mui/icons-material/HelpOutline';
-import { Box, Skeleton, Tooltip, Typography } from '@mui/material';
+import { Box, Tooltip, Typography } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
-import { useStore } from '../../store/store';
+import { usePool } from '../../hooks/api';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { Skeleton } from '../common/Skeleton';
 import { BorrowMarketCard } from './BorrowMarketCard';
 
 export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
 
-  const poolData = useStore((state) => state.pools.get(poolId));
+  const { data: pool } = usePool(poolId);
 
-  if (!poolData) {
-    return <Skeleton variant="rectangular" />;
+  if (pool === undefined) {
+    return <Skeleton />;
   }
 
   const headerNum = viewType === ViewType.REGULAR ? 5 : 3;
@@ -83,7 +84,7 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
 
         <Box sx={{ width: viewType === ViewType.MOBILE ? 'auto' : headerWidth }} />
       </Box>
-      {Array.from(poolData.reserves.values())
+      {Array.from(pool.reserves.values())
         .filter((reserve) => reserve.config.l_factor > 0)
         .map((reserve) => (
           <BorrowMarketCard key={reserve.assetId} poolId={poolId} reserve={reserve} />

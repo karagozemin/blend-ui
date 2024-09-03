@@ -3,6 +3,7 @@ import { Box, Typography } from '@mui/material';
 import theme from '../../theme';
 import { toBalance } from '../../utils/formatter';
 import { Banner } from '../common/Banner';
+
 export interface LendBannerProps {
   totalSupplied: number;
 }

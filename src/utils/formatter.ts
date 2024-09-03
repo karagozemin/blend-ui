@@ -15,7 +15,7 @@ export function toBalance(
   amount: bigint | number | undefined,
   decimals?: number | undefined
 ): string {
-  if (amount == undefined) {
+  if (amount == undefined || (typeof amount === 'number' && !isFinite(amount))) {
     return '--';
   }
   let numValue: number;
@@ -25,7 +25,7 @@ export function toBalance(
     numValue = amount;
   } else {
     console.error('Invalid toBalance input. Must provide decimals if amount is a bigint.');
-    return '';
+    return '--';
   }
 
   let visibleDecimals = 0;

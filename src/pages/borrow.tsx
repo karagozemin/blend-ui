@@ -1,3 +1,4 @@
+import { FixedMath } from '@blend-capital/blend-sdk';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Link, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
@@ -9,32 +10,31 @@ import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useWallet } from '../contexts/wallet';
-import { useStore } from '../store/store';
+import { usePool } from '../hooks/api';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerYearPerUnit, getTokenLinkFromReserve } from '../utils/token';
+import { getTokenLinkFromReserve } from '../utils/token';
 
 const Borrow: NextPage = () => {
   const theme = useTheme();
-  const { connected, walletAddress } = useWallet();
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const poolData = useStore((state) => state.pools.get(safePoolId));
+  const { data: pool } = usePool(safePoolId);
+  const reserve = pool?.reserves.get(safeAssetId);
 
-  const reserve = poolData?.reserves.get(safeAssetId);
-  //totalEstLiabilities / totalEstSupply , you you can just do something like canBorrow = totalSupply * max_util - totalLiabilities
-  const maxUtilFraction = (reserve?.config.max_util || 1) / 10 ** (reserve?.config.decimals || 7);
-  const totalSupplied = reserve?.estimates.supplied || 0;
-  const availableToBorrow = totalSupplied * maxUtilFraction - (reserve?.estimates.borrowed || 0);
+  const maxUtilFloat = reserve ? FixedMath.toFloat(BigInt(reserve.config.max_util), 7) : 1;
+  const totalSupplied = reserve ? reserve.totalSupplyFloat() : 0;
+  const availableToBorrow = reserve
+    ? totalSupplied * maxUtilFloat - reserve.totalLiabilitiesFloat()
+    : 0;
 
   return (
     <>
       <Row>
-        <GoBackHeader name={poolData?.config.name} />
+        <GoBackHeader name={pool?.config.name} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
@@ -97,19 +97,17 @@ const Borrow: NextPage = () => {
             title="Borrow APR"
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.estimates.apr)}{' '}
-                <FlameIcon
-                  width={22}
-                  height={22}
-                  title={getEmissionTextFromValue(
-                    getEmissionsPerYearPerUnit(
-                      reserve?.borrowEmissions?.config.eps || BigInt(0),
-                      reserve?.estimates.borrowed || 0,
-                      reserve?.config.decimals
-                    ),
-                    reserve?.tokenMetadata?.symbol || 'token'
-                  )}
-                />
+                {toPercentage(reserve?.borrowApr)}{' '}
+                {reserve?.borrowEmissions && (
+                  <FlameIcon
+                    width={22}
+                    height={22}
+                    title={getEmissionTextFromValue(
+                      reserve.emissionsPerYearPerBorrowedAsset(),
+                      reserve?.tokenMetadata?.symbol || 'token'
+                    )}
+                  />
+                )}
               </div>
             }
             sx={{ padding: '6px' }}
@@ -125,7 +123,7 @@ const Borrow: NextPage = () => {
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Total borrowed"
-            text={toBalance(reserve?.estimates.borrowed)}
+            text={toBalance(reserve?.totalLiabilitiesFloat())}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>

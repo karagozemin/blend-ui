@@ -1,10 +1,9 @@
-import { PoolUser, Reserve } from '@blend-capital/blend-sdk';
+import { Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
-import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -13,20 +12,21 @@ import { TokenHeader } from '../common/TokenHeader';
 
 export interface BorrowPositionCardProps extends PoolComponentProps {
   reserve: Reserve;
-  userPoolData: PoolUser;
+  dTokens: bigint;
 }
 
 export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   poolId,
   reserve,
-  userPoolData,
+  dTokens,
   sx,
   ...props
 }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
   const router = useRouter();
-  const userBorrowEst = userPoolData.positionEstimates.liabilities.get(reserve.assetId) ?? 0;
+
+  const assetFloat = reserve.toAssetFromDTokenFloat(dTokens);
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -54,7 +54,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         }
       }}
     >
-      <TokenHeader iconSize="24px" hideDomain id={reserve.assetId} sx={{ width: tableWidth }} />
+      <TokenHeader iconSize="24px" hideDomain reserve={reserve} sx={{ width: tableWidth }} />
       <Box
         sx={{
           width: tableWidth,
@@ -63,10 +63,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1">
-          {' '}
-          {formatter.toBalance(userBorrowEst, reserve.config.decimals)}
-        </Typography>
+        <Typography variant="body1"> {formatter.toBalance(assetFloat)}</Typography>
       </Box>
 
       <Box
@@ -77,24 +74,18 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apr)}</Typography>
-        {!!reserve.borrowEmissions && (
+        <Typography variant="body1">{formatter.toPercentage(reserve.borrowApr)}</Typography>
+        {reserve.borrowEmissions && (
           <FlameIcon
             width={22}
             height={22}
             title={formatter.getEmissionTextFromValue(
-              getEmissionsPerYearPerUnit(
-                reserve.borrowEmissions?.config.eps || BigInt(0),
-                reserve.estimates.borrowed,
-                reserve.config.decimals
-              ),
+              reserve.emissionsPerYearPerBorrowedAsset(),
               reserve.tokenMetadata.symbol
             )}
           />
         )}
       </Box>
-
-      {/* {tableNum >= 5 && <Box sx={{ width: tableWidth }} />} */}
       {viewType !== ViewType.MOBILE && (
         <LinkBox
           to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}

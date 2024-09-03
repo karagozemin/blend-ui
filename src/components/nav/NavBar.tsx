@@ -1,8 +1,7 @@
 import { Box, IconButton } from '@mui/material';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import { ViewType, useSettings } from '../../contexts';
-import { useStore } from '../../store/store';
+import { useBackstop } from '../../hooks/api';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { SectionBase } from '../common/SectionBase';
@@ -12,22 +11,9 @@ import { WalletMenu } from './WalletMenu';
 
 export const NavBar = () => {
   const { viewType, lastPool } = useSettings();
-  const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
-  const [poolId, setPoolId] = useState<string | undefined>(lastPool);
-  useEffect(() => {
-    if (!poolId || poolId !== lastPool) {
-      if (lastPool) {
-        setPoolId(lastPool);
-      } else if (rewardZone.length != 0) {
-        // get the last (oldest) pool in the reward zone
-        const rewardPoolId = rewardZone[rewardZone.length - 1];
-        if (rewardPoolId !== poolId) {
-          setPoolId(rewardPoolId);
-        }
-      }
-    }
-  }, [lastPool, rewardZone]);
+  const { data: backstop } = useBackstop();
+  const poolId = (lastPool ? lastPool : backstop?.config?.rewardZone[0]) ?? '';
 
   return (
     <Row sx={{ height: '62px' }}>

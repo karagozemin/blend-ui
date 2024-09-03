@@ -4,7 +4,6 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 
-import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { CustomButton } from '../common/CustomButton';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
@@ -24,6 +23,8 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
 }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+
+  const available = reserve.totalSupplyFloat() - reserve.totalLiabilitiesFloat();
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -53,7 +54,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
             },
           }}
         >
-          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
+          <TokenHeader reserve={reserve} sx={{ width: tableWidth }} />
           <Box
             sx={{
               width: tableWidth,
@@ -62,9 +63,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">
-              {formatter.toBalance(reserve.poolBalance, reserve.config.decimals)}
-            </Typography>
+            <Typography variant="body1">{formatter.toBalance(available)}</Typography>
           </Box>
 
           <Box
@@ -75,17 +74,13 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apr)}</Typography>
+            <Typography variant="body1">{formatter.toPercentage(reserve.borrowApr)}</Typography>
             {reserve.borrowEmissions && (
               <FlameIcon
                 width={22}
                 height={22}
                 title={formatter.getEmissionTextFromValue(
-                  getEmissionsPerYearPerUnit(
-                    reserve.borrowEmissions?.config.eps || BigInt(0),
-                    reserve.estimates.borrowed,
-                    reserve.config.decimals
-                  ),
+                  reserve.emissionsPerYearPerBorrowedAsset(),
                   reserve.tokenMetadata?.symbol
                 )}
               />

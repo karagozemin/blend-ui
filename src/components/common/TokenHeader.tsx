@@ -1,28 +1,33 @@
 import { Box, BoxProps, Typography } from '@mui/material';
 
-import { useStore } from '../../store/store';
+import { Reserve } from '@blend-capital/blend-sdk';
+import { useTokenMetadataFromToml } from '../../hooks/api';
 import { toCompactAddress } from '../../utils/formatter';
 import { TokenIcon } from './TokenIcon';
 
-/// @dev TODO: Consider consolidation of icons / headers
-
 export interface TokenHeaderProps extends BoxProps {
-  id: string;
+  reserve: Reserve;
   hideDomain?: boolean;
   iconSize?: string;
 }
 
 export const TokenHeader: React.FC<TokenHeaderProps> = ({
-  id,
+  reserve,
   sx,
   hideDomain,
   iconSize,
   ...props
 }) => {
-  const assetStellarMetadata = useStore((state) => state.assetStellarMetadata);
-  const tokenMetadata = assetStellarMetadata.get(id);
-  const code = tokenMetadata?.code || id;
-  const domain = tokenMetadata?.domain || tokenMetadata?.issuer;
+  const { data: tokenMetadata } = useTokenMetadataFromToml(reserve);
+
+  if (tokenMetadata === undefined) {
+    return <></>;
+  }
+
+  const domain =
+    tokenMetadata?.domain === undefined || tokenMetadata.domain === ''
+      ? toCompactAddress(tokenMetadata.issuer)
+      : tokenMetadata.domain;
   return (
     <Box
       sx={{
@@ -36,8 +41,7 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({
       {...props}
     >
       <TokenIcon
-        assetId={id}
-        symbol={code}
+        reserve={reserve}
         sx={{ width: iconSize || '32px', height: iconSize || '32px', marginRight: '6px' }}
       />
       <Box
@@ -48,10 +52,10 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({
           alignItems: 'flex-start',
         }}
       >
-        <Typography variant="body1">{code}</Typography>
+        <Typography variant="body1">{tokenMetadata.code}</Typography>
         {!hideDomain && (
           <Typography variant="body2" color="text.secondary">
-            {domain?.length === 56 ? toCompactAddress(domain) : domain}
+            {domain}
           </Typography>
         )}
       </Box>
