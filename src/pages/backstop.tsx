@@ -65,6 +65,21 @@ const Backstop: NextPage = () => {
       ? BackstopPoolUserEst.build(backstop, backstopPoolData, userBackstopPoolData)
       : undefined;
 
+  const backstopDepositUSD =
+    backstopUserEst?.tokens && backstop?.backstopToken.lpTokenPrice
+      ? backstopUserEst?.tokens * backstop.backstopToken.lpTokenPrice
+      : undefined;
+
+  const lpBalanceUSD =
+    lpBalance && backstop?.backstopToken.lpTokenPrice
+      ? (Number(lpBalance) / 1e7) * backstop.backstopToken.lpTokenPrice
+      : undefined;
+
+  const backstopClaimUSD =
+    lpTokenEmissions && backstop?.backstopToken.lpTokenPrice
+      ? (Number(lpTokenEmissions) / 1e7) * backstop.backstopToken.lpTokenPrice
+      : undefined;
+
   const handleClaimEmissionsClick = async () => {
     if (connected && userBackstopPoolData) {
       let claimArgs: BackstopClaimArgs = {
@@ -200,12 +215,17 @@ const Backstop: NextPage = () => {
                     alt={`blndusdclp`}
                     sx={{ height: '30px', width: '30px', marginRight: '12px' }}
                   />
-                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      {toBalance(lpTokenEmissions, 7)}
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      BLND-USDC LP
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                      <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                        {toBalance(lpTokenEmissions, 7)}
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                        BLND-USDC LP
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                      {`$${toBalance(backstopClaimUSD)}`}
                     </Typography>
                   </Box>
                 </Box>
@@ -244,12 +264,17 @@ const Backstop: NextPage = () => {
               alt={`blndusdclp`}
               sx={{ height: '30px', width: '30px', marginRight: '12px' }}
             />
-            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-              <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                {toBalance(lpBalance, 7)}
-              </Typography>
-              <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                BLND-USDC LP
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                  {toBalance(lpBalance, 7)}
+                </Typography>
+                <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                  BLND-USDC LP
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                {`$${toBalance(lpBalanceUSD)}`}
               </Typography>
             </Box>
           </Box>
@@ -309,12 +334,17 @@ const Backstop: NextPage = () => {
                   alt={`blndusdclp`}
                   sx={{ height: '30px', width: '30px', marginRight: '12px' }}
                 />
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    {toBalance(backstopUserEst?.tokens)}
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    BLND-USDC LP
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                      {toBalance(backstopUserEst?.tokens)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                      BLND-USDC LP
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                    {`$${toBalance(backstopDepositUSD)}`}
                   </Typography>
                 </Box>
               </Box>
