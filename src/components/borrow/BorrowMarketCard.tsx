@@ -30,6 +30,8 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const liabilityFactor = reserve.getLiabilityFactor();
 
+  const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
+
   return (
     <SectionBase
       sx={{
@@ -75,12 +77,12 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">{formatter.toPercentage(reserve.borrowApr)}</Typography>
-            {reserve.borrowEmissions && (
+            {emissionsPerAsset > 0 && (
               <FlameIcon
                 width={22}
                 height={22}
                 title={formatter.getEmissionTextFromValue(
-                  reserve.emissionsPerYearPerBorrowedAsset(),
+                  emissionsPerAsset,
                   reserve.tokenMetadata?.symbol
                 )}
               />

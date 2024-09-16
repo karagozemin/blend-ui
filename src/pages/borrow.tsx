@@ -30,6 +30,7 @@ const Borrow: NextPage = () => {
   const availableToBorrow = reserve
     ? totalSupplied * maxUtilFloat - reserve.totalLiabilitiesFloat()
     : 0;
+  const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerBorrowedAsset() : 0;
 
   return (
     <>
@@ -98,12 +99,12 @@ const Borrow: NextPage = () => {
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {toPercentage(reserve?.borrowApr)}{' '}
-                {reserve?.borrowEmissions && (
+                {emissionsPerAsset > 0 && (
                   <FlameIcon
                     width={22}
                     height={22}
                     title={getEmissionTextFromValue(
-                      reserve.emissionsPerYearPerBorrowedAsset(),
+                      emissionsPerAsset,
                       reserve?.tokenMetadata?.symbol || 'token'
                     )}
                   />

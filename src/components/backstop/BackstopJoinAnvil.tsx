@@ -38,10 +38,9 @@ export const BackstopJoinAnvil = () => {
   const { data: blndBalanceRes } = useTokenBalance(BLND_ID, BLND_ASSET, horizonAccount);
   const { data: usdcBalanceRes } = useTokenBalance(USDC_ID, USDC_ASSET, horizonAccount);
   const { data: lpBalanceRes } = useTokenBalance(
-    backstop?.backstopToken.id,
+    backstop?.backstopToken?.id ?? '',
     undefined,
-    undefined,
-    backstop !== undefined
+    horizonAccount
   );
 
   const [currentToken, setCurrentToken] = useState<{
