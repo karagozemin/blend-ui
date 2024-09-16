@@ -58,7 +58,9 @@ const BackstopToken: NextPage = () => {
           src={'/icons/pageicons/blnd_usdc_pair.svg'}
           alt={`blndusdclp`}
           isCircle={false}
-          sx={{ marginRight: '12px', height: '42px', width: '42px' }}
+          height={30}
+          width={45}
+          sx={{ marginRight: '12px' }}
         />
         <Typography variant="h2">{title}</Typography>
         <IconButton

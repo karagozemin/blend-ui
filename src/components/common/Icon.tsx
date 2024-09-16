@@ -1,29 +1,38 @@
-import { Icon as MuiIcon, IconProps as MuiIconProps } from '@mui/material';
+import { Box, SxProps, Theme } from '@mui/material';
 import Image from 'next/image';
 
-export interface IconProps extends MuiIconProps {
+export interface IconProps {
   src: string;
   alt: string;
-  height?: string;
-  width?: string;
+  height?: number;
+  width?: number;
   isCircle?: boolean; // defaults to true
+  sx?: SxProps<Theme>;
+  onError?: (error: React.SyntheticEvent<HTMLImageElement, Event>) => void;
 }
 
-export const Icon: React.FC<IconProps> = ({ src, alt, height, width, isCircle, sx, ...props }) => {
-  const resolvedHeight = height != undefined ? height : '30px';
-  const resolvedWidth = width != undefined ? width : '30px';
-  const resolvedIsCircle = isCircle == undefined ? true : isCircle;
+export const Icon: React.FC<IconProps> = ({
+  src,
+  alt,
+  height = 30,
+  width = 30,
+  isCircle = true,
+  sx,
+  onError,
+}) => {
   return (
-    <MuiIcon
+    <Box
       sx={{
-        borderRadius: resolvedIsCircle ? '50%' : '5px',
-        height: resolvedHeight,
-        width: resolvedWidth,
+        borderRadius: isCircle ? '50%' : '5px',
+        width,
+        height,
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'inline-block',
         ...sx,
       }}
-      {...props}
     >
-      <Image src={src} alt={alt} width="100%" height="100%" />
-    </MuiIcon>
+      <Image src={src} alt={alt} layout="fill" objectFit="cover" onError={onError} />
+    </Box>
   );
 };

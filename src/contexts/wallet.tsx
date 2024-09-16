@@ -19,7 +19,7 @@ import {
   WalletNetwork,
   XBULL_ID,
   xBullModule,
-} from '@creit.tech/stellar-wallets-kit/build/index';
+} from '@creit.tech/stellar-wallets-kit/index';
 import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
 import {
   Asset,
@@ -170,7 +170,7 @@ export const WalletProvider = ({ children = null as any }) => {
    */
   async function handleSetWalletAddress(): Promise<boolean> {
     try {
-      const publicKey = await walletKit.getPublicKey();
+      const { address: publicKey } = await walletKit.getAddress();
       if (publicKey === '' || publicKey == undefined) {
         console.error('Unable to load wallet key: ', publicKey);
         return false;
@@ -223,13 +223,12 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       setTxStatus(TxStatus.SIGNING);
       try {
-        let { result } = await walletKit.signTx({
-          xdr: xdr,
-          publicKeys: [walletAddress],
-          network: network.passphrase as WalletNetwork,
+        let { signedTxXdr } = await walletKit.signTransaction(xdr, {
+          address: walletAddress,
+          networkPassphrase: network.passphrase as WalletNetwork,
         });
         setTxStatus(TxStatus.SUBMITTING);
-        return result;
+        return signedTxXdr;
       } catch (e: any) {
         if (e === 'User declined access') {
           setTxFailure('Transaction rejected by wallet.');

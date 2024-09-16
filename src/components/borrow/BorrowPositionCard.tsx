@@ -31,6 +31,9 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
+
+  const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
+
   return (
     <Box
       sx={{
@@ -75,12 +78,12 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         }}
       >
         <Typography variant="body1">{formatter.toPercentage(reserve.borrowApr)}</Typography>
-        {reserve.borrowEmissions && (
+        {emissionsPerAsset > 0 && (
           <FlameIcon
             width={22}
             height={22}
             title={formatter.getEmissionTextFromValue(
-              reserve.emissionsPerYearPerBorrowedAsset(),
+              emissionsPerAsset,
               reserve.tokenMetadata.symbol
             )}
           />

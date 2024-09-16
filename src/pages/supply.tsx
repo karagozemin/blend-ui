@@ -10,7 +10,7 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { LendAnvil } from '../components/lend/LendAnvil';
-import { useHorizonAccount, usePool, usePoolUser, useTokenBalance } from '../hooks/api';
+import { useHorizonAccount, usePool, useTokenBalance } from '../hooks/api';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
 import { getTokenLinkFromReserve } from '../utils/token';
 
@@ -23,7 +23,6 @@ const Supply: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const { data: pool } = usePool(safePoolId);
-  const { data: poolUser } = usePoolUser(pool);
   const reserve = pool?.reserves.get(safeAssetId);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: tokenBalance } = useTokenBalance(
@@ -33,8 +32,7 @@ const Supply: NextPage = () => {
     reserve !== undefined
   );
 
-  const currentDebt = reserve && poolUser ? poolUser.getLiabilitiesFloat(reserve) : undefined;
-
+  const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerSuppliedAsset() : 0;
   return (
     <>
       <Row>
@@ -99,13 +97,13 @@ const Supply: NextPage = () => {
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {toPercentage(reserve?.supplyApr)}{' '}
-                {reserve?.supplyEmissions && (
+                {emissionsPerAsset > 0 && (
                   <FlameIcon
                     width={22}
                     height={22}
                     title={getEmissionTextFromValue(
-                      reserve.emissionsPerYearPerSuppliedAsset(),
-                      reserve.tokenMetadata?.symbol || 'token'
+                      emissionsPerAsset,
+                      reserve?.tokenMetadata?.symbol || 'token'
                     )}
                   />
                 )}

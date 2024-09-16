@@ -33,6 +33,8 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
+
+  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
   return (
     <SectionBase
       sx={{
@@ -80,12 +82,12 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">{formatter.toPercentage(reserve.supplyApr)}</Typography>
-            {reserve.supplyEmissions && (
+            {emissionsPerAsset > 0 && (
               <FlameIcon
                 width={22}
                 height={22}
                 title={formatter.getEmissionTextFromValue(
-                  reserve.emissionsPerYearPerSuppliedAsset(),
+                  emissionsPerAsset,
                   reserve.tokenMetadata?.symbol
                 )}
               />

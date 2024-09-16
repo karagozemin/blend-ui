@@ -24,6 +24,7 @@ const Withdraw: NextPage = () => {
   const reserve = pool?.reserves.get(safeAssetId);
 
   const currentDeposit = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
+  const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerSuppliedAsset() : 0;
 
   return (
     <>
@@ -68,19 +69,16 @@ const Withdraw: NextPage = () => {
             title="Supply APR"
             text={
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.supplyApr)}
-                {reserve?.supplyApr && (
-                  <>
-                    {' '}
-                    <FlameIcon
-                      width={22}
-                      height={22}
-                      title={getEmissionTextFromValue(
-                        reserve.emissionsPerYearPerSuppliedAsset(),
-                        reserve.tokenMetadata?.symbol || 'token'
-                      )}
-                    />
-                  </>
+                {toPercentage(reserve?.supplyApr)}{' '}
+                {emissionsPerAsset > 0 && (
+                  <FlameIcon
+                    width={22}
+                    height={22}
+                    title={getEmissionTextFromValue(
+                      emissionsPerAsset,
+                      reserve?.tokenMetadata?.symbol || 'token'
+                    )}
+                  />
                 )}
               </div>
             }

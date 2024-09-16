@@ -28,6 +28,8 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
 
   const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
 
+  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
@@ -77,12 +79,12 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         }}
       >
         <Typography variant="body1">{formatter.toPercentage(reserve.supplyApr)}</Typography>
-        {reserve.supplyEmissions && (
+        {emissionsPerAsset > 0 && (
           <FlameIcon
             width={22}
             height={22}
             title={formatter.getEmissionTextFromValue(
-              reserve.emissionsPerYearPerSuppliedAsset(),
+              emissionsPerAsset,
               reserve.tokenMetadata.symbol
             )}
           />

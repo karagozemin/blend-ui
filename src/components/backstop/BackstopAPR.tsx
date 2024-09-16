@@ -79,13 +79,14 @@ export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
         <Typography variant="h4" color={'text.primary'}>
           {toPercentage(estBackstopApr)}
         </Typography>
-        {backstopEmissionsPerDayPerLpToken && backstopEmissionsPerDayPerLpToken > 0 && (
-          <FlameIcon
-            height={22}
-            width={22}
-            title={getEmissionTextFromValue(backstopEmissionsPerDayPerLpToken, 'BLND-USDC LP')}
-          />
-        )}
+        {backstopEmissionsPerDayPerLpToken !== undefined &&
+          backstopEmissionsPerDayPerLpToken > 0 && (
+            <FlameIcon
+              height={22}
+              width={22}
+              title={getEmissionTextFromValue(backstopEmissionsPerDayPerLpToken, 'BLND-USDC LP')}
+            />
+          )}
       </Box>
     </Box>
   );
