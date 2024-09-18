@@ -122,7 +122,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       } else {
         return getErrorFromSim(toBorrow, decimals, loading, simResponse, undefined);
       }
-    }, [toBorrow, simResponse, poolUser]);
+    }, [toBorrow, simResponse, poolUser, horizonAccount]);
 
   if (pool === undefined || reserve === undefined) {
     return <Skeleton />;

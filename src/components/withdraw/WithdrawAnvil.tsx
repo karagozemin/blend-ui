@@ -122,7 +122,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       } else {
         return getErrorFromSim(toWithdraw, decimals, loading, simResponse, undefined);
       }
-    }, [toWithdraw, simResponse, loading]);
+    }, [toWithdraw, simResponse, loading, horizonAccount]);
 
   if (pool === undefined || reserve === undefined) {
     return <Skeleton />;
