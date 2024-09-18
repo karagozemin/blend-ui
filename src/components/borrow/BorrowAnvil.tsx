@@ -89,6 +89,23 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     setLoadingEstimate(false);
   });
 
+  async function handleAddAssetTrustline() {
+    if (connected && reserve?.tokenMetadata?.asset) {
+      const reserveAsset = reserve?.tokenMetadata?.asset;
+      await createTrustline(reserveAsset);
+    }
+  }
+
+  const AddTrustlineButton = (
+    <OpaqueButton
+      onClick={handleAddAssetTrustline}
+      palette={theme.palette.warning}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Add {reserve?.tokenMetadata.asset?.code} Trustline
+    </OpaqueButton>
+  );
+
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
     useMemo(() => {
       const hasTokenTrustline = !requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset);
@@ -142,15 +159,6 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
       ? newPositionEstimate?.borrowLimit
       : 0;
-  const AddTrustlineButton = (
-    <OpaqueButton
-      onClick={handleAddAssetTrustline}
-      palette={theme.palette.warning}
-      sx={{ padding: '6px 24px', margin: '12px auto' }}
-    >
-      Add {reserve?.tokenMetadata.asset?.code} Trustline
-    </OpaqueButton>
-  );
 
   const handleBorrowMax = () => {
     if (reserve && assetToBase && curPositionEstimate) {
@@ -168,13 +176,6 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       setLoadingEstimate(true);
     }
   };
-
-  async function handleAddAssetTrustline() {
-    if (connected && reserve?.tokenMetadata?.asset) {
-      const reserveAsset = reserve?.tokenMetadata?.asset;
-      await createTrustline(reserveAsset);
-    }
-  }
 
   return (
     <Row>

@@ -89,6 +89,23 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     setLoadingEstimate(false);
   });
 
+  async function handleAddAssetTrustline() {
+    if (connected && reserve?.tokenMetadata?.asset) {
+      const reserveAsset = reserve?.tokenMetadata?.asset;
+      await createTrustline(reserveAsset);
+    }
+  }
+
+  const AddTrustlineButton = (
+    <OpaqueButton
+      onClick={handleAddAssetTrustline}
+      palette={theme.palette.warning}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Add {reserve?.tokenMetadata.asset?.code} Trustline
+    </OpaqueButton>
+  );
+
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
     useMemo(() => {
       const hasTokenTrustline = !requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset);
@@ -134,16 +151,6 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       ? newPositionsEstimate?.borrowLimit
       : 0;
 
-  const AddTrustlineButton = (
-    <OpaqueButton
-      onClick={handleAddAssetTrustline}
-      palette={theme.palette.warning}
-      sx={{ padding: '6px 24px', margin: '12px auto' }}
-    >
-      Add {reserve?.tokenMetadata.asset?.code} Trustline
-    </OpaqueButton>
-  );
-
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     if (reserve && poolUser) {
       let curSupplied = poolUser.getCollateralFloat(reserve);
@@ -177,13 +184,6 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       }
     }
   };
-
-  async function handleAddAssetTrustline() {
-    if (connected && reserve?.tokenMetadata?.asset) {
-      const reserveAsset = reserve?.tokenMetadata?.asset;
-      await createTrustline(reserveAsset);
-    }
-  }
 
   return (
     <Row>

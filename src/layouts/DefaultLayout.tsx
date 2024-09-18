@@ -49,7 +49,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
             <Row>
               <WalletWarning />
             </Row>
-            {faucet_pool && isTestnet && (
+            {faucet_pool !== undefined && isTestnet && (
               <Row>
                 <FaucetBanner poolId={faucet_pool} />
               </Row>
