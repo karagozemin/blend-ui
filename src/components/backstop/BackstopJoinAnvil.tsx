@@ -173,7 +173,16 @@ export const BackstopJoinAnvil = () => {
       } else {
         return getErrorFromSim(input.amount, decimals, loading, simResponse);
       }
-    }, [input, currentToken.symbol, loadingEstimate, simResponse]);
+    }, [
+      input,
+      currentToken.symbol,
+      blndBalance,
+      usdcBalance,
+      loadingEstimate,
+      simResponse,
+      maxUSDCDeposit,
+      maxBLNDDeposit,
+    ]);
 
   if (backstop === undefined) {
     return <Skeleton />;

@@ -38,8 +38,7 @@ export const BackstopExitAnvil = () => {
   const { data: lpBalanceRes } = useTokenBalance(
     backstop?.backstopToken.id,
     undefined,
-    undefined,
-    backstop !== undefined
+    horizonAccount
   );
 
   const [input, setInput] = useState<{ amount: string; slippage: string }>({
@@ -145,7 +144,7 @@ export const BackstopExitAnvil = () => {
       } else {
         return getErrorFromSim(input.amount, decimals, loading, simResponse, undefined);
       }
-    }, [input, loadingEstimate, simResponse]);
+    }, [input, loadingEstimate, simResponse, lpBalance]);
 
   if (backstop === undefined) {
     return <Skeleton />;
