@@ -5,7 +5,7 @@ import {
   PoolBackstopActionArgs,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { Horizon, SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -41,10 +41,11 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const { data: backstopPoolData } = useBackstopPool(poolId);
   const { data: backstopUserPoolData } = useBackstopPoolUser(poolId);
   const { data: lpTokenRes } = useTokenBalance(
-    backstop?.config.backstopTkn,
+    backstop?.config?.backstopTkn,
     undefined,
-    undefined,
-    backstop !== undefined
+    // passing undefined will cause the token balance to not load, and the horizon
+    // account is not needed for getting the LP token balance
+    {} as Horizon.AccountResponse
   );
 
   const [toDeposit, setToDeposit] = useState<string>('');
