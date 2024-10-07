@@ -5,12 +5,13 @@ import { BidListItem } from './BidListItem';
 
 export interface BidListProps extends BoxProps {
   pool: Pool;
+  bid: Map<string, bigint>;
+  type: string;
 }
 
-export const BidList: React.FC<BidListProps> = ({ pool }) => {
+export const BidList: React.FC<BidListProps> = ({ pool, bid, type }) => {
   const { viewType } = useSettings();
-
-  const headerNum = viewType == ViewType.REGULAR ? 6 : 6;
+  const headerNum = viewType == ViewType.REGULAR ? 3 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -33,27 +34,44 @@ export const BidList: React.FC<BidListProps> = ({ pool }) => {
           type: 'alt',
         }}
       >
-        <Typography variant="body2" color="text.secondary" sx={{ marginRight: '48px' }}>
-          Bid
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+        <Box
+          sx={{
+            width: headerWidth,
+            display: 'flex',
+            justifyContent: 'left',
+          }}
         >
-          Type
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+          <Typography variant="body2" color="text.secondary" align="left">
+            Bid
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            width: headerWidth,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
-          Amount
-        </Typography>
+          <Typography variant="body2" color="text.secondary" align="center">
+            Type
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            width: headerWidth,
+            display: 'flex',
+            justifyContent: 'right',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary" align="right">
+            Amount
+          </Typography>
+        </Box>
       </Box>
-      <BidListItem />
+      {Array.from(bid.entries()).map(([asset, amount]) => (
+        <BidListItem key={asset} reserve={pool.reserves.get(asset)!} type={type} amount={amount} />
+      ))}
     </Box>
   );
 };

@@ -5,12 +5,14 @@ import { LotListItem } from './LotListItem';
 
 export interface LotListProps extends BoxProps {
   pool: Pool;
+  lot: Map<string, bigint>;
+  type: string;
 }
 
-export const LotList: React.FC<LotListProps> = ({ pool }) => {
+export const LotList: React.FC<LotListProps> = ({ pool, lot, type }) => {
   const { viewType } = useSettings();
 
-  const headerNum = viewType == ViewType.REGULAR ? 6 : 6;
+  const headerNum = viewType == ViewType.REGULAR ? 3 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -33,27 +35,46 @@ export const LotList: React.FC<LotListProps> = ({ pool }) => {
           type: 'alt',
         }}
       >
-        <Typography variant="body2" color="text.secondary" sx={{ marginRight: '48px' }}>
-          Lot
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+        <Box
+          sx={{
+            width: headerWidth,
+            display: 'flex',
+            justifyContent: 'left',
+          }}
         >
-          Type
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+          <Typography variant="body2" color="text.secondary" align="left">
+            Lot
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            width: headerWidth,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
-          Amount
-        </Typography>
+          <Typography variant="body2" color="text.secondary" align="center">
+            Type
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            width: headerWidth,
+            display: 'flex',
+            justifyContent: 'right',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary" align="right">
+            Amount
+          </Typography>
+        </Box>
       </Box>
-      <LotListItem />
+      {Array.from(lot.entries()).map(([asset, amount]) => (
+        <LotListItem key={asset} reserve={pool.reserves.get(asset)} type={type} amount={amount} />
+      ))}
     </Box>
   );
 };

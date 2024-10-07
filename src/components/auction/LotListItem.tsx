@@ -1,56 +1,78 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { Reserve } from '@blend-capital/blend-sdk';
+import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
-import { PoolHeader } from '../pool/PoolHeader';
+import { toBalance } from '../../utils/formatter';
+import { Icon } from '../common/Icon';
+import { TokenHeader } from '../common/TokenHeader';
 
-export const LotListItem: React.FC = ({ ...props }) => {
+export interface LotItemProps extends BoxProps {
+  reserve: Reserve | undefined;
+  type: string;
+  amount: bigint;
+}
+export const LotListItem: React.FC<LotItemProps> = ({ reserve, amount, type, ...props }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const tableNum = viewType == ViewType.REGULAR ? 6 : 6;
+  const tableNum = viewType == ViewType.REGULAR ? 3 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   return (
     <Box
       sx={{
-        type: 'alt',
-        display: 'flex',
         width: '100%',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         padding: '6px',
+        type: 'alt',
       }}
       {...props}
     >
       <Box
         sx={{
-          width: '100%',
+          width: tableWidth,
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '6px',
-          type: 'alt',
+          justifyContent: 'left',
         }}
       >
-        <Box>
-          <PoolHeader name={''} />
-        </Box>
-        <Box
-          sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body1">TYPE</Typography>
-        </Box>
-        <Box
-          sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body1">888.888 XXX</Typography>
-        </Box>
+        {reserve ? (
+          <TokenHeader reserve={reserve} />
+        ) : (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+            <Icon
+              src={`/icons/tokens/blndusdclp.svg`}
+              alt={`blndusdclp`}
+              sx={{ height: '30px', width: '30px', marginRight: '12px' }}
+            />
+
+            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+              BLND-USDC LP
+            </Typography>
+          </Box>
+        )}
+      </Box>
+      <Box
+        sx={{
+          width: tableWidth,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="body1" align="center">
+          {type}
+        </Typography>
+      </Box>
+      <Box
+        sx={{
+          width: tableWidth,
+          display: 'flex',
+          justifyContent: 'right',
+        }}
+      >
+        <Typography variant="body1" align="right">
+          {toBalance(amount, reserve?.config.decimals ?? 7)}
+        </Typography>
       </Box>
     </Box>
   );
