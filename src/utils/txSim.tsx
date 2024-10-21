@@ -4,6 +4,7 @@ import { SorobanRpc } from '@stellar/stellar-sdk';
 import { OpaqueButton } from '../components/common/OpaqueButton';
 import { useWallet } from '../contexts/wallet';
 import theme from '../theme';
+
 export function RestoreButton({
   simResponse,
 }: {
@@ -25,6 +26,7 @@ export function RestoreButton({
     </OpaqueButton>
   );
 }
+
 export function getErrorFromSim(
   input: string | undefined,
   decimals: number,
