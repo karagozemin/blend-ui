@@ -5,6 +5,7 @@ import { usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { TooltipText } from '../common/TooltipText';
 import { LendBanner } from './LendBanner';
 import { LendPositionCard } from './LendPositionCard';
 
@@ -70,14 +71,12 @@ export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
               Balance
             </Typography>
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              align="center"
-              sx={{ width: headerWidth }}
+            <TooltipText
+              tooltip="The interest rate earned on a supplied position. This rate will fluctuate based on the market conditions, and is accrued to the supplied position."
+              width={headerWidth}
             >
               APR
-            </Typography>
+            </TooltipText>
 
             <Box
               sx={{ flexGrow: '2', width: viewType === ViewType.MOBILE ? '24px' : headerWidth }}

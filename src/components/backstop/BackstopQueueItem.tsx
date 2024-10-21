@@ -82,6 +82,10 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
       ? 'You can only unqueue the oldest withdrawal'
       : 'This transaction ran into expired entries that need to be restored before proceeding.';
 
+    console.log('needsTooltip', needsTooltip);
+    console.log('isRestore', isRestore);
+    console.log('first', first);
+
     return needsTooltip ? (
       <Tooltip
         title={tooltipMessage}
@@ -90,25 +94,27 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
         enterDelay={500}
         leaveTouchDelay={3000}
       >
-        {isRestore ? (
-          <OpaqueButton
-            onClick={() => handleRestore()}
-            palette={theme.palette.warning}
-            disabled={false}
-            sx={sx}
-          >
-            Restore
-          </OpaqueButton>
-        ) : (
-          <OpaqueButton
-            onClick={() => handleClick()}
-            palette={theme.palette.positive}
-            disabled={!first}
-            sx={sx}
-          >
-            {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
-          </OpaqueButton>
-        )}
+        <Box sx={sx}>
+          {isRestore ? (
+            <OpaqueButton
+              onClick={() => handleRestore()}
+              palette={theme.palette.warning}
+              disabled={false}
+              sx={{ width: '100%' }}
+            >
+              Restore
+            </OpaqueButton>
+          ) : (
+            <OpaqueButton
+              onClick={() => handleClick()}
+              palette={theme.palette.positive}
+              disabled={!first}
+              sx={{ width: '100%' }}
+            >
+              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
+            </OpaqueButton>
+          )}
+        </Box>
       </Tooltip>
     ) : (
       <OpaqueButton
@@ -186,12 +192,10 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
           </Box>
         </Box>
         {viewType === ViewType.REGULAR &&
-          queueItemActionButton({ height: '35px', width: '108px', margin: '12px', padding: '6px' })}
+          queueItemActionButton({ height: '35px', width: '108px', margin: '12px' })}
       </Row>
       {viewType !== ViewType.REGULAR && (
-        <Row>
-          {queueItemActionButton({ height: '35px', width: '100%', margin: '12px', padding: '6px' })}
-        </Row>
+        <Row>{queueItemActionButton({ height: '35px', width: '100%', margin: '12px' })}</Row>
       )}
     </>
   );

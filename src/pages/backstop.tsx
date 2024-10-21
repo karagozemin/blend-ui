@@ -6,8 +6,7 @@ import {
   parseResult,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import HelpOutline from '@mui/icons-material/HelpOutline';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
@@ -150,29 +149,12 @@ const Backstop: NextPage = () => {
           <BackstopAPR poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
-          <Tooltip
-            title="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
-            placement="top"
-            enterTouchDelay={0}
-            enterDelay={500}
-            leaveTouchDelay={3000}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-              <StackedText
-                title="Q4W"
-                text={toPercentage(backstopPoolEst?.q4wPercentage)}
-                sx={{ width: '100%', padding: '6px' }}
-              ></StackedText>
-              <HelpOutline
-                sx={{
-                  marginLeft: '-10px',
-                  marginTop: '9px',
-                  width: '15px',
-                  color: 'text.secondary',
-                }}
-              />
-            </Box>
-          </Tooltip>
+          <StackedText
+            title="Q4W"
+            text={toPercentage(backstopPoolEst?.q4wPercentage)}
+            sx={{ width: '100%', padding: '6px' }}
+            tooltip="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
+          ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText

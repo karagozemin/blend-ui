@@ -90,6 +90,7 @@ const Repay: NextPage = () => {
               </div>
             }
             sx={{ width: '100%', padding: '6px' }}
+            tooltip="The interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions, and is accrued to the borrowed position."
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
@@ -97,6 +98,7 @@ const Repay: NextPage = () => {
             title="Liability factor"
             text={toPercentage(reserve?.getLiabilityFactor())}
             sx={{ width: '100%', padding: '6px' }}
+            tooltip="The percent of this asset's value subtracted from your borrow capacity."
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
