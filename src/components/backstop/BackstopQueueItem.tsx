@@ -82,11 +82,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
     const needsTooltip = !first || isRestore;
     const tooltipMessage = !first
       ? 'You can only unqueue the oldest withdrawal'
-      : 'This transaction ran into expired entries that need to be restored before proceeding.';
-
-    console.log('needsTooltip', needsTooltip);
-    console.log('isRestore', isRestore);
-    console.log('first', first);
+      : 'This transaction ran into expired entries which need to be restored before proceeding.';
 
     return needsTooltip ? (
       <Tooltip

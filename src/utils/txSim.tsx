@@ -79,7 +79,7 @@ export function getErrorFromSim(
     errorProps.isMaxDisabled = false;
     errorProps.disabledType = 'warning';
     errorProps.reason =
-      'This transaction ran into expired entries that need to be restored before proceeding.';
+      'This transaction ran into expired entries which need to be restored before proceeding.';
     return errorProps;
   }
   if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
