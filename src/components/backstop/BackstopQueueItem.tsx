@@ -36,11 +36,12 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   };
   // the BackstopQueueMod sets the expiration for unlocked withdrawals to 0
   const sim_op =
-    q4w.exp === BigInt(0) ? backstop.dequeueWithdrawal(actionArgs) : backstop.withdraw(actionArgs);
-  const { data: simResult, isLoading } = useSimulateOperation(
-    sim_op,
-    q4w.exp === BigInt(0) || first
-  );
+    q4w.exp === BigInt(0) ? backstop.withdraw(actionArgs) : backstop.dequeueWithdrawal(actionArgs);
+  const {
+    data: simResult,
+    isLoading,
+    refetch: refetchSim,
+  } = useSimulateOperation(sim_op, q4w.exp === BigInt(0) || first);
   const isRestore =
     isLoading === false && simResult !== undefined && SorobanRpc.Api.isSimulationRestore(simResult);
 
@@ -72,7 +73,8 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
 
   const handleRestore = async () => {
     if (simResult && SorobanRpc.Api.isSimulationRestore(simResult)) {
-      restore(simResult);
+      await restore(simResult);
+      refetchSim();
     }
   };
 
