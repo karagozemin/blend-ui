@@ -110,12 +110,12 @@ const Supply: NextPage = () => {
               </div>
             }
             sx={{ width: '100%', padding: '6px' }}
-            tooltip="The interest rate earned on a supplied position. This rate will fluctuate based on the market conditions, and is accrued to the supplied position."
+            tooltip="The interest rate earned on a supplied position. This rate will fluctuate based on the market conditions and is accrued to the supplied position."
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Collateral factor"
+            title="Collateral Factor"
             text={toPercentage(reserve?.getCollateralFactor())}
             sx={{ width: '100%', padding: '6px' }}
             tooltip="The percent of this asset's value added to your borrow capacity."
@@ -123,7 +123,7 @@ const Supply: NextPage = () => {
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total supplied"
+            title="Total Supplied"
             text={toBalance(reserve?.totalSupplyFloat())}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>

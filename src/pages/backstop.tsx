@@ -158,7 +158,7 @@ const Backstop: NextPage = () => {
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total deposited"
+            title="Total Deposited"
             text={`$${toBalance(backstopPoolEst?.totalSpotValue)}`}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
