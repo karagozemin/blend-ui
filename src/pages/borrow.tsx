@@ -112,18 +112,20 @@ const Borrow: NextPage = () => {
               </div>
             }
             sx={{ padding: '6px' }}
+            tooltip="The interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions and is accrued to the borrowed position."
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Liability factor"
+            title="Liability Factor"
             text={toPercentage(reserve?.getLiabilityFactor())}
             sx={{ width: '100%', padding: '6px' }}
+            tooltip="The percent of this asset's value subtracted from your borrow capacity."
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total borrowed"
+            title="Total Borrowed"
             text={toBalance(reserve?.totalLiabilitiesFloat())}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>

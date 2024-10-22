@@ -119,5 +119,5 @@ export function toTimeSpan(secondsLeft: number): string {
 }
 
 export function getEmissionTextFromValue(value: number, symbol: string) {
-  return ` This position earns ${toBalance(value, 7)} BLND a year per ${symbol}`;
+  return `This position earns an additional ${toBalance(value, 7)} BLND per year per ${symbol}.`;
 }

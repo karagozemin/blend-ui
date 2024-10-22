@@ -4,6 +4,7 @@ import { SorobanRpc } from '@stellar/stellar-sdk';
 import { OpaqueButton } from '../components/common/OpaqueButton';
 import { useWallet } from '../contexts/wallet';
 import theme from '../theme';
+
 export function RestoreButton({
   simResponse,
 }: {
@@ -25,6 +26,7 @@ export function RestoreButton({
     </OpaqueButton>
   );
 }
+
 export function getErrorFromSim(
   input: string | undefined,
   decimals: number,
@@ -77,7 +79,7 @@ export function getErrorFromSim(
     errorProps.isMaxDisabled = false;
     errorProps.disabledType = 'warning';
     errorProps.reason =
-      'This transaction ran into expired entries that need to be restored before proceeding.';
+      'This transaction ran into expired entries which need to be restored before proceeding.';
     return errorProps;
   }
   if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
