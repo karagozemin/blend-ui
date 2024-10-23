@@ -1,5 +1,5 @@
+import AcUnitIcon from '@mui/icons-material/AcUnit';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import SevereColdIcon from '@mui/icons-material/SevereCold';
 import { Box, Typography, useTheme } from '@mui/material';
 import { usePool } from '../../hooks/api';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -30,7 +30,7 @@ export const PoolOnIceBanner = ({ poolId }: PoolOnIceBannerParams) => {
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-        <SevereColdIcon sx={{ marginRight: '6px' }} />
+        <AcUnitIcon sx={{ marginRight: '6px' }} />
         <Typography variant="body2">
           This pool is on-ice. Borrowing is suspended. You CAN supply, withdraw, and repay.
         </Typography>
