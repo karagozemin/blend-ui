@@ -12,6 +12,7 @@ export const NavMenu = () => {
 
   const { data: backstop } = useBackstop();
   const poolId = (lastPool ? lastPool : backstop?.config?.rewardZone[0]) ?? '';
+  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
   const [openCon, setOpenCon] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -71,6 +72,11 @@ export const NavMenu = () => {
           <Link href="/termsofservice">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Terms of Service
+            </MenuItem>
+          </Link>
+          <Link href={`/auction/?poolId=${safePoolId}`}>
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Auctions
             </MenuItem>
           </Link>
         </Menu>
