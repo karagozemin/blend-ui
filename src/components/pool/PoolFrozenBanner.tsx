@@ -1,17 +1,10 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SevereColdIcon from '@mui/icons-material/SevereCold';
 import { Box, Typography, useTheme } from '@mui/material';
-import { usePool } from '../../hooks/api';
 import { OpaqueButton } from '../common/OpaqueButton';
 
-interface PoolFrozenBannerParams {
-  poolId: string;
-}
-
-export const PoolFrozenBanner = ({ poolId }: PoolFrozenBannerParams) => {
+export const PoolFrozenBanner = () => {
   const theme = useTheme();
-
-  const { data: pool } = usePool(poolId);
 
   return (
     <OpaqueButton

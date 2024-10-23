@@ -1,18 +1,10 @@
 import AcUnitIcon from '@mui/icons-material/AcUnit';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
-import { usePool } from '../../hooks/api';
 import { OpaqueButton } from '../common/OpaqueButton';
 
-interface PoolOnIceBannerParams {
-  poolId: string;
-}
-
-export const PoolOnIceBanner = ({ poolId }: PoolOnIceBannerParams) => {
+export const PoolOnIceBanner = () => {
   const theme = useTheme();
-
-  const { data: pool } = usePool(poolId);
-
   return (
     <OpaqueButton
       onClick={() =>

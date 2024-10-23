@@ -1,6 +1,9 @@
 import { BackstopPoolEst, PoolEstimate } from '@blend-capital/blend-sdk';
+import AcUnitIcon from '@mui/icons-material/AcUnit';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import SevereColdIcon from '@mui/icons-material/SevereCold';
+import WarningIcon from '@mui/icons-material/Warning';
 import { Box, Collapse, useTheme } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useSettings } from '../../contexts';
@@ -14,7 +17,10 @@ import { Section, SectionSize } from '../common/Section';
 import { Skeleton } from '../common/Skeleton';
 import { StackedTextHLBox } from '../common/StackedTextHLBox';
 import { TokenIcon } from '../common/TokenIcon';
+import { PoolFrozenBanner } from '../pool/PoolFrozenBanner';
 import { PoolHeader } from '../pool/PoolHeader';
+import { PoolOnIceBanner } from '../pool/PoolOnIceBanner';
+import { PoolOracleError } from '../pool/PoolOracleErrorBanner';
 import { MarketCardCollapse } from './MarketCardCollapse';
 
 export interface MarketCardProps extends PoolComponentProps {
@@ -67,6 +73,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
       >
         <Row>
           <PoolHeader name={pool.config.name} sx={{ margin: '6px', padding: '6px' }} />
+
           <Box
             sx={{
               margin: '6px',
@@ -88,6 +95,9 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
                 transition: 'all 0.2s linear',
               }}
             />
+            {pool.config.status === 3 && <AcUnitIcon sx={{ marginLeft: '6px' }} />}
+            {pool.config.status === 5 && <SevereColdIcon sx={{ marginLeft: '6px' }} />}
+            {poolOracle === undefined && <WarningIcon sx={{ marginLeft: '6px' }} />}
           </Box>
         </Row>
         <Row>
@@ -142,6 +152,10 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
           </OpaqueButton>
         </LinkBox>
       </Row>
+      <Row>{pool.config.status === 3 && <PoolOnIceBanner />}</Row>
+      <Row>{pool.config.status === 5 && <PoolFrozenBanner />}</Row>
+      <Row>{poolOracle === undefined && <PoolOracleError />}</Row>
+
       <Collapse in={expand} sx={{ width: '100%' }}>
         <MarketCardCollapse
           pool={pool}
