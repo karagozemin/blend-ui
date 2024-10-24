@@ -41,8 +41,8 @@ export function FlameIcon({
       >
         <Icon
           src="/icons/dashboard/flame.svg"
-          height={iconHeight}
-          width={iconWidth}
+          height={`${iconHeight}px`}
+          width={`${iconWidth}px`}
           alt="emmission"
         />
       </Box>

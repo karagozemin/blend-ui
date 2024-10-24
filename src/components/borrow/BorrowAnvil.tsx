@@ -32,6 +32,8 @@ import { TxOverview } from '../common/TxOverview';
 import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
+import { PoolOracleError } from '../pool/PoolOracleErrorBanner';
+import { PoolStatusBanner } from '../pool/PoolStatusBanner';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
@@ -41,7 +43,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     useWallet();
 
   const { data: pool } = usePool(poolId);
-  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const reserve = pool?.reserves.get(assetId);
   const decimals = reserve?.config.decimals ?? 7;
@@ -128,8 +130,29 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     return <Skeleton />;
   }
 
+  if (isOracleError && pool.config.status > 1) {
+    return (
+      <>
+        <Row>
+          <PoolStatusBanner status={pool.config.status} />
+        </Row>
+        <Row>
+          <PoolOracleError />
+        </Row>
+      </>
+    );
+  }
+  if (pool.config.status > 1) {
+    <Row>
+      <PoolStatusBanner status={pool.config.status} />
+    </Row>;
+  }
+  if (isOracleError) {
+    return <PoolOracleError />;
+  }
+
   const curPositionEstimate =
-    pool && poolOracle && poolUser
+    pool && poolUser && poolOracle
       ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
       : undefined;
   const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());

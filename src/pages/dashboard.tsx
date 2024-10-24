@@ -13,6 +13,7 @@ import { PositionOverview } from '../components/dashboard/PositionOverview';
 import { LendMarketList } from '../components/lend/LendMarketList';
 import { LendPositionList } from '../components/lend/LendPositionList';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
 import { useSettings } from '../contexts';
 import { usePool, usePoolOracle } from '../hooks/api';
 import { toBalance } from '../utils/formatter';
@@ -26,7 +27,7 @@ const Dashboard: NextPage = () => {
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
   const { data: pool } = usePool(safePoolId);
-  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
 
   const marketSize =
     poolOracle !== undefined && pool !== undefined
@@ -47,6 +48,7 @@ const Dashboard: NextPage = () => {
 
   return (
     <>
+      <PoolHealthBanner poolId={safePoolId} />
       <PoolExploreBar poolId={safePoolId} />
       <Divider />
       <BackstopPreviewBar poolId={safePoolId} />

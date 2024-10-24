@@ -15,6 +15,7 @@ import { Skeleton } from '../common/Skeleton';
 import { StackedTextHLBox } from '../common/StackedTextHLBox';
 import { TokenIcon } from '../common/TokenIcon';
 import { PoolHeader } from '../pool/PoolHeader';
+import { PoolHealthBanner } from '../pool/PoolHealthBanner';
 import { MarketCardCollapse } from './MarketCardCollapse';
 
 export interface MarketCardProps extends PoolComponentProps {
@@ -67,6 +68,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
       >
         <Row>
           <PoolHeader name={pool.config.name} sx={{ margin: '6px', padding: '6px' }} />
+
           <Box
             sx={{
               margin: '6px',
@@ -142,6 +144,8 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
           </OpaqueButton>
         </LinkBox>
       </Row>
+      <PoolHealthBanner poolId={poolId} />
+
       <Collapse in={expand} sx={{ width: '100%' }}>
         <MarketCardCollapse
           pool={pool}

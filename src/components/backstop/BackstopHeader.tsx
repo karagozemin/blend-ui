@@ -21,7 +21,7 @@ export const BackstopHeader: React.FC<BackstopHeaderProps> = ({ type, sx, ...pro
       }}
       {...props}
     >
-      <Icon src={`/icons/tokens/blndusdclp.svg`} alt={`blndusdclp`} height={30} width={30} />
+      <Icon src={`/icons/tokens/blndusdclp.svg`} alt={`blndusdclp`} />
       <Typography variant="h3" sx={{ marginLeft: '12px' }}>
         {headerText}
       </Typography>

@@ -131,9 +131,7 @@ const Borrow: NextPage = () => {
           ></StackedText>
         </Section>
       </Row>
-      <Row>
-        <BorrowAnvil poolId={safePoolId} assetId={safeAssetId} />
-      </Row>
+      <BorrowAnvil poolId={safePoolId} assetId={safeAssetId} />
     </>
   );
 };
