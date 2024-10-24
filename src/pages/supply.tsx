@@ -10,7 +10,6 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { LendAnvil } from '../components/lend/LendAnvil';
-import { PoolFrozenBanner } from '../components/pool/PoolFrozenBanner';
 import { useHorizonAccount, usePool, useTokenBalance } from '../hooks/api';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
 import { getTokenLinkFromReserve } from '../utils/token';
@@ -130,13 +129,7 @@ const Supply: NextPage = () => {
           ></StackedText>
         </Section>
       </Row>
-      {pool && pool.config.status === 5 ? (
-        <Row>
-          <PoolFrozenBanner></PoolFrozenBanner>
-        </Row>
-      ) : (
-        <LendAnvil poolId={safePoolId} assetId={safeAssetId} />
-      )}
+      <LendAnvil poolId={safePoolId} assetId={safeAssetId} />
     </>
   );
 };

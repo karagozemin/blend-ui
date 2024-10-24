@@ -10,8 +10,6 @@ import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { PoolFrozenBanner } from '../components/pool/PoolFrozenBanner';
-import { PoolOnIceBanner } from '../components/pool/PoolOnIceBanner';
 import { usePool } from '../hooks/api';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
 import { getTokenLinkFromReserve } from '../utils/token';
@@ -133,15 +131,7 @@ const Borrow: NextPage = () => {
           ></StackedText>
         </Section>
       </Row>
-      <Row>
-        {pool && pool.config.status === 3 ? (
-          <PoolOnIceBanner />
-        ) : pool && pool.config.status === 5 ? (
-          <PoolFrozenBanner />
-        ) : (
-          <BorrowAnvil poolId={safePoolId} assetId={safeAssetId} />
-        )}
-      </Row>
+      <BorrowAnvil poolId={safePoolId} assetId={safeAssetId} />
     </>
   );
 };
