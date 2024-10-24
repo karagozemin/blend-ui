@@ -124,6 +124,8 @@ export function usePoolOracle(
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['poolOracle', pool?.id],
     enabled: pool !== undefined && enabled,
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
       if (pool !== undefined) {
         return await pool.loadOracle();

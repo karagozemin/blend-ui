@@ -24,6 +24,7 @@ import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
 import { useWallet } from '../contexts/wallet';
 import {
   useBackstop,
@@ -137,6 +138,7 @@ const Backstop: NextPage = () => {
 
   return (
     <>
+      <PoolHealthBanner poolId={safePoolId} />
       <PoolExploreBar poolId={safePoolId} />
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>

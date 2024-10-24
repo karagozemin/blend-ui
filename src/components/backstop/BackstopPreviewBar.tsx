@@ -2,7 +2,7 @@ import { BackstopPoolEst, BackstopPoolUserEst } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
-import { useBackstop, useBackstopPool, useBackstopPoolUser } from '../../hooks/api';
+import { useBackstop, useBackstopPool, useBackstopPoolUser, usePool } from '../../hooks/api';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { Icon } from '../common/Icon';
@@ -17,6 +17,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
   const { viewType } = useSettings();
   const theme = useTheme();
 
+  const { data: pool } = usePool(poolId);
   const { data: backstop } = useBackstop();
   const { data: backstopPoolData } = useBackstopPool(poolId);
   const { data: backstopUserData } = useBackstopPoolUser(poolId);
@@ -61,7 +62,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
             borderRadius: '5px',
           }}
         >
-          <PoolStatusBox titleColor="inherit" type="large" status="Active" />
+          <PoolStatusBox titleColor="inherit" type="large" status={pool?.config?.status} />
         </Box>
         <Box
           sx={{

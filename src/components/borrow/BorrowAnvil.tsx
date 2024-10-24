@@ -32,7 +32,7 @@ import { TxOverview } from '../common/TxOverview';
 import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
-import { PoolOracleError } from '../pool/PoolOracleErrorBanner';
+import { PoolHealthBanner } from '../pool/PoolHealthBanner';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
@@ -42,7 +42,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     useWallet();
 
   const { data: pool } = usePool(poolId);
-  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const reserve = pool?.reserves.get(assetId);
   const decimals = reserve?.config.decimals ?? 7;
@@ -128,19 +128,22 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   if (pool === undefined || reserve === undefined) {
     return <Skeleton />;
   }
-  if (poolOracle === undefined) {
-    return <PoolOracleError />;
+
+  if (isOracleError || pool.config.status > 1) {
+    return <PoolHealthBanner poolId={poolId} />;
   }
 
   const curPositionEstimate =
-    pool && poolUser ? PositionsEstimate.build(pool, poolOracle, poolUser.positions) : undefined;
+    pool && poolUser && poolOracle
+      ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
+      : undefined;
   const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());
   const newPositionEstimate =
     pool && poolOracle && parsedSimResult
       ? PositionsEstimate.build(pool, poolOracle, parsedSimResult)
       : undefined;
 
-  const assetToBase = poolOracle.getPriceFloat(assetId);
+  const assetToBase = poolOracle?.getPriceFloat(assetId);
 
   const assetToEffectiveLiability = assetToBase
     ? assetToBase * reserve.getLiabilityFactor()
