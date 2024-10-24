@@ -129,13 +129,11 @@ export async function getTokenMetadataFromTOML(
           }
         }
       }
-      console.log('iconData', iconData);
       // Return the stellar asset metadata
       return iconData;
     } catch (e) {
       console.error(e);
       // return stellar asset defaults if we can't find the icon
-      console.log('iconData', iconData);
       return iconData;
     }
   }

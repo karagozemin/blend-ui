@@ -32,7 +32,8 @@ import { TxOverview } from '../common/TxOverview';
 import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
-import { PoolHealthBanner } from '../pool/PoolHealthBanner';
+import { PoolOracleError } from '../pool/PoolOracleErrorBanner';
+import { PoolStatusBanner } from '../pool/PoolStatusBanner';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
@@ -129,8 +130,25 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     return <Skeleton />;
   }
 
-  if (isOracleError || pool.config.status > 1) {
-    return <PoolHealthBanner poolId={poolId} />;
+  if (isOracleError && pool.config.status > 1) {
+    return (
+      <>
+        <Row>
+          <PoolStatusBanner status={pool.config.status} />
+        </Row>
+        <Row>
+          <PoolOracleError />
+        </Row>
+      </>
+    );
+  }
+  if (pool.config.status > 1) {
+    <Row>
+      <PoolStatusBanner status={pool.config.status} />
+    </Row>;
+  }
+  if (isOracleError) {
+    return <PoolOracleError />;
   }
 
   const curPositionEstimate =
