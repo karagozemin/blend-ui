@@ -1,6 +1,5 @@
 import { Reserve } from '@blend-capital/blend-sdk';
 import { Horizon, StellarToml } from '@stellar/stellar-sdk';
-import toml from 'toml';
 
 export type StellarTokenMetadata = {
   assetId: string;
@@ -22,7 +21,7 @@ export async function getTokenMetadataFromTOML(
   let iconData: StellarTokenMetadata = {
     assetId,
     code,
-    image: code ? `/icons/tokens/${code.toLowerCase()}.svg` : undefined,
+    image: undefined,
   };
   let stellarToml: any;
 
@@ -30,10 +29,11 @@ export async function getTokenMetadataFromTOML(
     // set soroban token defaults
     return { ...iconData, image: `/icons/tokens/soroban.svg` };
   }
+
   if (reserve.tokenMetadata.asset.isNative()) {
     // set native asset defaults
     iconData = {
-      assetId: 'XLM',
+      assetId: assetId,
       code: 'XLM',
       domain: 'stellar.org',
       image: `/icons/tokens/xlm.svg`,
@@ -72,32 +72,33 @@ export async function getTokenMetadataFromTOML(
           issuer: assetIssuer,
         };
       }
-      if (tokenAccountHomeDomain === 'circle.com') {
-        stellarToml = await fetch('https://www.circle.com/hubfs/stellar.toml.txt')
-          .then((response) => response.text())
-          .then(async (text) => {
-            try {
-              const tomlObject = toml.parse(text);
-              return Promise.resolve(tomlObject);
-            } catch (e: any) {
-              return Promise.reject(
-                new Error(
-                  `stellar.toml is invalid - Parsing error on line ${e.line}, column ${e.column}: ${e.message}`
-                )
-              );
-            }
-          })
-          .catch((err: Error) => {
-            if (err.message.match(/^maxContentLength size/)) {
-              throw new Error(`stellar.toml file exceeds allowed size`);
-            } else {
-              throw err;
-            }
-          });
-      } else {
-        /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-        stellarToml = await StellarToml.Resolver.resolve(tokenAccountHomeDomain || '', {});
-      }
+      // if (tokenAccountHomeDomain === 'circle.com') {
+      //   stellarToml = await fetch('https://www.circle.com/hubfs/stellar.toml.txt')
+      //     .then((response) => response.text())
+      //     .then(async (text) => {
+      //       try {
+      //         const tomlObject = toml.parse(text);
+      //         return Promise.resolve(tomlObject);
+      //       } catch (e: any) {
+      //         return Promise.reject(
+      //           new Error(
+      //             `stellar.toml is invalid - Parsing error on line ${e.line}, column ${e.column}: ${e.message}`
+      //           )
+      //         );
+      //       }
+      //     })
+      //     .catch((err: Error) => {
+      //       if (err.message.match(/^maxContentLength size/)) {
+      //         throw new Error(`stellar.toml file exceeds allowed size`);
+      //       } else {
+      //         throw err;
+      //       }
+      //     });
+      // } else {
+      //   /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
+      //   stellarToml = await StellarToml.Resolver.resolve(tokenAccountHomeDomain || '', {});
+      // }
+      stellarToml = await StellarToml.Resolver.resolve(tokenAccountHomeDomain || '', {});
       if (stellarToml.CURRENCIES) {
         /* If we find some currencies listed, check to see if they have the currency we're looking for listed */
         for (const { code: currencyCode, issuer, image } of stellarToml.CURRENCIES) {
@@ -128,11 +129,13 @@ export async function getTokenMetadataFromTOML(
           }
         }
       }
+      console.log('iconData', iconData);
       // Return the stellar asset metadata
       return iconData;
     } catch (e) {
       console.error(e);
       // return stellar asset defaults if we can't find the icon
+      console.log('iconData', iconData);
       return iconData;
     }
   }
