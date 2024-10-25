@@ -35,6 +35,7 @@ export interface ISettingsContext {
   setShowLend: (showLend: boolean) => void;
   showJoinPool: boolean;
   setShowJoinPool: (showJoinPool: boolean) => void;
+  blockedPools: string[];
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
@@ -60,6 +61,9 @@ export const SettingsProvider = ({ children = null as any }) => {
   );
 
   const trackedPools = JSON.parse(trackedPoolsString || '[]') as TrackedPool[];
+  const [blockedPools, setBlockedPools] = useState<string[]>(
+    (process.env.NEXT_PUBLIC_BLOCKED_POOLS || '').split(',')
+  );
 
   let viewType: ViewType;
   if (mobile) viewType = ViewType.MOBILE;
@@ -105,6 +109,7 @@ export const SettingsProvider = ({ children = null as any }) => {
         setShowLend,
         showJoinPool,
         setShowJoinPool,
+        blockedPools,
       }}
     >
       {children}
