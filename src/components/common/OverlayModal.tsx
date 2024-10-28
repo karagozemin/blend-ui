@@ -30,6 +30,8 @@ export const OverlayModal: React.FC = () => {
         router.push({ pathname: '/' });
       } else if (router.route.includes('backstop')) {
         router.push({ pathname: `/backstop`, query: { poolId: lastPoolId } });
+      } else if (router.route.includes('auction')) {
+        router.push({ pathname: `/auction`, query: { poolId: lastPoolId } });
       } else {
         router.push({ pathname: `/dashboard`, query: { poolId: lastPoolId } });
       }
