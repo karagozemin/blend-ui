@@ -31,6 +31,7 @@ import { TxOverview } from '../common/TxOverview';
 import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
+import { PoolOracleError } from '../pool/PoolOracleErrorBanner';
 
 export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
@@ -127,18 +128,20 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   if (pool === undefined || reserve === undefined) {
     return <Skeleton />;
   }
-
+  if (poolOracle === undefined) {
+    return <PoolOracleError />;
+  }
   const curPositionsEstimate =
     pool && poolOracle && poolUser
       ? PositionsEstimate.build(pool, poolOracle, poolUser.positions)
       : undefined;
   const newPoolUser = parsedSimResult && new PoolUser(walletAddress, parsedSimResult, new Map());
   const newPositionsEstimate =
-    pool && poolOracle && parsedSimResult
+    pool && parsedSimResult
       ? PositionsEstimate.build(pool, poolOracle, parsedSimResult)
       : undefined;
 
-  const assetToBase = poolOracle?.getPriceFloat(assetId);
+  const assetToBase = poolOracle.getPriceFloat(assetId);
 
   const curBorrowCap = curPositionsEstimate?.borrowCap;
   const nextBorrowCap = newPositionsEstimate?.borrowCap;

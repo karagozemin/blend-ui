@@ -1,9 +1,11 @@
-import { PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
+import { BackstopContract, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
-import { ReactNode, useEffect, useState } from 'react';
+import { Box, CircularProgress, SxProps, Theme, Tooltip, Typography } from '@mui/material';
+import { SorobanRpc } from '@stellar/stellar-sdk';
+import { useEffect, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
+import { useSimulateOperation } from '../../hooks/api';
 import theme from '../../theme';
 import { toBalance, toTimeSpan } from '../../utils/formatter';
 import { Icon } from '../common/Icon';
@@ -22,9 +24,26 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   first,
   poolId,
 }) => {
-  const { connected, walletAddress, backstopDequeueWithdrawal, backstopWithdraw } = useWallet();
-
+  const { connected, walletAddress, backstopDequeueWithdrawal, backstopWithdraw, restore } =
+    useWallet();
   const { viewType } = useSettings();
+
+  const backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const actionArgs: PoolBackstopActionArgs = {
+    from: walletAddress,
+    pool_address: poolId,
+    amount: q4w.amount,
+  };
+  // the BackstopQueueMod sets the expiration for unlocked withdrawals to 0
+  const sim_op =
+    q4w.exp === BigInt(0) ? backstop.withdraw(actionArgs) : backstop.dequeueWithdrawal(actionArgs);
+  const {
+    data: simResult,
+    isLoading,
+    refetch: refetchSim,
+  } = useSimulateOperation(sim_op, q4w.exp === BigInt(0) || first);
+  const isRestore =
+    isLoading === false && simResult !== undefined && SorobanRpc.Api.isSimulationRestore(simResult);
 
   const TOTAL_QUEUE_TIME_SECONDS = 21 * 24 * 60 * 60;
 
@@ -42,13 +61,8 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
     return () => clearInterval(refreshInterval);
   }, [q4w]);
 
-  const handleClick = async (amount: bigint) => {
+  const handleClick = async () => {
     if (connected) {
-      let actionArgs: PoolBackstopActionArgs = {
-        from: walletAddress,
-        pool_address: poolId,
-        amount: BigInt(amount),
-      };
       if (timeLeft > 0) {
         await backstopDequeueWithdrawal(actionArgs, false);
       } else {
@@ -57,19 +71,58 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
     }
   };
 
-  const wrapButtonTooptip = (condition: boolean, children: ReactNode) => {
-    return condition ? (
+  const handleRestore = async () => {
+    if (simResult && SorobanRpc.Api.isSimulationRestore(simResult)) {
+      await restore(simResult);
+      refetchSim();
+    }
+  };
+
+  const queueItemActionButton = (sx: SxProps<Theme>) => {
+    const needsTooltip = !first || isRestore;
+    const tooltipMessage = !first
+      ? 'You can only unqueue the oldest withdrawal'
+      : 'This transaction ran into expired entries which need to be restored before proceeding.';
+
+    return needsTooltip ? (
       <Tooltip
-        title="You can only unqueue the oldest withdrawal"
+        title={tooltipMessage}
         placement="top"
         enterTouchDelay={0}
         enterDelay={500}
         leaveTouchDelay={3000}
       >
-        <span>{children}</span>
+        <Box sx={sx}>
+          {isRestore ? (
+            <OpaqueButton
+              onClick={() => handleRestore()}
+              palette={theme.palette.warning}
+              disabled={false}
+              sx={{ width: '100%' }}
+            >
+              Restore
+            </OpaqueButton>
+          ) : (
+            <OpaqueButton
+              onClick={() => handleClick()}
+              palette={theme.palette.positive}
+              disabled={!first}
+              sx={{ width: '100%' }}
+            >
+              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
+            </OpaqueButton>
+          )}
+        </Box>
       </Tooltip>
     ) : (
-      children
+      <OpaqueButton
+        onClick={() => handleClick()}
+        palette={theme.palette.positive}
+        disabled={!first}
+        sx={sx}
+      >
+        {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
+      </OpaqueButton>
     );
   };
 
@@ -137,32 +190,10 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
           </Box>
         </Box>
         {viewType === ViewType.REGULAR &&
-          wrapButtonTooptip(
-            !first,
-            <OpaqueButton
-              onClick={() => handleClick(q4w.amount)}
-              palette={theme.palette.positive}
-              disabled={!first}
-              sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
-            >
-              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
-            </OpaqueButton>
-          )}
+          queueItemActionButton({ height: '35px', width: '108px', margin: '12px' })}
       </Row>
       {viewType !== ViewType.REGULAR && (
-        <Row>
-          {wrapButtonTooptip(
-            !first,
-            <OpaqueButton
-              onClick={() => handleClick(q4w.amount)}
-              palette={theme.palette.positive}
-              disabled={!first}
-              sx={{ height: '35px', width: '100%', margin: '12px', padding: '6px' }}
-            >
-              {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
-            </OpaqueButton>
-          )}
-        </Row>
+        <Row>{queueItemActionButton({ height: '35px', width: '100%', margin: '12px' })}</Row>
       )}
     </>
   );

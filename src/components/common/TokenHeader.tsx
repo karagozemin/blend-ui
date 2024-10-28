@@ -42,7 +42,9 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({
     >
       <TokenIcon
         reserve={reserve}
-        sx={{ width: iconSize || '32px', height: iconSize || '32px', marginRight: '6px' }}
+        height={iconSize || '32px'}
+        width={iconSize || '32px'}
+        sx={{ marginRight: '6px' }}
       />
       <Box
         sx={{

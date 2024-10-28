@@ -3,15 +3,13 @@ import {
   BackstopPool,
   BackstopPoolUser,
   Pool,
-  PoolEvent,
-  poolEventFromEventResponse,
   PoolOracle,
   PoolUser,
   Positions,
   Reserve,
   UserBalance,
 } from '@blend-capital/blend-sdk';
-import { Address, Asset, Horizon, SorobanRpc, xdr } from '@stellar/stellar-sdk';
+import { Address, Asset, Horizon, SorobanRpc } from '@stellar/stellar-sdk';
 import { useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
@@ -117,6 +115,8 @@ export function usePoolOracle(
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['poolOracle', pool?.id],
     enabled: pool !== undefined && enabled,
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
       if (pool !== undefined) {
         return await pool.loadOracle();
@@ -438,6 +438,40 @@ export function useAuctionEventsShortQuery(
         console.error('Error fetching auction events', e);
         return undefined;
       }
+    },
+  });
+}
+
+/**
+ * Fetch the simulating result for a given operation.
+ * @param operation_str - The operation XDR string in base64
+ * @param enabled - Whether the query is enabled (optional - defaults to true)
+ * @returns Query result with the simulation transaction response.
+ */
+export function useSimulateOperation<T>(
+  operation_str: string,
+  enabled: boolean = true
+): UseQueryResult<SorobanRpc.Api.SimulateTransactionResponse> {
+  const { walletAddress, connected } = useWallet();
+  const { network } = useSettings();
+  return useQuery({
+    staleTime: USER_STALE_TIME,
+    queryKey: ['sim', operation_str],
+    enabled: enabled && connected && walletAddress !== '',
+    queryFn: async () => {
+      if (walletAddress === '') {
+        throw new Error('No wallet address');
+      }
+      let operation = xdr.Operation.fromXDR(operation_str, 'base64');
+      let rpc = new SorobanRpc.Server(network.rpc, network.opts);
+      const account = new Account(walletAddress, '123');
+      const tx_builder = new TransactionBuilder(account, {
+        networkPassphrase: network.passphrase,
+        fee: BASE_FEE,
+        timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+      }).addOperation(operation);
+      const transaction = tx_builder.build();
+      return await rpc.simulateTransaction(transaction);
     },
   });
 }

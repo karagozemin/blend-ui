@@ -1,10 +1,10 @@
 import { BackstopPoolEst, FixedMath, PoolEstimate } from '@blend-capital/blend-sdk';
-import { HelpOutline } from '@mui/icons-material';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useBackstop, useBackstopPool, usePool, usePoolOracle } from '../../hooks/api';
 import { getEmissionTextFromValue, toPercentage } from '../../utils/formatter';
 import { FlameIcon } from '../common/FlameIcon';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { TooltipText } from '../common/TooltipText';
 
 export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
   const { data: pool } = usePool(poolId);
@@ -45,28 +45,9 @@ export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId, sx, ...props
         padding: '6px',
       }}
     >
-      <Tooltip
-        title="Estimated APR based on pool interest sharing."
-        placement="top"
-        enterTouchDelay={0}
-        enterDelay={500}
-        leaveTouchDelay={3000}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-end',
-            ...sx,
-          }}
-        >
-          <Typography variant="body2" color={'text.secondary'}>
-            {'Backstop APR'}
-          </Typography>
-          <HelpOutline sx={{ marginLeft: '6px', width: '15px', color: 'text.secondary' }} />
-        </Box>
-      </Tooltip>
+      <TooltipText tooltip="Estimated APR based on pool interest sharing." width="100%">
+        Backstop APR
+      </TooltipText>
       <Box
         sx={{
           display: 'flex',

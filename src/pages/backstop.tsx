@@ -6,8 +6,7 @@ import {
   parseResult,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import HelpOutline from '@mui/icons-material/HelpOutline';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
@@ -25,6 +24,7 @@ import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
 import { useWallet } from '../contexts/wallet';
 import {
   useBackstop,
@@ -138,6 +138,7 @@ const Backstop: NextPage = () => {
 
   return (
     <>
+      <PoolHealthBanner poolId={safePoolId} />
       <PoolExploreBar poolId={safePoolId} />
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
@@ -150,33 +151,16 @@ const Backstop: NextPage = () => {
           <BackstopAPR poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
-          <Tooltip
-            title="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
-            placement="top"
-            enterTouchDelay={0}
-            enterDelay={500}
-            leaveTouchDelay={3000}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-              <StackedText
-                title="Q4W"
-                text={toPercentage(backstopPoolEst?.q4wPercentage)}
-                sx={{ width: '100%', padding: '6px' }}
-              ></StackedText>
-              <HelpOutline
-                sx={{
-                  marginLeft: '-10px',
-                  marginTop: '9px',
-                  width: '15px',
-                  color: 'text.secondary',
-                }}
-              />
-            </Box>
-          </Tooltip>
+          <StackedText
+            title="Q4W"
+            text={toPercentage(backstopPoolEst?.q4wPercentage)}
+            sx={{ width: '100%', padding: '6px' }}
+            tooltip="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
+          ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total deposited"
+            title="Total Deposited"
             text={`$${toBalance(backstopPoolEst?.totalSpotValue)}`}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>

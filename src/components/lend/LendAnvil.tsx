@@ -39,6 +39,7 @@ import { TxOverview } from '../common/TxOverview';
 import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
+import { PoolStatusBanner } from '../pool/PoolStatusBanner';
 
 export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
@@ -114,6 +115,10 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
 
   if (pool === undefined || reserve === undefined) {
     return <Skeleton />;
+  }
+
+  if (pool.config.status > 3) {
+    return <PoolStatusBanner status={pool.config.status} />;
   }
 
   const curPositionsEstimate =

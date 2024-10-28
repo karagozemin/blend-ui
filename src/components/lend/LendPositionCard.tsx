@@ -32,7 +32,9 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
-  const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
+  const buttonWidth = `${((100 / tableNum) * (viewType === ViewType.REGULAR ? 1.5 : 1)).toFixed(
+    2
+  )}%`;
 
   const viewTypeIsMobile = viewType === ViewType.MOBILE;
   return (

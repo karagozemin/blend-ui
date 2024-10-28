@@ -122,8 +122,8 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               <Icon
                 alt="BLND Token Icon"
                 src="/icons/tokens/blnd-yellow.svg"
-                height={24}
-                width={24}
+                height={'24px'}
+                width={'24px'}
               />
             </Box>
             <StackedText
