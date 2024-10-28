@@ -158,7 +158,11 @@ const BackstopToken: NextPage = () => {
           width={viewType === ViewType.REGULAR ? SectionSize.THIRD : SectionSize.TILE}
           sx={{ alignItems: 'center', justifyContent: 'flex-start', padding: '12px' }}
         >
-          <Icon src={'/icons/tokens/usdc.svg'} alt={`usdc icon`} sx={{ marginRight: '12px' }} />
+          <Icon
+            src={'https://www.centre.io/images/usdc/usdc-icon-86074d9d49.png'}
+            alt={`usdc icon`}
+            sx={{ marginRight: '12px' }}
+          />
           <StackedText
             title="Your USDC Balance"
             titleColor="inherit"

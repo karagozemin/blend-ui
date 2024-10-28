@@ -10,7 +10,7 @@ import { PoolHeader } from './PoolHeader';
 export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const router = useRouter();
-  const { trackedPools } = useSettings();
+  const { trackedPools, blockedPools } = useSettings();
   const pathname = router.pathname;
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -52,11 +52,14 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         }}
       >
         {trackedPools.length > 0 &&
-          Array.from(trackedPools.values()).map((pool) => (
-            <MenuItem onClick={() => handleClickMenuItem(pool.id)} key={pool.id}>
-              <PoolHeader name={pool.name} />
-            </MenuItem>
-          ))}
+          Array.from(trackedPools.values()).map((pool) => {
+            if (!blockedPools.includes(pool.id))
+              return (
+                <MenuItem onClick={() => handleClickMenuItem(pool.id)} key={pool.id}>
+                  <PoolHeader name={pool.name} />
+                </MenuItem>
+              );
+          })}
       </Menu>
     </>
   );
