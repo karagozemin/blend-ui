@@ -15,7 +15,6 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useBackstop, useHorizonAccount, usePoolOracle } from '../../hooks/api';
-import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { calculateAuctionOracleProfit } from '../../utils/auction';
 import { toBalance, toCompactAddress } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
@@ -56,36 +55,47 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
-  const scaledAuction = auction.scale(simResponse?.latestLedger ?? currLedger)[0];
-  const auctionValue =
-    poolOracle &&
-    backstop &&
-    calculateAuctionOracleProfit(
-      scaledAuction.data,
-      scaledAuction.type,
-      pool,
-      poolOracle,
-      backstop.backstopToken
-    );
-  const newPositionEstimate =
-    poolOracle && parsedSimResult && PositionsEstimate.build(pool, poolOracle, parsedSimResult);
 
-  const trustlinesToAdd: Asset[] = [];
-  let hasTokenTrustline = true;
-  const auctionAssetSet = new Set(scaledAuction.data.lot.keys());
-  for (const asset of Array.from(scaledAuction.data.bid.keys())) {
-    auctionAssetSet.add(asset);
-  }
-  for (const asset of Array.from(auctionAssetSet)) {
-    const reserve = pool.reserves.get(asset);
-    if (requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset)) {
-      hasTokenTrustline = false;
-      if (reserve?.tokenMetadata?.asset) {
-        trustlinesToAdd.push(reserve.tokenMetadata.asset);
+  const { scaledAuction, auctionValue, newPositionEstimate, trustlinesToAdd, hasTokenTrustline } =
+    useMemo(() => {
+      const scaledAuction = auction.scale(simResponse?.latestLedger ?? currLedger)[0];
+      const auctionValue =
+        poolOracle &&
+        backstop &&
+        calculateAuctionOracleProfit(
+          scaledAuction.data,
+          scaledAuction.type,
+          pool,
+          poolOracle,
+          backstop.backstopToken
+        );
+      const newPositionEstimate =
+        poolOracle && parsedSimResult && PositionsEstimate.build(pool, poolOracle, parsedSimResult);
+
+      const trustlinesToAdd: Asset[] = [];
+      let hasTokenTrustline = true;
+      const auctionAssetSet = new Set(scaledAuction.data.lot.keys());
+      for (const asset of Array.from(scaledAuction.data.bid.keys())) {
+        auctionAssetSet.add(asset);
       }
-      break;
-    }
-  }
+      for (const asset of Array.from(auctionAssetSet)) {
+        const reserve = pool.reserves.get(asset);
+        if (requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset)) {
+          hasTokenTrustline = false;
+          if (reserve?.tokenMetadata?.asset) {
+            trustlinesToAdd.push(reserve.tokenMetadata.asset);
+          }
+          break;
+        }
+      }
+      return {
+        scaledAuction,
+        auctionValue,
+        newPositionEstimate,
+        trustlinesToAdd,
+        hasTokenTrustline,
+      };
+    }, [auction, simResponse, currLedger, poolOracle, backstop, pool, parsedSimResult]);
 
   const handleAddAssetTrustline = async () => {
     if (connected && trustlinesToAdd.length > 0) {
@@ -117,7 +127,6 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
     }
   }, [hasTokenTrustline, isLoading, loadingEstimate, simResponse, theme.palette.warning]);
 
-  useDebouncedState(currLedger, RPC_DEBOUNCE_DELAY, txType, async () => {});
   const handleSubmitTransaction = async (sim: boolean) => {
     if (!connected) return;
 
@@ -228,7 +237,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
         sx={{ margin: '6px', padding: '6px' }}
         onClick={() => handleSubmitTransaction(true)}
       >
-        {!parsedSimResult ? 'Bid' : 'Update'}
+        {!parsedSimResult ? 'Simulate Bid' : 'Update'}
       </OpaqueButton>
 
       <DividerSection />
@@ -266,6 +275,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
               auctionType={auction.type}
               assetId={asset}
               bidAmount={amount}
+              newPosition={parsedSimResult}
             />
           ))}
           {(auction.type === AuctionType.Liquidation || auction.type === AuctionType.BadDebt) && (
