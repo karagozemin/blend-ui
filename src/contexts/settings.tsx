@@ -31,6 +31,7 @@ export interface ISettingsContext {
   setLastPool: (poolId: string) => void;
   trackedPools: TrackedPool[];
   trackPool: (id: string, name: string | undefined) => void;
+  untrackPool: (id: string) => void;
   showLend: boolean;
   setShowLend: (showLend: boolean) => void;
   showJoinPool: boolean;
@@ -93,6 +94,14 @@ export const SettingsProvider = ({ children = null as any }) => {
     }
   }
 
+  function untrackPool(id: string) {
+    const index = trackedPools.findIndex((pool) => pool.id === id);
+    if (index !== -1) {
+      trackedPools.splice(index, 1);
+      setTrackedPoolsString(JSON.stringify(trackedPools));
+    }
+  }
+
   return (
     <SettingsContext.Provider
       value={{
@@ -105,6 +114,7 @@ export const SettingsProvider = ({ children = null as any }) => {
         setLastPool,
         trackedPools,
         trackPool,
+        untrackPool,
         showLend,
         setShowLend,
         showJoinPool,

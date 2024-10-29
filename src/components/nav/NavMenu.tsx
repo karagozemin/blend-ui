@@ -53,9 +53,9 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Link href="/network">
+          <Link href="/settings">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Network Config
+              Settings
             </MenuItem>
           </Link>
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
@@ -107,9 +107,9 @@ export const NavMenu = () => {
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
-          <Link href="/network">
+          <Link href="/settings">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Network Config
+              Settings
             </MenuItem>
           </Link>
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
