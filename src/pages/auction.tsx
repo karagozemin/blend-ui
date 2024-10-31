@@ -8,6 +8,7 @@ import { OngoingAuctionCard } from '../components/auction/OngoingAuctionCard';
 import { Banner } from '../components/common/Banner';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
+import { Skeleton } from '../components/common/Skeleton';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { TxStatus, useWallet } from '../contexts/wallet';
 import {
@@ -74,18 +75,19 @@ const Auction: NextPage = () => {
               />
             );
           })}
+          {auctions.ongoing.length === 0 && auctions.filled.length === 0 && (
+            <Banner
+              sx={{
+                color: theme.palette.grey[100],
+                backgroundColor: theme.palette.grey[900],
+              }}
+            >
+              <Typography variant="body2">{'No ongoing auctions for this pool'}</Typography>
+            </Banner>
+          )}
         </>
       ) : (
-        <Banner
-          sx={{
-            color: theme.palette.grey[100],
-            backgroundColor: theme.palette.grey[900],
-          }}
-        >
-          <Typography variant="body2">
-            {'Unable to load pool state. Please try again later'}
-          </Typography>
-        </Banner>
+        <Skeleton />
       )}
     </>
   );
