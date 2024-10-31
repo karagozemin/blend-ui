@@ -2,12 +2,18 @@ import { Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
-import { useHorizonAccount, useTokenBalance } from '../../hooks/api';
+import {
+  useBackstop,
+  useHorizonAccount,
+  usePool,
+  usePoolOracle,
+  useTokenBalance,
+} from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
-import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { ReserveApr } from '../common/ReserveAPR';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
@@ -30,11 +36,22 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     reserve.tokenMetadata.asset,
     userAccount
   );
+  const { data: backstop } = useBackstop();
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+
+  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+  const emissionApr =
+    backstop && emissionsPerAsset > 0 && oraclePrice
+      ? (emissionsPerAsset *
+          (backstop.backstopToken.lpTokenPrice / backstop.backstopToken.blndPerLpToken) *
+          0.8) /
+        oraclePrice
+      : undefined;
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
-
-  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
   return (
     <SectionBase
       sx={{
@@ -77,21 +94,17 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             sx={{
               width: tableWidth,
               display: 'flex',
+              flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toPercentage(reserve.supplyApr)}</Typography>
-            {emissionsPerAsset > 0 && (
-              <FlameIcon
-                width={22}
-                height={22}
-                title={formatter.getEmissionTextFromValue(
-                  emissionsPerAsset,
-                  reserve.tokenMetadata?.symbol
-                )}
-              />
-            )}
+            <ReserveApr
+              reserveSymbol={reserve.tokenMetadata.symbol}
+              reserveApr={reserve.supplyApr}
+              emissionApr={emissionApr}
+              isSupply={true}
+            />
           </Box>
 
           {viewType !== ViewType.MOBILE && (

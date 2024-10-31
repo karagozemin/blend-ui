@@ -4,10 +4,11 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 
+import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
 import { CustomButton } from '../common/CustomButton';
-import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { ReserveApr } from '../common/ReserveAPR';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
@@ -31,6 +32,17 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const liabilityFactor = reserve.getLiabilityFactor();
 
   const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
+  const { data: backstop } = useBackstop();
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+  const emissionApr =
+    backstop && emissionsPerAsset > 0 && oraclePrice
+      ? (emissionsPerAsset *
+          (backstop.backstopToken.lpTokenPrice / backstop.backstopToken.blndPerLpToken) *
+          0.8) /
+        oraclePrice
+      : undefined;
 
   return (
     <SectionBase
@@ -76,17 +88,12 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toPercentage(reserve.borrowApr)}</Typography>
-            {emissionsPerAsset > 0 && (
-              <FlameIcon
-                width={22}
-                height={22}
-                title={formatter.getEmissionTextFromValue(
-                  emissionsPerAsset,
-                  reserve.tokenMetadata?.symbol
-                )}
-              />
-            )}
+            <ReserveApr
+              reserveSymbol={reserve.tokenMetadata.symbol}
+              reserveApr={reserve.supplyApr}
+              emissionApr={emissionApr}
+              isSupply={false}
+            />
           </Box>
           {viewType !== ViewType.MOBILE && (
             <Box

@@ -3,11 +3,12 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
+import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
-import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { ReserveApr } from '../common/ReserveAPR';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface BorrowPositionCardProps extends PoolComponentProps {
@@ -27,14 +28,24 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   const router = useRouter();
 
   const assetFloat = reserve.toAssetFromDTokenFloat(dTokens);
+  const { data: backstop } = useBackstop();
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+  const emissionApr =
+    backstop && emissionsPerAsset > 0 && oraclePrice
+      ? (emissionsPerAsset *
+          (backstop.backstopToken.lpTokenPrice / backstop.backstopToken.blndPerLpToken) *
+          0.8) /
+        oraclePrice
+      : undefined;
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const buttonWidth = `${((100 / tableNum) * (viewType === ViewType.REGULAR ? 1.5 : 1)).toFixed(
     2
   )}%`;
-
-  const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
 
   return (
     <Box
@@ -79,18 +90,14 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1">{formatter.toPercentage(reserve.borrowApr)}</Typography>
-        {emissionsPerAsset > 0 && (
-          <FlameIcon
-            width={22}
-            height={22}
-            title={formatter.getEmissionTextFromValue(
-              emissionsPerAsset,
-              reserve.tokenMetadata.symbol
-            )}
-          />
-        )}
+        <ReserveApr
+          reserveSymbol={reserve.tokenMetadata.symbol}
+          reserveApr={reserve.supplyApr}
+          emissionApr={emissionApr}
+          isSupply={false}
+        />
       </Box>
+
       {viewType !== ViewType.MOBILE && (
         <LinkBox
           to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}
