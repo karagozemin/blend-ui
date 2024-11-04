@@ -58,7 +58,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
 
   const { scaledAuction, auctionValue, newPositionEstimate, trustlinesToAdd, hasTokenTrustline } =
     useMemo(() => {
-      const scaledAuction = auction.scale(simResponse?.latestLedger ?? currLedger)[0];
+      const scaledAuction = auction.scale(currLedger + 1)[0];
       const auctionValue =
         poolOracle &&
         backstop &&
@@ -236,6 +236,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
         palette={!parsedSimResult ? theme.palette.primary : theme.palette.positive}
         sx={{ margin: '6px', padding: '6px' }}
         onClick={() => handleSubmitTransaction(true)}
+        disabled={parsedSimResult && simResponse && simResponse.latestLedger === currLedger}
       >
         {!parsedSimResult ? 'Simulate Bid' : 'Update'}
       </OpaqueButton>
