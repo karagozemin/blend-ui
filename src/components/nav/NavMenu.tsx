@@ -54,6 +54,11 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
+          <Link href={`/auction/?poolId=${safePoolId}`}>
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Auctions
+            </MenuItem>
+          </Link>
           <Link href="/settings">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Settings
@@ -72,11 +77,6 @@ export const NavMenu = () => {
           <Link href="/termsofservice">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Terms of Service
-            </MenuItem>
-          </Link>
-          <Link href={`/auction/?poolId=${safePoolId}`}>
-            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Auctions
             </MenuItem>
           </Link>
         </Menu>
@@ -111,6 +111,12 @@ export const NavMenu = () => {
             onClick={handleClose}
             to={{ pathname: '/backstop', query: { poolId: poolId } }}
             title="Backstop"
+            sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
+          />
+          <NavItem
+            onClick={handleClose}
+            to={{ pathname: '/auction', query: { poolId: poolId } }}
+            title="Auctions"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <Link href="/settings">
