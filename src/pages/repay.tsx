@@ -1,15 +1,23 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { FlameIcon } from '../components/common/FlameIcon';
+import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { RepayAnvil } from '../components/repay/RepayAnvil';
-import { useHorizonAccount, usePool, usePoolUser, useTokenBalance } from '../hooks/api';
-import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
+import {
+  useBackstop,
+  useHorizonAccount,
+  usePool,
+  usePoolOracle,
+  usePoolUser,
+  useTokenBalance,
+} from '../hooks/api';
+import { toBalance, toPercentage } from '../utils/formatter';
+import { estimateEmissionsApr } from '../utils/math';
 
 const Repay: NextPage = () => {
   const theme = useTheme();
@@ -28,8 +36,15 @@ const Repay: NextPage = () => {
     horizonAccount,
     reserve !== undefined
   );
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: backstop } = useBackstop();
 
   const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerBorrowedAsset() : 0;
+  const oraclePrice = reserve ? poolOracle?.getPriceFloat(reserve.assetId) : 0;
+  const emissionApr =
+    backstop && emissionsPerAsset > 0 && oraclePrice
+      ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
+      : undefined;
 
   const currentDebt = reserve && poolUser ? poolUser.getLiabilitiesFloat(reserve) : undefined;
 
@@ -75,19 +90,18 @@ const Repay: NextPage = () => {
           <StackedText
             title="Borrow APR"
             text={
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.borrowApr)}{' '}
-                {emissionsPerAsset > 0 && (
-                  <FlameIcon
-                    width={22}
-                    height={22}
-                    title={getEmissionTextFromValue(
-                      emissionsPerAsset,
-                      reserve?.tokenMetadata?.symbol || 'token'
-                    )}
-                  />
-                )}
-              </div>
+              reserve ? (
+                <AprDisplay
+                  assetSymbol={reserve.tokenMetadata.symbol}
+                  assetApr={reserve.borrowApr}
+                  emissionSymbol={'BLND'}
+                  emissionApr={emissionApr}
+                  isSupply={false}
+                  direction={'horizontal'}
+                />
+              ) : (
+                ''
+              )
             }
             sx={{ width: '100%', padding: '6px' }}
             tooltip="The interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions and is accrued to the borrowed position."
