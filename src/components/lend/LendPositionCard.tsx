@@ -5,10 +5,11 @@ import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
 import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
+import { estimateEmissionsApr } from '../../utils/math';
+import { AprDisplay } from '../common/AprDisplay';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
-import { ReserveApr } from '../common/ReserveAPR';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface LendPositionCardProps extends PoolComponentProps {
@@ -35,10 +36,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
-      ? (emissionsPerAsset *
-          (backstop.backstopToken.lpTokenPrice / backstop.backstopToken.blndPerLpToken) *
-          0.8) /
-        oraclePrice
+      ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -90,11 +88,13 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <ReserveApr
-          reserveSymbol={reserve.tokenMetadata.symbol}
-          reserveApr={reserve.supplyApr}
+        <AprDisplay
+          assetSymbol={reserve.tokenMetadata.symbol}
+          assetApr={reserve.supplyApr}
+          emissionSymbol="BLND"
           emissionApr={emissionApr}
           isSupply={true}
+          direction="vertical"
         />
       </Box>
       {viewType !== ViewType.MOBILE && (

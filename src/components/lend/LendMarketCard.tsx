@@ -10,10 +10,11 @@ import {
   useTokenBalance,
 } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
+import { estimateEmissionsApr } from '../../utils/math';
+import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
-import { ReserveApr } from '../common/ReserveAPR';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
@@ -44,10 +45,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
-      ? (emissionsPerAsset *
-          (backstop.backstopToken.lpTokenPrice / backstop.backstopToken.blndPerLpToken) *
-          0.8) /
-        oraclePrice
+      ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
@@ -99,11 +97,13 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <ReserveApr
-              reserveSymbol={reserve.tokenMetadata.symbol}
-              reserveApr={reserve.supplyApr}
+            <AprDisplay
+              assetSymbol={reserve.tokenMetadata.symbol}
+              assetApr={reserve.supplyApr}
+              emissionSymbol="BLND"
               emissionApr={emissionApr}
               isSupply={true}
+              direction="vertical"
             />
           </Box>
 

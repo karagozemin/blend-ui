@@ -5,10 +5,11 @@ import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 
 import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
+import { estimateEmissionsApr } from '../../utils/math';
+import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
-import { ReserveApr } from '../common/ReserveAPR';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
@@ -38,10 +39,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
-      ? (emissionsPerAsset *
-          (backstop.backstopToken.lpTokenPrice / backstop.backstopToken.blndPerLpToken) *
-          0.8) /
-        oraclePrice
+      ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
 
   return (
@@ -88,11 +86,13 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <ReserveApr
-              reserveSymbol={reserve.tokenMetadata.symbol}
-              reserveApr={reserve.supplyApr}
+            <AprDisplay
+              assetSymbol={reserve.tokenMetadata.symbol}
+              assetApr={reserve.borrowApr}
+              emissionSymbol="BLND"
               emissionApr={emissionApr}
               isSupply={false}
+              direction="vertical"
             />
           </Box>
           {viewType !== ViewType.MOBILE && (
