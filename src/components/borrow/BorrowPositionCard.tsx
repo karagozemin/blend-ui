@@ -90,7 +90,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
       >
         <AprDisplay
           assetSymbol={reserve.tokenMetadata.symbol}
-          AprDisplay={reserve.borrowApr}
+          assetApr={reserve.borrowApr}
           emissionSymbol="BLND"
           emissionApr={emissionApr}
           isSupply={false}
