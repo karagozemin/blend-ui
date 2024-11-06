@@ -165,6 +165,7 @@ export default function SettingsPage() {
         {trackedPools.length > 0 &&
           trackedPools.map((pool) => (
             <Box
+              key={pool.id}
               sx={{
                 width: '100%',
                 display: 'flex',

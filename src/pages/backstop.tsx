@@ -147,7 +147,7 @@ const Backstop: NextPage = () => {
       </Row>
       <Divider />
       <Row>
-        <Section width={SectionSize.THIRD} sx={{ alignItems: 'center' }}>
+        <Section width={SectionSize.THIRD}>
           <BackstopAPR poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
