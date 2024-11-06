@@ -60,7 +60,7 @@ const Auction: NextPage = () => {
                 auction={auction}
                 poolId={safePoolId}
                 pool={pool}
-                currLedger={recentEvents?.latestLedger ? recentEvents.latestLedger + 1 : 0}
+                currLedger={recentEvents?.latestLedger ? recentEvents.latestLedger : 0}
               />
             );
           })}
