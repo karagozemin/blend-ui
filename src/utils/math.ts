@@ -1,18 +1,19 @@
-import { BackstopToken } from '@blend-capital/blend-sdk';
+import { BackstopToken, FixedMath } from '@blend-capital/blend-sdk';
 
 /**
  * Estimate the emissions apr for a reserve
- * @param emissionsPerAsset emissions per asset
+ * @param emissionsPerAsset emissions per asset per year as a float
  * @param backstopToken backstop token
  * @param assetPrice asset price
  */
 export function estimateEmissionsApr(
-  emissionsPerAsset: number,
+  emissionsPerAssetPerYear: number,
   backstopToken: BackstopToken,
   assetPrice: number
 ): number {
-  return (
-    (emissionsPerAsset * (backstopToken.lpTokenPrice / backstopToken.blndPerLpToken) * 0.8) /
-    assetPrice
-  );
+  const usdcPerBlnd =
+    FixedMath.toFloat(backstopToken.usdc, 7) /
+    0.2 /
+    (FixedMath.toFloat(backstopToken.blnd, 7) / 0.8);
+  return (emissionsPerAssetPerYear * usdcPerBlnd) / assetPrice;
 }
