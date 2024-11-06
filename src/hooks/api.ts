@@ -333,7 +333,7 @@ export function useAuctionEventsLongQuery(
 ): UseQueryResult<PoolEvent[], Error> {
   const { network } = useSettings();
   return useQuery({
-    staleTime: USER_STALE_TIME,
+    staleTime: 10 * 60 * 1000,
     queryKey: ['auctionEventsLong', poolId],
     enabled,
     queryFn: async () => {
@@ -341,7 +341,7 @@ export function useAuctionEventsLongQuery(
         let events: PoolEvent[] = [];
         const rpc = new SorobanRpc.Server(network.rpc, network.opts);
         const latestLedger = (await rpc.getLatestLedger()).sequence;
-        let queryLedger = Math.round(latestLedger - (60 * 60 * 12) / 6);
+        let queryLedger = Math.round(latestLedger - (60 * 60 * 23) / 6);
         queryLedger = Math.max(queryLedger, 100);
 
         let resp = await rpc._getEvents({
