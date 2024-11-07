@@ -341,9 +341,9 @@ export function useAuctionEventsLongQuery(
         let events: PoolEvent[] = [];
         const rpc = new SorobanRpc.Server(network.rpc, network.opts);
         const latestLedger = (await rpc.getLatestLedger()).sequence;
-        let queryLedger = Math.round(latestLedger - (60 * 60 * 23) / 6);
+        // default event retention period for RPCs is 17280 ledgers
+        let queryLedger = Math.round(latestLedger - 17000);
         queryLedger = Math.max(queryLedger, 100);
-
         let resp = await rpc._getEvents({
           startLedger: queryLedger,
           filters: [
