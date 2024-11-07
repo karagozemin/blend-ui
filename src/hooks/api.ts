@@ -325,12 +325,12 @@ const AUCTION_EVENT_FILTERS = [
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
  * @param enabled - Whether the query is enabled (optional - defaults to true)
- * @returns An array of parsed pool events.
+ * @returns An object containing an events and latestLedger field.
  */
 export function useAuctionEventsLongQuery(
   poolId: string,
   enabled: boolean = true
-): UseQueryResult<PoolEvent[], Error> {
+): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
     staleTime: 10 * 60 * 1000,
@@ -377,39 +377,41 @@ export function useAuctionEventsLongQuery(
             limit: 100,
           });
         }
-        return events;
+        return { events, latestLedger };
       } catch (e) {
         console.error('Error fetching auction events', e);
-        return [];
+        return undefined;
       }
     },
   });
 }
 
 /**
- * Fetch auction related events for the given pool ID.
+ * Fetch auction related events starting from the `lastCurser` or `lastLedgerFetched`.
  * @param poolId - The pool ID
- * @param curser - The cursor for the query
+ * @param cursor - The cursor of the last event fetched
+ * @param lastLedgerFetched - The last ledger fetched
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns An object containing an events and latestLedger field.
  */
 export function useAuctionEventsShortQuery(
   poolId: string,
-  curser: string,
+  lastCursor: string,
+  lastLedgerFetched: number,
   enabled: boolean = true
 ): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
-    queryKey: ['auctionEventsShort', poolId, curser],
+    queryKey: ['auctionEventsShort', poolId, lastCursor],
     enabled,
     refetchInterval: 5 * 1000,
     queryFn: async () => {
       try {
         let events: PoolEvent[] = [];
         const rpc = new SorobanRpc.Server(network.rpc, network.opts);
-
         let resp = await rpc._getEvents({
-          cursor: curser,
+          startLedger: lastCursor === '' ? lastLedgerFetched : undefined,
+          cursor: lastCursor !== '' ? lastCursor : undefined,
           filters: [
             {
               type: 'contract',
@@ -419,7 +421,6 @@ export function useAuctionEventsShortQuery(
           ],
           limit: 1000,
         });
-        let cursor = '';
         while (resp.events.length > 0) {
           for (const raw_event of resp.events) {
             let blendPoolEvent = poolEventFromEventResponse(raw_event);
@@ -427,10 +428,10 @@ export function useAuctionEventsShortQuery(
               events.push(blendPoolEvent);
             }
           }
-          cursor = resp.events[resp.events.length - 1].pagingToken;
+          lastCursor = resp.events[resp.events.length - 1].pagingToken;
           if (resp.events.length >= 100) {
             resp = await rpc._getEvents({
-              cursor: cursor,
+              cursor: lastCursor,
               filters: [
                 {
                   type: 'contract',

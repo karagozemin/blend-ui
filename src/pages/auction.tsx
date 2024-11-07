@@ -28,19 +28,28 @@ const Auction: NextPage = () => {
   const { txStatus } = useWallet();
   const { data: pool, isError: isPoolLoadingError } = usePool(safePoolId, safePoolId !== '');
   const { data: backstop } = useBackstop();
-  const { data: events, isError: isLongEventsError } = useAuctionEventsLongQuery(
+  const { data: pastEvents, isError: isLongEventsError } = useAuctionEventsLongQuery(
     safePoolId,
     safePoolId !== ''
   );
-  let curser = Array.isArray(events) && events.length > 0 ? events[events.length - 1].id : '';
-  const moreEventsToFetch = curser !== '';
+  let curser =
+    pastEvents && Array.isArray(pastEvents.events) && pastEvents.events.length > 0
+      ? pastEvents.events[pastEvents.events.length - 1].id
+      : '';
   const {
     data: recentEvents,
     refetch: refetchShortQuery,
     isError: isShortEventsError,
-  } = useAuctionEventsShortQuery(safePoolId, curser, moreEventsToFetch && safePoolId !== '');
+  } = useAuctionEventsShortQuery(
+    safePoolId,
+    curser,
+    pastEvents?.latestLedger ?? 0,
+    safePoolId !== '' && pastEvents !== undefined
+  );
   const allEvents =
-    events !== undefined && recentEvents !== undefined ? events.concat(recentEvents.events) : [];
+    pastEvents !== undefined && recentEvents !== undefined
+      ? pastEvents.events.concat(recentEvents.events)
+      : [];
   const auctions =
     pool && backstop ? getAuctionsfromEvents(allEvents, backstop.id) : { filled: [], ongoing: [] };
 
@@ -50,7 +59,7 @@ const Auction: NextPage = () => {
     }
   }, [txStatus, refetchShortQuery]);
 
-  const hasData = pool && backstop && events !== undefined;
+  const hasData = pool && backstop && pastEvents;
   const hasAuctions = auctions.filled.length > 0 || auctions.ongoing.length > 0;
   const hasError = isPoolLoadingError || isLongEventsError || isShortEventsError;
 
