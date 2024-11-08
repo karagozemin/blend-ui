@@ -333,9 +333,10 @@ export function useAuctionEventsLongQuery(
 ): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
-    staleTime: 10 * 60 * 1000,
+    // staleTime: 5 * 1000,
     queryKey: ['auctionEventsLong', poolId],
     enabled,
+    refetchInterval: 5 * 1000,
     queryFn: async () => {
       try {
         let events: PoolEvent[] = [];
