@@ -13,7 +13,12 @@ import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { TxStatus, useWallet } from '../contexts/wallet';
-import { useAuctionEventsLongQuery, useBackstop, usePool } from '../hooks/api';
+import {
+  useAuctionEventsLongQuery,
+  useAuctionEventsShortQuery,
+  useBackstop,
+  usePool,
+} from '../hooks/api';
 
 const Auction: NextPage = () => {
   const theme = useTheme();
@@ -23,39 +28,40 @@ const Auction: NextPage = () => {
   const { txStatus } = useWallet();
   const { data: pool, isError: isPoolLoadingError } = usePool(safePoolId, safePoolId !== '');
   const { data: backstop } = useBackstop();
-  let {
-    data: pastEvents,
-    isError: isLongEventsError,
-    refetch: refetchEvents,
-  } = useAuctionEventsLongQuery(safePoolId, safePoolId !== '');
-  // TODO: Implement pagination once fixed
-  // let curser =
-  //   pastEvents && Array.isArray(pastEvents.events) && pastEvents.events.length > 0
-  //     ? pastEvents.events[pastEvents.events.length - 1].id
-  //     : '';
-  // const {
-  //   data: recentEvents,
-  //   refetch: refetchShortQuery,
-  //   isError: isShortEventsError,
-  // } = useAuctionEventsShortQuery(
-  //   safePoolId,
-  //   curser,
-  //   pastEvents?.latestLedger ?? 0,
-  //   safePoolId !== '' && pastEvents !== undefined
-  // );
-  const allEvents = pastEvents !== undefined ? pastEvents.events : [];
+  let { data: pastEvents, isError: isLongEventsError } = useAuctionEventsLongQuery(
+    safePoolId,
+    safePoolId !== ''
+  );
+  const {
+    data: recentEvents,
+    refetch: refetchShortEvents,
+    isError: isShortEventsError,
+  } = useAuctionEventsShortQuery(
+    safePoolId,
+    pastEvents?.latestLedger ?? 0,
+    safePoolId !== '' && pastEvents !== undefined && pastEvents.latestLedger > 0
+  );
+
+  const allEvents =
+    pastEvents !== undefined && recentEvents !== undefined
+      ? pastEvents.events.concat(recentEvents?.events)
+      : [];
+  // ensure events are sorted in ascending order by ledger
+  allEvents.sort((a, b) => a.ledger - b.ledger);
   const auctions =
     pool && backstop ? getAuctionsfromEvents(allEvents, backstop.id) : { filled: [], ongoing: [] };
 
+  const curLedger = recentEvents?.latestLedger ?? pastEvents?.latestLedger ?? 0;
+
   useEffect(() => {
     if (txStatus === TxStatus.SUCCESS) {
-      refetchEvents();
+      refetchShortEvents();
     }
-  }, [txStatus, refetchEvents]);
+  }, [txStatus, refetchShortEvents]);
 
-  const hasData = pool && backstop && pastEvents;
+  const hasData = pool && backstop && pastEvents !== undefined;
   const hasAuctions = auctions.filled.length > 0 || auctions.ongoing.length > 0;
-  const hasError = isPoolLoadingError || isLongEventsError;
+  const hasError = isPoolLoadingError || isLongEventsError || isShortEventsError;
 
   return (
     <>
@@ -74,7 +80,7 @@ const Auction: NextPage = () => {
                   auction={auction}
                   poolId={safePoolId}
                   pool={pool}
-                  currLedger={pastEvents?.latestLedger ?? 0}
+                  currLedger={curLedger}
                 />
               );
             })}
