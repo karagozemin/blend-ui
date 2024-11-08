@@ -21,7 +21,7 @@ import {
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
-import { useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { getTokenMetadataFromTOML, StellarTokenMetadata } from '../external/stellar-toml';
@@ -325,25 +325,28 @@ const AUCTION_EVENT_FILTERS = [
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
  * @param enabled - Whether the query is enabled (optional - defaults to true)
- * @returns An array of parsed pool events.
+ * @returns An object containing an events and latestLedger field.
  */
 export function useAuctionEventsLongQuery(
   poolId: string,
   enabled: boolean = true
-): UseQueryResult<PoolEvent[], Error> {
+): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
-    staleTime: USER_STALE_TIME,
+    staleTime: 10 * 60 * 1000,
     queryKey: ['auctionEventsLong', poolId],
     enabled,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       try {
         let events: PoolEvent[] = [];
         const rpc = new SorobanRpc.Server(network.rpc, network.opts);
         const latestLedger = (await rpc.getLatestLedger()).sequence;
-        let queryLedger = Math.round(latestLedger - (60 * 60 * 12) / 6);
+        // default event retention period for RPCs is 17280 ledgers
+        // but RPCs currently only scan 10k ledgers per request, provide
+        // some buffer to ensure the latest ledger is read
+        let queryLedger = Math.round(latestLedger - 9990);
         queryLedger = Math.max(queryLedger, 100);
-
         let resp = await rpc._getEvents({
           startLedger: queryLedger,
           filters: [
@@ -355,61 +358,47 @@ export function useAuctionEventsLongQuery(
           ],
           limit: 1000,
         });
-        let cursor = '';
-        while (resp.events.length > 0) {
-          for (const raw_event of resp.events) {
-            let blendPoolEvent = poolEventFromEventResponse(raw_event);
-            if (blendPoolEvent) {
-              events.push(blendPoolEvent);
-            }
+        // TODO: Implement pagination once cursor usage is fixed.
+        for (const raw_event of resp.events) {
+          let blendPoolEvent = poolEventFromEventResponse(raw_event);
+          if (blendPoolEvent) {
+            events.push(blendPoolEvent);
           }
-          cursor = resp.events[resp.events.length - 1].pagingToken;
-
-          resp = await rpc._getEvents({
-            cursor: cursor,
-            filters: [
-              {
-                type: 'contract',
-                contractIds: [poolId],
-                topics: AUCTION_EVENT_FILTERS,
-              },
-            ],
-            limit: 100,
-          });
         }
-        return events;
+        return { events, latestLedger: resp.latestLedger };
       } catch (e) {
         console.error('Error fetching auction events', e);
-        return [];
+        return undefined;
       }
     },
   });
 }
 
 /**
- * Fetch auction related events for the given pool ID.
+ * Fetch auction related events starting from the `lastCurser` or `lastLedgerFetched`.
  * @param poolId - The pool ID
- * @param curser - The cursor for the query
+ * @param lastLedgerFetched - The last ledger fetched
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns An object containing an events and latestLedger field.
  */
 export function useAuctionEventsShortQuery(
   poolId: string,
-  curser: string,
+  lastLedgerFetched: number,
   enabled: boolean = true
 ): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
+  // TODO: Use cursor instead of lastLedger when possible once RPC cursor usage is fixed.
   return useQuery({
-    queryKey: ['auctionEventsShort', poolId, curser],
+    queryKey: ['auctionEventsShort', poolId, lastLedgerFetched],
     enabled,
     refetchInterval: 5 * 1000,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       try {
         let events: PoolEvent[] = [];
         const rpc = new SorobanRpc.Server(network.rpc, network.opts);
-
         let resp = await rpc._getEvents({
-          cursor: curser,
+          startLedger: lastLedgerFetched,
           filters: [
             {
               type: 'contract',
@@ -419,29 +408,11 @@ export function useAuctionEventsShortQuery(
           ],
           limit: 1000,
         });
-        let cursor = '';
-        while (resp.events.length > 0) {
-          for (const raw_event of resp.events) {
-            let blendPoolEvent = poolEventFromEventResponse(raw_event);
-            if (blendPoolEvent) {
-              events.push(blendPoolEvent);
-            }
-          }
-          cursor = resp.events[resp.events.length - 1].pagingToken;
-          if (resp.events.length >= 100) {
-            resp = await rpc._getEvents({
-              cursor: cursor,
-              filters: [
-                {
-                  type: 'contract',
-                  contractIds: [poolId],
-                  topics: AUCTION_EVENT_FILTERS,
-                },
-              ],
-              limit: 100,
-            });
-          } else {
-            resp.events = [];
+        // TODO: Implement pagination once RPC cursor usage is fixed.
+        for (const raw_event of resp.events) {
+          let blendPoolEvent = poolEventFromEventResponse(raw_event);
+          if (blendPoolEvent) {
+            events.push(blendPoolEvent);
           }
         }
         return { events, latestLedger: resp.latestLedger };

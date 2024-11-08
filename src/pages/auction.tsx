@@ -1,13 +1,15 @@
-import { Auctions, getAuctionsfromEvents } from '@blend-capital/blend-sdk';
-import { Typography, useTheme } from '@mui/material';
+import { getAuctionsfromEvents } from '@blend-capital/blend-sdk';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import WarningIcon from '@mui/icons-material/Warning';
+import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { FilledAuctionCard } from '../components/auction/FilledAuctionCard';
 import { OngoingAuctionCard } from '../components/auction/OngoingAuctionCard';
-import { Banner } from '../components/common/Banner';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
+import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { TxStatus, useWallet } from '../contexts/wallet';
@@ -16,7 +18,6 @@ import {
   useAuctionEventsShortQuery,
   useBackstop,
   usePool,
-  usePoolOracle,
 } from '../hooks/api';
 
 const Auction: NextPage = () => {
@@ -25,67 +26,127 @@ const Auction: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const { txStatus } = useWallet();
-  const { data: pool } = usePool(safePoolId);
-  const { data: oracle } = usePoolOracle(pool);
+  const { data: pool, isError: isPoolLoadingError } = usePool(safePoolId, safePoolId !== '');
   const { data: backstop } = useBackstop();
-  let { data: events, refetch } = useAuctionEventsLongQuery(safePoolId);
-  let curser =
-    Array.isArray(events) && events[events.length - 1] ? events[events.length - 1].id : '';
-  const { data: recentEvents } = useAuctionEventsShortQuery(safePoolId, curser, curser !== '');
-  events = events?.concat(recentEvents?.events ?? []);
-  const auctions: Auctions =
-    oracle && pool && backstop && events && recentEvents
-      ? getAuctionsfromEvents(events, backstop.id)
-      : { ongoing: [], filled: [] };
+  let { data: pastEvents, isError: isLongEventsError } = useAuctionEventsLongQuery(
+    safePoolId,
+    safePoolId !== ''
+  );
+  const {
+    data: recentEvents,
+    refetch: refetchShortEvents,
+    isError: isShortEventsError,
+  } = useAuctionEventsShortQuery(
+    safePoolId,
+    pastEvents?.latestLedger ?? 0,
+    safePoolId !== '' && pastEvents !== undefined && pastEvents.latestLedger > 0
+  );
+
+  const allEvents =
+    pastEvents !== undefined && recentEvents !== undefined
+      ? pastEvents.events.concat(recentEvents?.events)
+      : [];
+  // ensure events are sorted in ascending order by ledger
+  allEvents.sort((a, b) => a.ledger - b.ledger);
+  const auctions =
+    pool && backstop ? getAuctionsfromEvents(allEvents, backstop.id) : { filled: [], ongoing: [] };
+
+  const curLedger = recentEvents?.latestLedger ?? pastEvents?.latestLedger ?? 0;
 
   useEffect(() => {
     if (txStatus === TxStatus.SUCCESS) {
-      refetch();
+      refetchShortEvents();
     }
-  }, [txStatus, refetch]);
+  }, [txStatus, refetchShortEvents]);
+
+  const hasData = pool && backstop && pastEvents !== undefined;
+  const hasAuctions = auctions.filled.length > 0 || auctions.ongoing.length > 0;
+  const hasError = isPoolLoadingError || isLongEventsError || isShortEventsError;
+
   return (
     <>
       <Row>
         <PoolExploreBar poolId={safePoolId} />
       </Row>
       <Divider />
-
-      {pool !== undefined ? (
-        <>
-          {auctions.ongoing.map((auction, index) => {
-            return (
-              <OngoingAuctionCard
-                key={index}
-                index={index}
-                auction={auction}
-                poolId={safePoolId}
-                pool={pool}
-                currLedger={recentEvents?.latestLedger ? recentEvents.latestLedger : 0}
-              />
-            );
-          })}
-          {auctions.filled.reverse().map((auction, index) => {
-            return (
-              <FilledAuctionCard
-                key={index}
-                index={index}
-                auction={auction}
-                poolId={safePoolId}
-                pool={pool}
-              />
-            );
-          })}
-          {auctions.ongoing.length === 0 && auctions.filled.length === 0 && (
-            <Banner
+      {hasData ? (
+        hasAuctions ? (
+          <>
+            {auctions.ongoing.map((auction, index) => {
+              return (
+                <OngoingAuctionCard
+                  key={index}
+                  index={index}
+                  auction={auction}
+                  poolId={safePoolId}
+                  pool={pool}
+                  currLedger={curLedger}
+                />
+              );
+            })}
+            {auctions.filled.reverse().map((auction, index) => {
+              return (
+                <FilledAuctionCard
+                  key={index}
+                  index={index}
+                  auction={auction}
+                  poolId={safePoolId}
+                  pool={pool}
+                />
+              );
+            })}
+          </>
+        ) : (
+          <Section
+            width={SectionSize.FULL}
+            sx={{
+              background: theme.palette.info.opaque,
+              color: theme.palette.text.primary,
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              padding: '12px',
+            }}
+          >
+            <Box
               sx={{
-                color: theme.palette.grey[100],
-                backgroundColor: theme.palette.grey[900],
+                display: 'flex',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              <Typography variant="body2">{'No ongoing auctions for this pool'}</Typography>
-            </Banner>
-          )}
-        </>
+              <InfoOutlinedIcon />
+              <Typography variant="body2">No recent auctions found for this pool.</Typography>
+            </Box>
+          </Section>
+        )
+      ) : hasError ? (
+        <Section
+          width={SectionSize.FULL}
+          sx={{
+            background: theme.palette.warning.opaque,
+            color: theme.palette.warning.main,
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            padding: '12px',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <WarningIcon />
+            <Typography variant="body2">
+              Unable to load auctions for this pool. Please check back later.
+            </Typography>
+          </Box>
+        </Section>
       ) : (
         <Skeleton />
       )}
