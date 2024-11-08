@@ -33,7 +33,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+  const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
