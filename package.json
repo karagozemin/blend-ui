@@ -12,7 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@blend-capital/blend-sdk": "2.1.1",
+    "@blend-capital/blend-sdk": "2.1.2",
     "@creit.tech/stellar-wallets-kit": "1.2.3",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
