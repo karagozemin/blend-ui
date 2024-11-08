@@ -14,9 +14,9 @@ import { Asset, SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
-import { useBackstop, useHorizonAccount, usePoolOracle } from '../../hooks/api';
+import { useBackstop, useHorizonAccount, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { calculateAuctionOracleProfit } from '../../utils/auction';
-import { toBalance, toCompactAddress } from '../../utils/formatter';
+import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
@@ -52,10 +52,13 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
   const { data: horizonAccount } = useHorizonAccount();
+  const { data: poolUser } = usePoolUser(pool);
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
 
+  const positionEstimate =
+    poolOracle && poolUser && PositionsEstimate.build(pool, poolOracle, poolUser.positions);
   const { scaledAuction, auctionValue, newPositionEstimate, trustlinesToAdd, hasTokenTrustline } =
     useMemo(() => {
       const scaledAuction = auction.scale(currLedger + 1)[0];
@@ -283,13 +286,14 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
             <>
               <ValueChange
                 title="Borrow capacity"
-                curValue={`${toBalance(newPositionEstimate?.borrowCap)} USD`}
+                curValue={`${toBalance(positionEstimate?.borrowCap)} USD`}
                 newValue={`${toBalance(newPositionEstimate?.borrowCap)} USD`}
               />
 
-              <Value
+              <ValueChange
                 title="Borrow limit"
-                value={`${toBalance(newPositionEstimate?.borrowLimit)} USD`}
+                curValue={`${toPercentage(positionEstimate?.borrowLimit)}`}
+                newValue={`${toPercentage(newPositionEstimate?.borrowLimit)}`}
               />
             </>
           )}
