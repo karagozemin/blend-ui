@@ -1,7 +1,7 @@
 import { PoolClaimArgs, PositionsEstimate } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -186,7 +186,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginLeft: isRegularViewType ? 'auto' : undefined,
+            marginLeft: isRegularViewType ? 'auto' : '18px',
           }}
         >
           <StackedText
