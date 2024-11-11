@@ -9,7 +9,7 @@ import {
   SubmitArgs,
 } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { Asset, SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -39,7 +39,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline, isLoading } =
+  const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustlines, isLoading } =
     useWallet();
 
   const { data: pool } = usePool(poolId);
@@ -94,7 +94,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   async function handleAddAssetTrustline() {
     if (connected && reserve?.tokenMetadata?.asset) {
       const reserveAsset = reserve?.tokenMetadata?.asset;
-      await createTrustline(reserveAsset);
+      const asset = new Asset(reserveAsset.code, reserveAsset.issuer);
+      await createTrustlines([asset]);
     }
   }
 

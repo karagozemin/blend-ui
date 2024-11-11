@@ -12,6 +12,7 @@ export const NavMenu = () => {
 
   const { data: backstop } = useBackstop();
   const poolId = (lastPool ? lastPool : backstop?.config?.rewardZone[0]) ?? '';
+  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
   const [openCon, setOpenCon] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -53,9 +54,14 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Link href="/network">
+          <Link href={`/auction/?poolId=${safePoolId}`}>
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Network Config
+              Auctions
+            </MenuItem>
+          </Link>
+          <Link href="/settings">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Settings
             </MenuItem>
           </Link>
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
@@ -107,9 +113,15 @@ export const NavMenu = () => {
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
-          <Link href="/network">
+          <NavItem
+            onClick={handleClose}
+            to={{ pathname: '/auction', query: { poolId: poolId } }}
+            title="Auctions"
+            sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
+          />
+          <Link href="/settings">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Network Config
+              Settings
             </MenuItem>
           </Link>
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">

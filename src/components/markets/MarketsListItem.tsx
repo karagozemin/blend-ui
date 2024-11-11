@@ -43,11 +43,10 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserve, sx, .
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '6px',
           type: 'alt',
         }}
       >
-        <TokenHeader reserve={reserve} sx={{ width: tableWidth, marginRight: '12px' }} />
+        <TokenHeader reserve={reserve} sx={{ width: tableWidth }} />
         <Box
           sx={{
             width: tableWidth,

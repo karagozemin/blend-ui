@@ -33,11 +33,7 @@ export const MarketsList: React.FC<MarketListProps> = ({ pool }) => {
           type: 'alt',
         }}
       >
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ width: headerWidth, marginRight: '12px' }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
           Asset
         </Typography>
         <Typography

@@ -4,14 +4,15 @@ import { Box, Link, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { BorrowAnvil } from '../components/borrow/BorrowAnvil';
-import { FlameIcon } from '../components/common/FlameIcon';
+import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { usePool } from '../hooks/api';
-import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
+import { useBackstop, usePool, usePoolOracle } from '../hooks/api';
+import { toBalance, toPercentage } from '../utils/formatter';
+import { estimateEmissionsApr } from '../utils/math';
 import { getTokenLinkFromReserve } from '../utils/token';
 
 const Borrow: NextPage = () => {
@@ -23,6 +24,8 @@ const Borrow: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const { data: pool } = usePool(safePoolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: backstop } = useBackstop();
   const reserve = pool?.reserves.get(safeAssetId);
 
   const maxUtilFloat = reserve ? FixedMath.toFloat(BigInt(reserve.config.max_util), 7) : 1;
@@ -30,7 +33,13 @@ const Borrow: NextPage = () => {
   const availableToBorrow = reserve
     ? totalSupplied * maxUtilFloat - reserve.totalLiabilitiesFloat()
     : 0;
+
+  const oraclePrice = reserve ? poolOracle?.getPriceFloat(reserve.assetId) : 0;
   const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerBorrowedAsset() : 0;
+  const emissionApr =
+    backstop && emissionsPerAsset > 0 && oraclePrice
+      ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
+      : undefined;
 
   return (
     <>
@@ -97,19 +106,18 @@ const Borrow: NextPage = () => {
           <StackedText
             title="Borrow APR"
             text={
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {toPercentage(reserve?.borrowApr)}{' '}
-                {emissionsPerAsset > 0 && (
-                  <FlameIcon
-                    width={22}
-                    height={22}
-                    title={getEmissionTextFromValue(
-                      emissionsPerAsset,
-                      reserve?.tokenMetadata?.symbol || 'token'
-                    )}
-                  />
-                )}
-              </div>
+              reserve ? (
+                <AprDisplay
+                  assetSymbol={reserve.tokenMetadata.symbol}
+                  assetApr={reserve.borrowApr}
+                  emissionSymbol={'BLND'}
+                  emissionApr={emissionApr}
+                  isSupply={false}
+                  direction={'horizontal'}
+                />
+              ) : (
+                ''
+              )
             }
             sx={{ padding: '6px' }}
             tooltip="The interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions and is accrued to the borrowed position."
