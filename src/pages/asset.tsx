@@ -9,6 +9,7 @@ import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
+import { PoolHeader } from '../components/pool/PoolHeader';
 import { useSettings, ViewType } from '../contexts';
 import { usePool, usePoolOracle } from '../hooks/api';
 import { toPercentage } from '../utils/formatter';
@@ -29,8 +30,16 @@ const Asset: NextPage = () => {
 
   return (
     <>
+      <Row>
+        <Section
+          width={SectionSize.FULL}
+          sx={{ marginTop: '12px', backgroundColor: theme.palette.menu.opaque }}
+        >
+          <PoolHeader name={pool?.config.name ?? 'Unknown'} sx={{ paddingLeft: '12px' }} />
+        </Section>
+      </Row>
       <Row sx={{ justifyContent: 'flex-start', alignItems: 'center' }}>
-        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
+        <Section width={SectionSize.FULL} sx={{ marginBottom: '12px' }}>
           <ReserveDropdown action="asset" poolId={safePoolId} activeReserveId={safeAssetId} />
         </Section>
         <IconButton
