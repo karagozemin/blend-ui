@@ -1,8 +1,11 @@
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AprDisplay } from '../components/common/AprDisplay';
+import { CustomButton } from '../components/common/CustomButton';
 import { GoBackHeader } from '../components/common/GoBackHeader';
+import { LinkBox } from '../components/common/LinkBox';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
@@ -41,6 +44,27 @@ const Withdraw: NextPage = () => {
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
           <ReserveDropdown action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
+        </Section>
+      </Row>
+      <Row>
+        <Section width={SectionSize.FULL}>
+          <LinkBox
+            sx={{ width: '100%' }}
+            to={{ pathname: '/asset', query: { poolId: poolId, assetId: safeAssetId } }}
+          >
+            <CustomButton
+              sx={{
+                width: '100%',
+                alignItems: 'space-between',
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                '&:hover': { backgroundColor: theme.palette.background.default },
+              }}
+            >
+              <Typography variant="body1">Asset Info</Typography>
+              <ArrowForwardIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
+            </CustomButton>
+          </LinkBox>
         </Section>
       </Row>
       <Row>

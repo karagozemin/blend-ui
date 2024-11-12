@@ -5,11 +5,10 @@ import { useRouter } from 'next/router';
 import { AssetGraphBoxBorrow } from '../components/asset/AssetGraphBoxBorrow';
 import { AssetGraphBoxSupply } from '../components/asset/AssetGraphBoxSupply';
 import { Divider } from '../components/common/Divider';
+import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
-import { TokenHeader } from '../components/common/TokenHeader';
-import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings, ViewType } from '../contexts';
 import { usePool, usePoolOracle } from '../hooks/api';
 import { toPercentage } from '../utils/formatter';
@@ -18,7 +17,6 @@ const Asset: NextPage = () => {
   const router = useRouter();
   const theme = useTheme();
   const { viewType } = useSettings();
-  const { showLend, setShowLend } = useSettings();
 
   const { poolId, assetId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
@@ -31,22 +29,22 @@ const Asset: NextPage = () => {
 
   return (
     <>
-      <PoolExploreBar poolId={safePoolId} />
+      <Row sx={{ justifyContent: 'flex-start', alignItems: 'center' }}>
+        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
+          <ReserveDropdown action="asset" poolId={safePoolId} activeReserveId={safeAssetId} />
+        </Section>
+        <IconButton
+          onClick={() => window.open(link, '_blank')}
+          size="small"
+          sx={{
+            color: theme.palette.text.secondary,
+          }}
+        >
+          <OpenInNewIcon fontSize="inherit" />
+        </IconButton>
+      </Row>
       {hasData ? (
         <>
-          <Row sx={{ margin: '12px', justifyContent: 'flex-start', alignItems: 'center' }}>
-            <TokenHeader reserve={reserve} sx={{ marginRight: '12px' }} />
-            <IconButton
-              onClick={() => window.open(link, '_blank')}
-              size="small"
-              sx={{
-                marginLeft: '6px',
-                color: theme.palette.text.secondary,
-              }}
-            >
-              <OpenInNewIcon fontSize="inherit" />
-            </IconButton>
-          </Row>
           <Divider />
           <Row
             sx={{

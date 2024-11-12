@@ -83,7 +83,7 @@ export const MarketsList: React.FC<MarketListProps> = ({ pool }) => {
       </Box>
       {pool.reserves.size > 0 &&
         Array.from(pool.reserves.values()).map((reserve) => (
-          <MarketsListItem key={reserve.assetId} reserve={reserve} />
+          <MarketsListItem key={reserve.assetId} poolId={pool.id} reserve={reserve} />
         ))}
     </Box>
   );
