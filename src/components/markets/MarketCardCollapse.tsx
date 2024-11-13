@@ -3,7 +3,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { toCompactAddress, toPercentage } from '../../utils/formatter';
 import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
@@ -54,7 +54,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             color: theme.palette.text.secondary,
-            cursor: 'default',
+            cursor: 'pointer',
           }}
           onClick={() =>
             window.open(
@@ -89,7 +89,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             color: theme.palette.text.secondary,
-            cursor: 'default',
+            cursor: 'pointer',
           }}
           onClick={() =>
             window.open(
@@ -119,7 +119,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             color: theme.palette.text.secondary,
-            cursor: 'default',
+            cursor: 'pointer',
           }}
           onClick={() => {
             if (pool.config.admin.charAt(0) === 'G') {
