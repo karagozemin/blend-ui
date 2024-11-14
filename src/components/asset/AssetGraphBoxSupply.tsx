@@ -75,7 +75,7 @@ export const AssetGraphBoxSupply: React.FC<ReserveComponentProps> = ({ poolId, a
             </Box>
           </Row>
           <Row>
-            <AssetGraphSupply poolId={poolId} assetId={assetId} />
+            <AssetGraphSupply poolId={poolId} assetId={assetId} reserve={reserve} />
           </Row>
         </Section>
       )}
