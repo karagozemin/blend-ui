@@ -1,19 +1,17 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Box, IconButton, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AssetGraphBoxBorrow } from '../components/asset/AssetGraphBoxBorrow';
 import { AssetGraphBoxSupply } from '../components/asset/AssetGraphBoxSupply';
 import { Divider } from '../components/common/Divider';
-import { ReserveDropdown } from '../components/common/ReserveDropdown';
+import { ReserveExploreBar } from '../components/common/ReserveExplorerBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
-import { PoolHeader } from '../components/pool/PoolHeader';
+import { PoolMenu } from '../components/pool/PoolMenu';
 import { useSettings, ViewType } from '../contexts';
 import { usePool, usePoolOracle } from '../hooks/api';
 import { toPercentage } from '../utils/formatter';
-import { getTokenLinkFromReserve } from '../utils/token';
 const Asset: NextPage = () => {
   const router = useRouter();
   const theme = useTheme();
@@ -21,37 +19,25 @@ const Asset: NextPage = () => {
 
   const { poolId, assetId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-  const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
   const { data: pool } = usePool(safePoolId);
   const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
+  let safeAssetId = '';
+  if (assetId === undefined) {
+    safeAssetId = pool ? pool.config.reserveList[0] : '';
+  } else if (typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId)) {
+    safeAssetId = assetId;
+  }
   const reserve = pool?.reserves.get(safeAssetId);
   const hasData = pool && poolOracle && reserve;
-  const link = getTokenLinkFromReserve(reserve);
 
   return (
     <>
       <Row>
-        <Section
-          width={SectionSize.FULL}
-          sx={{ marginTop: '12px', backgroundColor: theme.palette.menu.opaque }}
-        >
-          <PoolHeader name={pool?.config.name ?? 'Unknown'} sx={{ paddingLeft: '12px' }} />
+        <Section width={SectionSize.FULL} sx={{ marginTop: '12px' }}>
+          <PoolMenu poolId={safePoolId} />
         </Section>
       </Row>
-      <Row sx={{ justifyContent: 'flex-start', alignItems: 'center' }}>
-        <Section width={SectionSize.FULL} sx={{ marginBottom: '12px' }}>
-          <ReserveDropdown action="asset" poolId={safePoolId} activeReserveId={safeAssetId} />
-        </Section>
-        <IconButton
-          onClick={() => window.open(link, '_blank')}
-          size="small"
-          sx={{
-            color: theme.palette.text.secondary,
-          }}
-        >
-          <OpenInNewIcon fontSize="inherit" />
-        </IconButton>
-      </Row>
+      <ReserveExploreBar poolId={safePoolId} assetId={safeAssetId} />
       {hasData ? (
         <>
           <Divider />
@@ -121,7 +107,7 @@ const Asset: NextPage = () => {
                 </Box>
               </Row>
             </Section>
-          </Row>{' '}
+          </Row>
         </>
       ) : (
         <Skeleton />
