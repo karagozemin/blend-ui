@@ -23,26 +23,49 @@ export function estimateEmissionsApr(
  * @param utilizationRatio utilization ratio as a float
  * @param reserve The reserve to estimate the interest rate for
  */
-export function estimateInterestRate(utilizationRatio: number, reserve: Reserve): number {
-  let rateModifier = FixedMath.toFloat(reserve.data.interestRateModifier, 9);
-  let baseRate = reserve.config.r_base / 1e7;
-  let targetUtilization = reserve.config.util / 1e7;
-  let interestRate = 0;
-  const rateOne = reserve.config.r_one / 1e7;
-  const rateTwo = reserve.config.r_two / 1e7;
-  const rateThree = reserve.config.r_three / 1e7;
-  if (utilizationRatio <= targetUtilization) {
-    interestRate = rateModifier * (baseRate + (utilizationRatio / targetUtilization) * rateOne);
-  } else if (utilizationRatio > targetUtilization && utilizationRatio <= 0.95) {
-    interestRate =
-      rateModifier *
-      (baseRate +
-        rateOne +
-        ((utilizationRatio - targetUtilization) / (0.95 - targetUtilization)) * rateTwo);
-  } else if (utilizationRatio > 0.95) {
-    interestRate =
-      rateModifier * (baseRate + rateOne + rateTwo) +
-      ((utilizationRatio - 0.95) / 0.05) * rateThree;
+export function estimateInterestRate(utilizationRatio: number, reserve: Reserve): bigint {
+  const curUtil = FixedMath.toFixed(utilizationRatio, 7);
+  console.log(utilizationRatio, curUtil);
+  let curIr: bigint;
+  const targetUtil = BigInt(reserve.config.util);
+  const fixed_95_percent = BigInt(9_500_000);
+  const fixed_5_percent = BigInt(500_000);
+
+  // calculate current IR
+  if (curUtil <= targetUtil) {
+    const utilScalar = FixedMath.divCeil(curUtil, targetUtil, FixedMath.SCALAR_7);
+    const baseRate =
+      FixedMath.mulCeil(utilScalar, BigInt(reserve.config.r_one), FixedMath.SCALAR_7) +
+      BigInt(reserve.config.r_base);
+    curIr = FixedMath.mulCeil(baseRate, reserve.data.interestRateModifier, FixedMath.SCALAR_9);
+  } else if (curUtil <= fixed_95_percent) {
+    const utilScalar = FixedMath.divCeil(
+      curUtil - targetUtil,
+      fixed_95_percent - targetUtil,
+      FixedMath.SCALAR_7
+    );
+    const baseRate =
+      FixedMath.mulCeil(utilScalar, BigInt(reserve.config.r_two), FixedMath.SCALAR_7) +
+      BigInt(reserve.config.r_one) +
+      BigInt(reserve.config.r_base);
+    curIr = FixedMath.mulCeil(baseRate, reserve.data.interestRateModifier, FixedMath.SCALAR_9);
+  } else {
+    const utilScalar = FixedMath.divCeil(
+      curUtil - fixed_95_percent,
+      fixed_5_percent,
+      FixedMath.SCALAR_7
+    );
+    const extraRate = FixedMath.mulCeil(
+      utilScalar,
+      BigInt(reserve.config.r_three),
+      FixedMath.SCALAR_7
+    );
+    const intersection = FixedMath.mulCeil(
+      reserve.data.interestRateModifier,
+      BigInt(reserve.config.r_two) + BigInt(reserve.config.r_one) + BigInt(reserve.config.r_base),
+      FixedMath.SCALAR_9
+    );
+    curIr = extraRate + intersection;
   }
-  return interestRate;
+  return curIr;
 }
