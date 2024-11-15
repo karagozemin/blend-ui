@@ -1,13 +1,15 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { AssetGraphBoxBorrow } from '../components/asset/AssetGraphBoxBorrow';
-import { AssetGraphBoxSupply } from '../components/asset/AssetGraphBoxSupply';
+import { AssetBorrowInfo } from '../components/asset/AssetBorrowInfo';
+import { AssetSupplyInfo } from '../components/asset/AssetSupplyInfo';
+import { InterestGraph } from '../components/asset/InterestGraph';
 import { Divider } from '../components/common/Divider';
 import { ReserveExploreBar } from '../components/common/ReserveExplorerBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
+import { StackedTextBox } from '../components/common/StackedTextBox';
 import { PoolMenu } from '../components/pool/PoolMenu';
 import { useSettings, ViewType } from '../contexts';
 import { usePool, usePoolOracle } from '../hooks/api';
@@ -47,67 +49,47 @@ const Asset: NextPage = () => {
               flexDirection: viewType !== ViewType.REGULAR ? 'column' : 'row',
             }}
           >
-            <AssetGraphBoxSupply poolId={safePoolId} assetId={safeAssetId} />
-            <AssetGraphBoxBorrow poolId={safePoolId} assetId={safeAssetId} />
+            <AssetSupplyInfo poolId={safePoolId} assetId={safeAssetId} />
+            <AssetBorrowInfo poolId={safePoolId} assetId={safeAssetId} />
           </Row>
-          <Row sx={{ marginBottom: '48px' }}>
-            <Section width={SectionSize.FULL} sx={{ dislay: 'flex', flexDirection: 'column' }}>
-              <Row sx={{ width: '100%' }}>
-                <Box
-                  sx={{
-                    width: '100%',
-                    padding: '6px',
-                    margin: '6px',
-                    borderRadius: '5px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    background: theme.palette.background.default,
-                  }}
-                >
-                  <Typography sx={{ padding: '6px' }}>Utilization</Typography>
-                  <Typography variant="h4" sx={{ padding: '6px' }}>
-                    {toPercentage(reserve.getUtilizationFloat())}
-                  </Typography>
-                </Box>
-              </Row>
-              <Row sx={{ width: '100%' }}>
-                <Box
-                  sx={{
-                    width: '100%',
-                    padding: '6px',
-                    margin: '6px',
-                    borderRadius: '5px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    background: theme.palette.background.default,
-                  }}
-                >
-                  <Typography sx={{ padding: '6px' }}> Target Utilization</Typography>
-                  <Typography variant="h4" sx={{ padding: '6px' }}>
-                    {toPercentage(reserve.config.util / 1e7)}
-                  </Typography>
-                </Box>
-              </Row>
-              <Row sx={{ width: '100%' }}>
-                <Box
-                  sx={{
-                    width: '100%',
-                    padding: '6px',
-                    margin: '6px',
-                    borderRadius: '5px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    background: theme.palette.background.default,
-                  }}
-                >
-                  <Typography sx={{ padding: '6px' }}>Max Utilization</Typography>
-                  <Typography variant="h4" sx={{ padding: '6px' }}>
-                    {toPercentage(reserve.config.max_util / 1e7)}
-                  </Typography>
-                </Box>
-              </Row>
-            </Section>
-          </Row>
+
+          <Section
+            width={SectionSize.FULL}
+            sx={{
+              dislay: 'flex',
+              flexDirection: 'column',
+              marginBottom: '48px',
+              display: 'flex',
+              background: theme.palette.background.paper,
+            }}
+          >
+            <Row sx={{ margin: '4px 4px 4px 6px', paddingLeft: '6px' }}>
+              <Typography variant="h3" sx={{ color: theme.palette.text.primary }}>
+                Interest Rate Model
+              </Typography>
+            </Row>
+            <Row>
+              <InterestGraph poolId={safePoolId} assetId={safeAssetId} reserve={reserve} />
+            </Row>
+
+            <Row>
+              <StackedTextBox
+                name={'Utilization'}
+                text={toPercentage(reserve.getUtilizationFloat())}
+                sx={{ width: '100%', padding: '6px' }}
+              />
+              <StackedTextBox
+                name={'Target Utilization'}
+                text={toPercentage(reserve.config.util / 1e7)}
+                sx={{ width: '100%', padding: '6px' }}
+              />
+              <StackedTextBox
+                name={'Max Utilization'}
+                text={toPercentage(reserve.config.max_util / 1e7)}
+                sx={{ width: '100%', padding: '6px' }}
+              />
+            </Row>
+          </Section>
         </>
       ) : (
         <Skeleton />

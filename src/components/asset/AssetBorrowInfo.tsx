@@ -1,20 +1,26 @@
 import { Circle } from '@mui/icons-material';
 import { Box, Typography, useTheme } from '@mui/material';
-import { usePool, usePoolOracle } from '../../hooks/api';
+import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { estimateEmissionsApr } from '../../utils/math';
+import { AprDisplay } from '../common/AprDisplay';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { AssetGraphSupply } from './AssetGraphSupply';
 
-export const AssetGraphBoxSupply: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
+export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
+  const theme = useTheme();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
+  const { data: backstop } = useBackstop();
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);
+  const emissionsPerAsset = reserve?.emissionsPerYearPerBorrowedAsset();
+  const emissionApr =
+    backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
+      ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
+      : undefined;
   const hasData = pool && poolOracle && reserve && oraclePrice;
-  const theme = useTheme();
-
   return (
     <>
       {hasData && (
@@ -25,7 +31,6 @@ export const AssetGraphBoxSupply: React.FC<ReserveComponentProps> = ({ poolId, a
           <Row sx={{ padding: '6px' }}>
             <Typography
               sx={{
-                width: '100%',
                 padding: '6px',
                 display: 'flex',
                 gap: '4px',
@@ -34,8 +39,8 @@ export const AssetGraphBoxSupply: React.FC<ReserveComponentProps> = ({ poolId, a
               variant="body2"
               color={theme.palette.text.primary}
             >
-              <Circle fontSize="inherit" sx={{ width: '8px', color: theme.palette.lend.main }} />
-              Supply Info
+              <Circle fontSize="inherit" sx={{ width: '8px', color: theme.palette.borrow.main }} />
+              Borrow Info
             </Typography>
           </Row>
           <Row>
@@ -50,9 +55,32 @@ export const AssetGraphBoxSupply: React.FC<ReserveComponentProps> = ({ poolId, a
                 background: theme.palette.background.default,
               }}
             >
-              <Typography sx={{ padding: '6px' }}>Total Supplied</Typography>
-              <Typography sx={{ padding: '6px', color: theme.palette.lend.main }}>
-                {toBalance(reserve.totalSupplyFloat() * oraclePrice)}
+              <Typography sx={{ padding: '6px' }}>APR</Typography>
+              <AprDisplay
+                assetSymbol={reserve.tokenMetadata.symbol}
+                assetApr={reserve.borrowApr}
+                emissionSymbol={'BLND'}
+                emissionApr={emissionApr}
+                isSupply={false}
+                direction={'horizontal'}
+              />
+            </Box>
+          </Row>
+          <Row>
+            <Box
+              sx={{
+                width: '100%',
+                padding: '6px',
+                margin: '6px',
+                borderRadius: '5px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                background: theme.palette.background.default,
+              }}
+            >
+              <Typography sx={{ padding: '6px' }}>Total Borrowed</Typography>
+              <Typography sx={{ padding: '6px', color: theme.palette.borrow.main }}>
+                {toBalance(reserve.totalLiabilitiesFloat() * oraclePrice)}
               </Typography>
             </Box>
           </Row>
@@ -68,14 +96,11 @@ export const AssetGraphBoxSupply: React.FC<ReserveComponentProps> = ({ poolId, a
                 background: theme.palette.background.default,
               }}
             >
-              <Typography sx={{ padding: '6px' }}>Collateral Factor</Typography>
+              <Typography sx={{ padding: '6px' }}>Liability Factor</Typography>
               <Typography sx={{ padding: '6px' }}>
-                {toPercentage(reserve.getCollateralFactor())}
+                {toPercentage(reserve.getLiabilityFactor())}
               </Typography>
             </Box>
-          </Row>
-          <Row>
-            <AssetGraphSupply poolId={poolId} assetId={assetId} reserve={reserve} />
           </Row>
         </Section>
       )}

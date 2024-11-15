@@ -102,7 +102,7 @@ const Supply: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <Section width={SectionSize.THIRD}>
+        <Section width={SectionSize.THIRD} sx={{ justifyContent: 'center' }}>
           <StackedText
             title="Supply APR"
             text={
