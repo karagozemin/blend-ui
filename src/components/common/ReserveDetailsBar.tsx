@@ -6,6 +6,7 @@ import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { LinkBox } from './LinkBox';
 import { ReserveDropdown } from './ReserveDropdown';
+import { SectionBase } from './SectionBase';
 
 export const ReserveDetailsBar: React.FC<ReserveDropdown> = ({
   poolId,
@@ -43,22 +44,33 @@ export const ReserveDetailsBar: React.FC<ReserveDropdown> = ({
       )}
       {viewType !== ViewType.REGULAR && (
         <>
-          <Section width={SectionSize.EIGHTY}>
+          <Section width={SectionSize.FULL}>
             <ReserveDropdown action={action} poolId={poolId} activeReserveId={activeReserveId} />
           </Section>
-          <Section width={SectionSize.TWENTY}>
+          <SectionBase
+            sx={{
+              margin: '6px',
+              display: 'flex',
+              padding: '6px',
+            }}
+          >
             <LinkBox
               sx={{ width: '100%', height: '100%' }}
               to={{ pathname: 'asset', query: { poolId, assetId: activeReserveId } }}
             >
               <OpaqueButton
                 palette={theme.palette.primary}
-                sx={{ minWidth: 'auto', width: '100%', height: '100%' }}
+                sx={{
+                  minWidth: 'auto',
+                  height: '100%',
+                  width: '100%',
+                  aspectRatio: '1 / 1',
+                }}
               >
                 <ArrowForwardIcon fontSize="inherit" />
               </OpaqueButton>
             </LinkBox>
-          </Section>
+          </SectionBase>
         </>
       )}
     </Row>

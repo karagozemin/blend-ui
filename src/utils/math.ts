@@ -25,7 +25,6 @@ export function estimateEmissionsApr(
  */
 export function estimateInterestRate(utilizationRatio: number, reserve: Reserve): bigint {
   const curUtil = FixedMath.toFixed(utilizationRatio, 7);
-  console.log(utilizationRatio, curUtil);
   let curIr: bigint;
   const targetUtil = BigInt(reserve.config.util);
   const fixed_95_percent = BigInt(9_500_000);

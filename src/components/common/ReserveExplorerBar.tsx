@@ -8,6 +8,7 @@ import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { ReserveComponentProps } from './ReserveComponentProps';
 import { ReserveDropdown } from './ReserveDropdown';
+import { SectionBase } from './SectionBase';
 
 export const ReserveExploreBar: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const { viewType } = useSettings();
@@ -16,7 +17,7 @@ export const ReserveExploreBar: React.FC<ReserveComponentProps> = ({ poolId, ass
   const reserve = pool?.reserves.get(assetId);
   const link = reserve ? getTokenLinkFromReserve(reserve) : '';
   return (
-    <Row>
+    <Row width={'100%'}>
       {viewType === ViewType.REGULAR && (
         <>
           <Section width={SectionSize.LARGE}>
@@ -40,18 +41,29 @@ export const ReserveExploreBar: React.FC<ReserveComponentProps> = ({ poolId, ass
       )}
       {viewType !== ViewType.REGULAR && (
         <>
-          <Section width={SectionSize.EIGHTY}>
+          <Section width={SectionSize.FULL}>
             <ReserveDropdown action="asset" poolId={poolId} activeReserveId={assetId} />
           </Section>
-          <Section width={SectionSize.TWENTY}>
+          <SectionBase
+            sx={{
+              margin: '6px',
+              display: 'flex',
+              padding: '6px',
+            }}
+          >
             <OpaqueButton
               palette={theme.palette.primary}
               onClick={() => window.open(link, '_blank')}
-              sx={{ minWidth: 'auto', width: '100%' }}
+              sx={{
+                minWidth: 'auto',
+                width: '100%',
+                height: '100%', // Set the height to match the parent's height
+                aspectRatio: '1 / 1',
+              }}
             >
               <OpenInNewIcon fontSize="inherit" />
             </OpaqueButton>
-          </Section>
+          </SectionBase>
         </>
       )}
     </Row>
