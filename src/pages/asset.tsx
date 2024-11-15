@@ -76,7 +76,11 @@ const Asset: NextPage = () => {
               <StackedTextBox
                 name={'Utilization'}
                 text={toPercentage(reserve.getUtilizationFloat())}
-                sx={{ width: '100%', padding: '6px' }}
+                sx={{
+                  width: '100%',
+                  padding: '6px',
+                  border: '1px solid #2775C9',
+                }}
               />
               <StackedTextBox
                 name={'Target Utilization'}

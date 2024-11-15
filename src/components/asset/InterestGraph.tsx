@@ -1,6 +1,6 @@
 import { FixedMath, Reserve } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { axisClasses } from '@mui/x-charts';
+import { axisClasses, ChartsReferenceLine } from '@mui/x-charts';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useState } from 'react';
 import { toPercentage } from '../../utils/formatter';
@@ -147,7 +147,7 @@ export const InterestGraph: React.FC<InterestGraphProps> = ({ poolId, assetId, r
                 element.position === maxUtil
               );
             },
-            color: theme.palette.grey[500],
+            color: theme.palette.text.secondary,
             area: true,
           },
         ]}
@@ -179,6 +179,7 @@ export const InterestGraph: React.FC<InterestGraphProps> = ({ poolId, assetId, r
             <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
+        <ChartsReferenceLine x={currentUtil} lineStyle={{ stroke: theme.palette.positive.main }} />
       </LineChart>
       <CustomButton
         onClick={() => setShowMore(!showMore)}
