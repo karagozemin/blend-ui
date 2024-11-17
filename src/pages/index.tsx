@@ -15,9 +15,11 @@ const Markets: NextPage = () => {
 
   const rewardZone = [...(backstop?.config?.rewardZone ?? [])].reverse();
 
+  const safeRewardZone = rewardZone.filter((poolId) => !blockedPools.includes(poolId));
+
   function handlePoolLoaded(index: number) {
     if (index >= currentIndex) {
-      setCurrentIndex(Math.min(currentIndex + 1, rewardZone.length));
+      setCurrentIndex(Math.min(currentIndex + 1, safeRewardZone.length));
     }
   }
 
@@ -29,16 +31,15 @@ const Markets: NextPage = () => {
         </SectionBase>
       </Row>
       <Divider />
-      {rewardZone.slice(0, currentIndex + 1).map((poolId, index) => {
-        if (!blockedPools.includes(poolId))
-          return (
-            <MarketCard
-              key={poolId}
-              poolId={poolId}
-              index={index}
-              onLoaded={handlePoolLoaded}
-            ></MarketCard>
-          );
+      {safeRewardZone.slice(0, currentIndex + 1).map((poolId, index) => {
+        return (
+          <MarketCard
+            key={poolId}
+            poolId={poolId}
+            index={index}
+            onLoaded={handlePoolLoaded}
+          ></MarketCard>
+        );
       })}
     </>
   );
