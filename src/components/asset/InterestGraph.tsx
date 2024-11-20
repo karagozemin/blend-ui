@@ -153,6 +153,24 @@ export const InterestGraph: React.FC<InterestGraphProps> = ({ poolId, assetId, r
         ]}
         slotProps={{
           legend: {
+            seriesToDisplay: [
+              {
+                id: 'CurrentAPR',
+                seriesId: 'CurrentAPR',
+                color: theme.palette.borrow.main,
+                label: 'Current APR',
+              },
+              {
+                id: 'DefaultAPR',
+                color: theme.palette.text.secondary,
+                label: 'Base APR',
+              },
+              {
+                id: 'CurrentUtil',
+                color: theme.palette.positive.main,
+                label: 'Current Utilization',
+              },
+            ],
             position: { horizontal: 'left', vertical: 'top' },
             labelStyle: {
               fontSize: 11,
@@ -179,7 +197,10 @@ export const InterestGraph: React.FC<InterestGraphProps> = ({ poolId, assetId, r
             <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
-        <ChartsReferenceLine x={currentUtil} lineStyle={{ stroke: theme.palette.positive.main }} />
+        <ChartsReferenceLine
+          x={currentUtil}
+          lineStyle={{ stroke: theme.palette.positive.main, strokeDasharray: 3 }}
+        />
       </LineChart>
       <CustomButton
         onClick={() => setShowMore(!showMore)}
