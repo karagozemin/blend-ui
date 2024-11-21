@@ -54,7 +54,7 @@ export function getAssetReserve(
       stellar_reserve_amount += Number(balanceLine?.selling_liabilities);
     }
     if (asset.isNative()) {
-      stellar_reserve_amount += 1.5 + 0.5 * account.subentry_count; // add 1 XLM for gas headroom
+      stellar_reserve_amount += 10.5 + 0.5 * account.subentry_count; // add 10.5 XLM for gas headroom
     }
   }
   return stellar_reserve_amount;
