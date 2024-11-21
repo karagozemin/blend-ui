@@ -44,6 +44,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Q4W>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+  const [sendingTx, setSendingTx] = useState<boolean>(false);
   const loading = isLoading || loadingEstimate;
   const decimals = 7;
 
@@ -57,7 +58,11 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toQueue) != 0) {
     setToQueue('');
   }
-
+  if ((txStatus === TxStatus.FAIL || txStatus === TxStatus.SUCCESS) && sendingTx) {
+    setSendingTx(false);
+  }
+  const displayTxOverview =
+    txStatus === TxStatus.SUCCESS || txStatus === TxStatus.NONE || sendingTx;
   const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } =
     useMemo(() => {
       if (toQueue !== '' && toQueueShares === BigInt(0)) {
@@ -172,7 +177,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             </InputBar>
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
-                onClick={() => handleSubmitTransaction(false)}
+                onClick={() => {
+                  handleSubmitTransaction(false);
+                  setSendingTx(true);
+                }}
                 palette={theme.palette.backstop}
                 sx={{ minWidth: '108px', padding: '6px', display: 'flex' }}
                 disabled={isSubmitDisabled}
@@ -187,7 +195,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
-                onClick={() => handleSubmitTransaction(false)}
+                onClick={() => {
+                  handleSubmitTransaction(false);
+                  setSendingTx(true);
+                }}
                 palette={theme.palette.backstop}
                 sx={{ minWidth: '108px', padding: '6px', display: 'flex', width: '100%' }}
                 disabled={isSubmitDisabled}
@@ -197,7 +208,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             )}
           </Box>
         </Box>
-        {!isError && (
+        {!isError && displayTxOverview && (
           <TxOverview>
             <>
               <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
