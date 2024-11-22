@@ -1,8 +1,8 @@
-import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
+import MenuIcon from '@mui/icons-material/Menu';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import Link from 'next/link';
 import React from 'react';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useBackstop } from '../../hooks/api';
 import { NavItem } from './NavItem';
 
@@ -38,7 +38,7 @@ export const NavMenu = () => {
         onClick={handleClick}
         sx={{ width: '100%', height: '100%', color: theme.palette.text.secondary }}
       >
-        <MoreHorizRoundedIcon />
+        <MenuIcon />
       </IconButton>
       {viewType === ViewType.REGULAR && (
         <Menu

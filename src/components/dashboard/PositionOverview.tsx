@@ -1,7 +1,7 @@
 import { PoolClaimArgs, PositionsEstimate } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -158,6 +158,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
           flexDirection: 'row',
           alignItems: 'center',
           width: isRegularViewType ? '50%' : '100%',
+          justifyContent: isRegularViewType ? undefined : 'space-between',
         }}
       >
         <Box
