@@ -1,6 +1,6 @@
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { Box, Input, Typography } from '@mui/material';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import { useEffect, useState } from 'react';
 import { Divider } from '../components/common/Divider';
 import { OpaqueButton } from '../components/common/OpaqueButton';
@@ -16,7 +16,7 @@ export default function SettingsPage() {
 
   const [newNetworkRPCUrl, setNewNetworkRPCUrl] = useState<string>('');
   const [newHorizonUrl, setNewHorizonUrl] = useState<string>('');
-  const [newOpts, setNewOpts] = useState<SorobanRpc.Server.Options | undefined>(undefined);
+  const [newOpts, setNewOpts] = useState<rpc.Server.Options | undefined>(undefined);
   const [poolToAdd, setPoolToAdd] = useState<string>('');
   const [poolIdError, setPoolIdError] = useState('');
   const { data: pool } = usePool(poolToAdd, poolToAdd.length > 0);

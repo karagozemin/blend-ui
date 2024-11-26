@@ -1,6 +1,6 @@
 import { ContractErrorType, parseError } from '@blend-capital/blend-sdk';
 import { AlertColor } from '@mui/material';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import { OpaqueButton } from '../components/common/OpaqueButton';
 import { useWallet } from '../contexts/wallet';
 import theme from '../theme';
@@ -8,11 +8,11 @@ import theme from '../theme';
 export function RestoreButton({
   simResponse,
 }: {
-  simResponse: SorobanRpc.Api.SimulateTransactionResponse;
+  simResponse: rpc.Api.SimulateTransactionResponse;
 }) {
   const { restore } = useWallet();
   function handleRestore() {
-    if (simResponse && SorobanRpc.Api.isSimulationRestore(simResponse)) {
+    if (simResponse && rpc.Api.isSimulationRestore(simResponse)) {
       restore(simResponse);
     }
   }
@@ -31,7 +31,7 @@ export function getErrorFromSim(
   input: string | undefined,
   decimals: number,
   loading: boolean,
-  simulationResult: SorobanRpc.Api.SimulateTransactionResponse | undefined,
+  simulationResult: rpc.Api.SimulateTransactionResponse | undefined,
   extraValidations?: () => Partial<SubmitError>
 ): SubmitError {
   let errorProps: SubmitError = {
@@ -72,7 +72,7 @@ export function getErrorFromSim(
       return errorProps;
     }
   }
-  if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
+  if (simulationResult && rpc.Api.isSimulationRestore(simulationResult)) {
     errorProps.isError = true;
     errorProps.extraContent = <RestoreButton simResponse={simulationResult} />;
     errorProps.isSubmitDisabled = true;
@@ -82,7 +82,7 @@ export function getErrorFromSim(
       'This transaction ran into expired entries which need to be restored before proceeding.';
     return errorProps;
   }
-  if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
+  if (simulationResult && rpc.Api.isSimulationError(simulationResult)) {
     const error = parseError(simulationResult);
     errorProps.isError = true;
     errorProps.isSubmitDisabled = true;
