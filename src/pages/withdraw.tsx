@@ -3,7 +3,7 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
-import { ReserveDropdown } from '../components/common/ReserveDropdown';
+import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
@@ -38,11 +38,8 @@ const Withdraw: NextPage = () => {
       <Row>
         <GoBackHeader name={pool?.config.name} />
       </Row>
-      <Row>
-        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <ReserveDropdown action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
-        </Section>
-      </Row>
+      <ReserveDetailsBar action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
+
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
           <Box

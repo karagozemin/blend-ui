@@ -1,11 +1,10 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Link, Typography, useTheme } from '@mui/material';
-
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
-import { ReserveDropdown } from '../components/common/ReserveDropdown';
+import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
@@ -52,11 +51,9 @@ const Supply: NextPage = () => {
       <Row>
         <GoBackHeader name={pool?.config.name} />
       </Row>
-      <Row>
-        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <ReserveDropdown action="supply" poolId={safePoolId} activeReserveId={safeAssetId} />
-        </Section>
-      </Row>
+
+      <ReserveDetailsBar action="supply" poolId={safePoolId} activeReserveId={safeAssetId} />
+
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
           <Box
@@ -105,7 +102,7 @@ const Supply: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <Section width={SectionSize.THIRD}>
+        <Section width={SectionSize.THIRD} sx={{ justifyContent: 'center' }}>
           <StackedText
             title="Supply APR"
             text={

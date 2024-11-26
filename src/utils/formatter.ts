@@ -72,17 +72,18 @@ export function toBalance(
 /**
  * Format a number as a percentage
  * @param rate - The number expressed in decimal
+ * @param decimals - The number of decimals to display (default is 2)
  * @returns the number as a percentage
  */
-export function toPercentage(rate: number | undefined): string {
+export function toPercentage(rate: number | undefined, decimals = 2): string {
   if (rate == undefined) {
     return '--';
   }
 
   const adjRate = rate * 100;
   const formattedStr = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
+    maximumFractionDigits: decimals,
+    minimumFractionDigits: decimals,
   }).format(adjRate);
   return `${formattedStr}%`;
 }

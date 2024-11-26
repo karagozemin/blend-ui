@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 import { BorrowAnvil } from '../components/borrow/BorrowAnvil';
 import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
-import { ReserveDropdown } from '../components/common/ReserveDropdown';
+import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
@@ -46,11 +46,7 @@ const Borrow: NextPage = () => {
       <Row>
         <GoBackHeader name={pool?.config.name} />
       </Row>
-      <Row>
-        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <ReserveDropdown action="borrow" poolId={safePoolId} activeReserveId={safeAssetId} />
-        </Section>
-      </Row>
+      <ReserveDetailsBar action="borrow" poolId={safePoolId} activeReserveId={safeAssetId} />
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
           <Box

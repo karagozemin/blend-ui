@@ -58,6 +58,7 @@ export const TooltipText: React.FC<TooltipTextProps> = ({
               color: 'text.secondary',
               width: '15px',
               marginLeft: '4px',
+              height: '15px',
             }}
           />
         </Box>

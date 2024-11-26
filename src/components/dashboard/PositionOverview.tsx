@@ -187,7 +187,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginLeft: isRegularViewType ? 'auto' : undefined,
+            marginLeft: isRegularViewType ? 'auto' : '18px',
           }}
         >
           <StackedText
