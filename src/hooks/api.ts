@@ -17,7 +17,7 @@ import {
   Asset,
   BASE_FEE,
   Horizon,
-  SorobanRpc,
+  rpc,
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
@@ -306,8 +306,13 @@ export function useTokenBalance(
           return BigInt(balance_line.balance.replace('.', ''));
         }
       }
-      let rpc = new SorobanRpc.Server(network.rpc, network.opts);
-      return await getTokenBalance(rpc, network.passphrase, tokenId, new Address(walletAddress));
+      const stellarRpc = new rpc.Server(network.rpc, network.opts);
+      return await getTokenBalance(
+        stellarRpc,
+        network.passphrase,
+        tokenId,
+        new Address(walletAddress)
+      );
     },
   });
 }
@@ -340,14 +345,14 @@ export function useAuctionEventsLongQuery(
     queryFn: async () => {
       try {
         let events: PoolEvent[] = [];
-        const rpc = new SorobanRpc.Server(network.rpc, network.opts);
-        const latestLedger = (await rpc.getLatestLedger()).sequence;
+        const stellarRpc = new rpc.Server(network.rpc, network.opts);
+        const latestLedger = (await stellarRpc.getLatestLedger()).sequence;
         // default event retention period for RPCs is 17280 ledgers
         // but RPCs currently only scan 10k ledgers per request, provide
         // some buffer to ensure the latest ledger is read
         let queryLedger = Math.round(latestLedger - 9990);
         queryLedger = Math.max(queryLedger, 100);
-        let resp = await rpc._getEvents({
+        let resp = await stellarRpc._getEvents({
           startLedger: queryLedger,
           filters: [
             {
@@ -396,8 +401,8 @@ export function useAuctionEventsShortQuery(
     queryFn: async () => {
       try {
         let events: PoolEvent[] = [];
-        const rpc = new SorobanRpc.Server(network.rpc, network.opts);
-        let resp = await rpc._getEvents({
+        const stellarRpc = new rpc.Server(network.rpc, network.opts);
+        let resp = await stellarRpc._getEvents({
           startLedger: lastLedgerFetched,
           filters: [
             {
@@ -433,7 +438,7 @@ export function useAuctionEventsShortQuery(
 export function useSimulateOperation<T>(
   operation_str: string,
   enabled: boolean = true
-): UseQueryResult<SorobanRpc.Api.SimulateTransactionResponse> {
+): UseQueryResult<rpc.Api.SimulateTransactionResponse> {
   const { walletAddress, connected } = useWallet();
   const { network } = useSettings();
   return useQuery({
@@ -445,7 +450,7 @@ export function useSimulateOperation<T>(
         throw new Error('No wallet address');
       }
       let operation = xdr.Operation.fromXDR(operation_str, 'base64');
-      let rpc = new SorobanRpc.Server(network.rpc, network.opts);
+      const stellarRpc = new rpc.Server(network.rpc, network.opts);
       const account = new Account(walletAddress, '123');
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
@@ -453,7 +458,7 @@ export function useSimulateOperation<T>(
         timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
       }).addOperation(operation);
       const transaction = tx_builder.build();
-      return await rpc.simulateTransaction(transaction);
+      return await stellarRpc.simulateTransaction(transaction);
     },
   });
 }

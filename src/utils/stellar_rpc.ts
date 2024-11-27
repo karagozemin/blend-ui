@@ -2,14 +2,14 @@ import {
   Account,
   Address,
   Contract,
+  rpc,
   scValToBigInt,
-  SorobanRpc,
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
 
 export async function createTxBuilder(
-  stellar_rpc: SorobanRpc.Server,
+  stellar_rpc: rpc.Server,
   network: string,
   source: string
 ): Promise<TransactionBuilder> {
@@ -27,7 +27,7 @@ export async function createTxBuilder(
 }
 
 export async function getOraclePrice(
-  stellar_rpc: SorobanRpc.Server,
+  stellar_rpc: rpc.Server,
   network_passphrase: string,
   oracle_id: string,
   token_id: string,
@@ -47,7 +47,7 @@ export async function getOraclePrice(
     ]);
     tx_builder.addOperation(new Contract(oracle_id).call('lastprice', asset));
     let result = await stellar_rpc.simulateTransaction(tx_builder.build());
-    if (SorobanRpc.Api.isSimulationSuccess(result)) {
+    if (rpc.Api.isSimulationSuccess(result)) {
       const xdr_str = result.result?.retval.toXDR('base64');
       if (xdr_str) {
         let price_result = xdr.ScVal.fromXDR(xdr_str, 'base64')?.value();

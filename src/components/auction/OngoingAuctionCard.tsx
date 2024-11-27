@@ -10,7 +10,7 @@ import {
   SubmitArgs,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Asset, SorobanRpc } from '@stellar/stellar-sdk';
+import { Asset, rpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -53,7 +53,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
   const { data: backstop } = useBackstop();
   const { data: horizonAccount } = useHorizonAccount();
   const { data: poolUser } = usePoolUser(pool);
-  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
 
@@ -162,7 +162,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
     let response = await poolSubmit(pool.id, submitArgs, sim);
     if (response && sim) {
       setSimResponse(response);
-      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+      if (rpc.Api.isSimulationSuccess(response)) {
         setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
       } else {
         console.error('Simulation failed', response);

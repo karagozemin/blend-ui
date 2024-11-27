@@ -5,7 +5,7 @@ import {
   PoolBackstopActionArgs,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Horizon, SorobanRpc } from '@stellar/stellar-sdk';
+import { Horizon, rpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -49,7 +49,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   );
 
   const [toDeposit, setToDeposit] = useState<string>('');
-  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<bigint>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toDeposit) != 0) {
@@ -104,7 +104,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       const response = await backstopDeposit(depositArgs, sim);
       if (response) {
         setSimResponse(response);
-        if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        if (rpc.Api.isSimulationSuccess(response)) {
           const result = parseResult(response, BackstopContract.parsers.deposit);
           setParsedSimResult(result);
         }

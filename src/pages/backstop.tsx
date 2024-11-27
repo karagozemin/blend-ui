@@ -7,7 +7,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography } from '@mui/material';
-import { SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -105,7 +105,7 @@ const Backstop: NextPage = () => {
         true
       );
       if (response) {
-        return SorobanRpc.Api.isSimulationSuccess(response)
+        return rpc.Api.isSimulationSuccess(response)
           ? parseResult(response, (xdrString: string) => {
               return scValToBigInt(xdr.ScVal.fromXDR(xdrString, 'base64'));
             })

@@ -9,7 +9,7 @@ import {
   SubmitArgs,
 } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import { Asset, SorobanRpc } from '@stellar/stellar-sdk';
+import { Asset, rpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -51,7 +51,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const { data: horizonAccount } = useHorizonAccount();
 
   const [toBorrow, setToBorrow] = useState<string>('');
-  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const loading = isLoading || loadingEstimate;
@@ -84,7 +84,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     let response = await handleSubmitTransaction(true);
     if (response) {
       setSimResponse(response);
-      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+      if (rpc.Api.isSimulationSuccess(response)) {
         setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
       }
     }

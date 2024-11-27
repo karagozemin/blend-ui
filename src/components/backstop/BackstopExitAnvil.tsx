@@ -1,5 +1,5 @@
 import { Box, Typography, useTheme } from '@mui/material';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { ViewType, useSettings } from '../../contexts';
@@ -50,7 +50,7 @@ export const BackstopExitAnvil = () => {
   const [minUSDCOut, setMinUSDCOut] = useState<number>(0);
 
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
-  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const loading = isLoading || loadingEstimate;
   const decimals = 7;
 
@@ -182,7 +182,7 @@ export const BackstopExitAnvil = () => {
         },
         true
       )
-        .then((sim: SorobanRpc.Api.SimulateTransactionResponse | undefined) => {
+        .then((sim: rpc.Api.SimulateTransactionResponse | undefined) => {
           setSimResponse(sim);
         })
         .catch((e) => {

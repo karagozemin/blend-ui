@@ -1,7 +1,7 @@
 import { BackstopContract, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, SxProps, Theme, Tooltip, Typography } from '@mui/material';
-import { SorobanRpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import { useEffect, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
@@ -43,7 +43,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
     refetch: refetchSim,
   } = useSimulateOperation(sim_op, q4w.exp === BigInt(0) || first);
   const isRestore =
-    isLoading === false && simResult !== undefined && SorobanRpc.Api.isSimulationRestore(simResult);
+    isLoading === false && simResult !== undefined && rpc.Api.isSimulationRestore(simResult);
 
   const TOTAL_QUEUE_TIME_SECONDS = 21 * 24 * 60 * 60;
 
@@ -72,7 +72,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   };
 
   const handleRestore = async () => {
-    if (simResult && SorobanRpc.Api.isSimulationRestore(simResult)) {
+    if (simResult && rpc.Api.isSimulationRestore(simResult)) {
       await restore(simResult);
       refetchSim();
     }

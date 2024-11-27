@@ -1,7 +1,7 @@
 import { parseResult } from '@blend-capital/blend-sdk';
 import { LoopOutlined } from '@mui/icons-material';
 import { Box, Typography, useTheme } from '@mui/material';
-import { SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { ViewType, useSettings } from '../../contexts';
@@ -56,7 +56,7 @@ export const BackstopJoinAnvil = () => {
   const [maxUSDCIn, setMaxUSDCIn] = useState<number>(0);
 
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
-  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const loading = isLoading || loadingEstimate;
   const decimals = 7;
   const isJoin = currentToken.symbol === 'BLND-USDC LP';
@@ -241,12 +241,12 @@ export const BackstopJoinAnvil = () => {
           },
           true
         )
-          .then((sim: SorobanRpc.Api.SimulateTransactionResponse | undefined) => {
+          .then((sim: rpc.Api.SimulateTransactionResponse | undefined) => {
             if (sim === undefined) {
               return;
             }
             setSimResponse(sim);
-            if (SorobanRpc.Api.isSimulationSuccess(sim)) {
+            if (rpc.Api.isSimulationSuccess(sim)) {
               let result = parseResult(sim, (xdrString: string) => {
                 return scValToBigInt(xdr.ScVal.fromXDR(xdrString, 'base64'));
               });
@@ -274,7 +274,7 @@ export const BackstopJoinAnvil = () => {
             },
             true
           )
-            .then((sim: SorobanRpc.Api.SimulateTransactionResponse | undefined) => {
+            .then((sim: rpc.Api.SimulateTransactionResponse | undefined) => {
               setSimResponse(sim);
             })
             .catch((e) => {
