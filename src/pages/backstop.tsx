@@ -1,5 +1,6 @@
 import {
   BackstopClaimArgs,
+  BackstopContract,
   BackstopPoolEst,
   BackstopPoolUserEst,
   FixedMath,
@@ -10,7 +11,6 @@ import { Box, Typography } from '@mui/material';
 import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
 import { BackstopAPR } from '../components/backstop/BackstopAPR';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
 import { CustomButton } from '../components/common/CustomButton';
@@ -31,19 +31,19 @@ import {
   useBackstopPool,
   useBackstopPoolUser,
   useHorizonAccount,
+  useSimulateOperation,
   useTokenBalance,
 } from '../hooks/api';
 import theme from '../theme';
+import { CometClient } from '../utils/comet';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { connected, walletAddress, backstopClaim, cometSingleSidedDeposit } = useWallet();
+  const { connected, walletAddress, backstopClaim, restore } = useWallet();
 
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-
-  const [lpTokenEmissions, setLpTokenEmissions] = useState<bigint>();
 
   const { data: backstop } = useBackstop();
   const { data: backstopPoolData } = useBackstopPool(safePoolId);
@@ -75,6 +75,49 @@ const Backstop: NextPage = () => {
       ? (Number(lpBalance) / 1e7) * backstop.backstopToken.lpTokenPrice
       : undefined;
 
+  const backstopContract = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const claimArgs: BackstopClaimArgs = {
+    from: walletAddress,
+    pool_addresses: [safePoolId],
+    to: walletAddress,
+  };
+  const claimOp = safePoolId && walletAddress !== '' ? backstopContract.claim(claimArgs) : '';
+  const {
+    data: claimSimResult,
+    isLoading: isClaimLoading,
+    refetch: refetchClaimSim,
+  } = useSimulateOperation(claimOp, backstop !== undefined && claimOp !== '' && connected);
+  const isRestore =
+    isClaimLoading === false &&
+    claimSimResult !== undefined &&
+    rpc.Api.isSimulationRestore(claimSimResult);
+
+  const cometContract =
+    backstop !== undefined ? new CometClient(backstop.backstopToken.id) : undefined;
+  const lpMintEstOp =
+    backstop && cometContract && backstopUserEst && walletAddress !== ''
+      ? cometContract
+          .depositTokenInGetLPOut({
+            depositTokenAddress: backstop.config.blndTkn,
+            depositTokenAmount: FixedMath.toFixed(backstopUserEst.emissions, 7),
+            minLPTokenAmount: BigInt(0),
+            user: walletAddress,
+          })
+          .toXDR('base64')
+      : undefined;
+
+  const { data: mintSimResult, refetch: refetchMintSim } = useSimulateOperation(
+    lpMintEstOp ?? '',
+    lpMintEstOp !== undefined && !isRestore
+  );
+  let lpTokenEmissions: bigint = BigInt(0);
+  if (mintSimResult && rpc.Api.isSimulationSuccess(mintSimResult)) {
+    lpTokenEmissions =
+      parseResult(mintSimResult, (xdrString: string) => {
+        return scValToBigInt(xdr.ScVal.fromXDR(xdrString, 'base64'));
+      }) ?? BigInt(0);
+  }
+
   const backstopClaimUSD =
     lpTokenEmissions && backstop?.backstopToken.lpTokenPrice
       ? (Number(lpTokenEmissions) / 1e7) * backstop.backstopToken.lpTokenPrice
@@ -87,54 +130,18 @@ const Backstop: NextPage = () => {
         pool_addresses: [safePoolId],
         to: walletAddress,
       };
-      setLpTokenEmissions(BigInt(0));
       await backstopClaim(claimArgs, false);
+      refetchClaimSim();
+      refetchMintSim();
     }
   };
 
-  async function getLPEstimate(amount: bigint, depositTokenAddress: string, source: string) {
-    if (connected && backstop) {
-      let response = await cometSingleSidedDeposit(
-        backstop.config.backstopTkn,
-        {
-          depositTokenAddress: depositTokenAddress,
-          depositTokenAmount: amount,
-          minLPTokenAmount: BigInt(0),
-          user: source,
-        },
-        true
-      );
-      if (response) {
-        return rpc.Api.isSimulationSuccess(response)
-          ? parseResult(response, (xdrString: string) => {
-              return scValToBigInt(xdr.ScVal.fromXDR(xdrString, 'base64'));
-            })
-          : BigInt(0);
-      }
+  const handleRestore = async () => {
+    if (claimSimResult && rpc.Api.isSimulationRestore(claimSimResult)) {
+      await restore(claimSimResult);
+      refetchClaimSim();
     }
-    return BigInt(0);
-  }
-
-  useEffect(() => {
-    const update = async () => {
-      if (
-        backstop?.config?.blndTkn !== undefined &&
-        backstopUserEst?.emissions !== undefined &&
-        backstopUserEst.emissions > 0
-      ) {
-        let emissions_as_bigint = FixedMath.toFixed(backstopUserEst.emissions, 7);
-        let lp_tokens_emitted = await getLPEstimate(
-          emissions_as_bigint,
-          backstop.config.blndTkn,
-          backstop.id
-        );
-        setLpTokenEmissions(lp_tokens_emitted);
-      } else if (lpTokenEmissions !== BigInt(0)) {
-        setLpTokenEmissions(BigInt(0));
-      }
-    };
-    update();
-  }, [userBackstopPoolData]);
+  };
 
   return (
     <>
@@ -166,7 +173,63 @@ const Backstop: NextPage = () => {
           ></StackedText>
         </Section>
       </Row>
-      {lpTokenEmissions !== undefined && lpTokenEmissions > BigInt(0) && (
+      {isRestore && (
+        <Row>
+          <Section
+            width={SectionSize.FULL}
+            sx={{
+              flexDirection: 'column',
+              paddingTop: '12px',
+            }}
+          >
+            <Typography variant="body2" sx={{ margin: '6px' }}>
+              Emissions to claim
+            </Typography>
+            <Row>
+              <CustomButton
+                sx={{
+                  width: '100%',
+                  margin: '6px',
+                  padding: '12px',
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.background.default,
+                  '&:hover': {
+                    color: theme.palette.warning.main,
+                  },
+                }}
+                onClick={handleRestore}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.warning.opaque,
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Icon
+                      alt="BLND Token Icon"
+                      src="/icons/tokens/blnd-yellow.svg"
+                      height="24px"
+                      width="18px"
+                      isCircle={false}
+                    />
+                  </Box>
+                  <Typography variant="h4" sx={{ marginLeft: '6px' }}>
+                    {`Restore Data`}
+                  </Typography>
+                </Box>
+                <ArrowForwardIcon fontSize="inherit" />
+              </CustomButton>
+            </Row>
+          </Section>
+        </Row>
+      )}
+      {!isRestore && lpTokenEmissions !== undefined && lpTokenEmissions > BigInt(0) && (
         <Row>
           <Section
             width={SectionSize.FULL}
