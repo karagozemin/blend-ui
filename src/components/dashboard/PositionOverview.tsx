@@ -1,9 +1,16 @@
-import { PoolClaimArgs, PositionsEstimate } from '@blend-capital/blend-sdk';
+import { PoolClaimArgs, PoolContract, PositionsEstimate } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
+import { rpc } from '@stellar/stellar-sdk';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
-import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
+import {
+  useHorizonAccount,
+  usePool,
+  usePoolOracle,
+  usePoolUser,
+  useSimulateOperation,
+} from '../../hooks/api';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { BLND_ASSET } from '../../utils/token_display';
@@ -19,19 +26,38 @@ import { BorrowCapRing } from './BorrowCapRing';
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
-  const { connected, walletAddress, poolClaim, createTrustlines } = useWallet();
+  const { connected, walletAddress, poolClaim, createTrustlines, restore } = useWallet();
 
   const { data: account, refetch: refechAccount } = useHorizonAccount();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: userPoolData, refetch: refetchPoolUser } = usePoolUser(pool);
 
+  const { emissions, claimedTokens } =
+    userPoolData && pool
+      ? userPoolData.estimateEmissions(pool)
+      : { emissions: 0, claimedTokens: [] };
+
+  const poolContract = poolId ? new PoolContract(poolId) : undefined;
+  const claimArgs: PoolClaimArgs = {
+    from: walletAddress,
+    reserve_token_ids: claimedTokens,
+    to: walletAddress,
+  };
+  const sim_op = poolContract && walletAddress !== '' ? poolContract.claim(claimArgs) : '';
+  const {
+    data: simResult,
+    isLoading,
+    refetch: refetchSim,
+  } = useSimulateOperation(sim_op, claimedTokens.length > 0 && sim_op !== '' && connected);
+
   if (pool === undefined || userPoolData === undefined) {
     return <Skeleton />;
   }
 
-  const { emissions, claimedTokens } = userPoolData.estimateEmissions(pool);
   const hasBLNDTrustline = !requiresTrustline(account, BLND_ASSET);
+  const isRestore =
+    isLoading === false && simResult !== undefined && rpc.Api.isSimulationRestore(simResult);
 
   const userEst = poolOracle
     ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions)
@@ -58,8 +84,15 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
     }
   }
 
+  const handleRestore = async () => {
+    if (simResult && rpc.Api.isSimulationRestore(simResult)) {
+      await restore(simResult);
+      refetchSim();
+    }
+  };
+
   function renderClaimButton() {
-    if (hasBLNDTrustline) {
+    if (hasBLNDTrustline && !isRestore) {
       return (
         <CustomButton
           sx={{
@@ -98,7 +131,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               color: theme.palette.warning.main,
             },
           }}
-          onClick={handleCreateTrustlineClick}
+          onClick={isRestore ? handleRestore : handleCreateTrustlineClick}
         >
           <Box
             sx={{
@@ -122,14 +155,15 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               <Icon
                 alt="BLND Token Icon"
                 src="/icons/tokens/blnd-yellow.svg"
-                height={'24px'}
-                width={'24px'}
+                height="24px"
+                width="18px"
+                isCircle={false}
               />
             </Box>
             <StackedText
               title="Claim Pool Emissions"
               titleColor="inherit"
-              text={`Add BLND Trustline`}
+              text={isRestore ? 'Restore Data' : 'Add BLND Trustline'}
               textColor="inherit"
               type="large"
             />
