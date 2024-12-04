@@ -101,7 +101,7 @@ const Backstop: NextPage = () => {
             depositTokenAddress: backstop.config.blndTkn,
             depositTokenAmount: FixedMath.toFixed(backstopUserEst.emissions, 7),
             minLPTokenAmount: BigInt(0),
-            user: walletAddress,
+            user: backstop.id,
           })
           .toXDR('base64')
       : undefined;

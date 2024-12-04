@@ -550,6 +550,7 @@ export const WalletProvider = ({ children = null as any }) => {
       } else {
         cleanBackstopPoolCache(claimArgs.pool_addresses[0].toString());
       }
+      cleanBackstopCache();
       cleanWalletCache();
     }
   }

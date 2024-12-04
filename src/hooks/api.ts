@@ -43,8 +43,19 @@ export function useQueryClientCacheCleaner(): {
 
   const cleanWalletCache = () => {
     queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === 'balance' || query.queryKey[0] === 'account',
+      predicate: (query) =>
+        query.queryKey[0] === 'balance' ||
+        query.queryKey[0] === 'account' ||
+        query.queryKey[0] === 'sim',
     });
+
+    // Re-invalide the balance and account queries to ensure they are re-fetched after Horizon is updated
+    // This is a temporary solution until we have a better way to handle delayed Horizon updates
+    setTimeout(() => {
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'balance' || query.queryKey[0] === 'account',
+      });
+    }, 1000);
   };
 
   const cleanBackstopCache = () => {
