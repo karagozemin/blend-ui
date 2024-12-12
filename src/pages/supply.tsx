@@ -2,6 +2,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Link, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { AllbridgeButton } from '../components/bridge/allbridge';
 import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
@@ -53,6 +54,7 @@ const Supply: NextPage = () => {
       </Row>
 
       <ReserveDetailsBar action="supply" poolId={safePoolId} activeReserveId={safeAssetId} />
+      {reserve?.tokenMetadata.symbol === 'USDC' && <AllbridgeButton />}
 
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
