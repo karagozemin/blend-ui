@@ -62,7 +62,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
       onClick={() => {
         if (viewType === ViewType.MOBILE) {
           router.push({
-            pathname: '/withdraw',
+            pathname: '/repay',
             query: { poolId: poolId, assetId: reserve.assetId },
           });
         }
