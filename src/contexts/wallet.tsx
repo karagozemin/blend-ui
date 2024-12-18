@@ -20,6 +20,7 @@ import {
   XBULL_ID,
   xBullModule,
 } from '@creit.tech/stellar-wallets-kit/index';
+import { LedgerModule } from '@creit.tech/stellar-wallets-kit/modules/ledger.module';
 import {
   WalletConnectAllowedMethods,
   WalletConnectModule,
@@ -129,6 +130,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
     new FreighterModule(),
     new LobstrModule(),
     new AlbedoModule(),
+    new LedgerModule(),
     new WalletConnectModule({
       url: process.env.NEXT_PUBLIC_WALLET_CONNECT_URL ?? '',
       projectId: 'a0fd1483122937b5cabbe0d85fa9c34e',
