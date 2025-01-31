@@ -36,7 +36,7 @@ const Withdraw: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader name={pool?.metadata.name} />
       </Row>
       <ReserveDetailsBar action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
 

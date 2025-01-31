@@ -1,7 +1,7 @@
 import {
   FixedMath,
   parseResult,
-  PoolContract,
+  PoolContractV1,
   PoolUser,
   Positions,
   PositionsEstimate,
@@ -85,7 +85,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     if (response) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+        setParsedSimResult(parseResult(response, PoolContractV1.parsers.submit));
       }
     }
     setLoadingEstimate(false);
@@ -131,11 +131,11 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     return <Skeleton />;
   }
 
-  if (isOracleError && pool.config.status > 1) {
+  if (isOracleError && pool.metadata.status > 1) {
     return (
       <>
         <Row>
-          <PoolStatusBanner status={pool.config.status} />
+          <PoolStatusBanner status={pool.metadata.status} />
         </Row>
         <Row>
           <PoolOracleError />
@@ -143,9 +143,9 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       </>
     );
   }
-  if (pool.config.status > 1) {
+  if (pool.metadata.status > 1) {
     <Row>
-      <PoolStatusBanner status={pool.config.status} />
+      <PoolStatusBanner status={pool.metadata.status} />
     </Row>;
   }
   if (isOracleError) {

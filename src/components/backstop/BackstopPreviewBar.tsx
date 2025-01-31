@@ -62,7 +62,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
             borderRadius: '5px',
           }}
         >
-          <PoolStatusBox titleColor="inherit" type="large" status={pool?.config?.status} />
+          <PoolStatusBox titleColor="inherit" type="large" status={pool?.metadata?.status} />
         </Box>
         <Box
           sx={{

@@ -1,5 +1,5 @@
 import {
-  BackstopContract,
+  BackstopContractV1,
   BackstopPoolUserEst,
   parseResult,
   PoolBackstopActionArgs,
@@ -105,7 +105,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       if (response) {
         setSimResponse(response);
         if (rpc.Api.isSimulationSuccess(response)) {
-          const result = parseResult(response, BackstopContract.parsers.deposit);
+          const result = parseResult(response, BackstopContractV1.parsers.deposit);
           setParsedSimResult(result);
         }
       }

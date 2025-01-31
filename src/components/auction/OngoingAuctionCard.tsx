@@ -3,7 +3,7 @@ import {
   AuctionType,
   parseResult,
   Pool,
-  PoolContract,
+  PoolContractV1,
   Positions,
   PositionsEstimate,
   RequestType,
@@ -163,7 +163,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
     if (response && sim) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+        setParsedSimResult(parseResult(response, PoolContractV1.parsers.submit));
       } else {
         console.error('Simulation failed', response);
       }

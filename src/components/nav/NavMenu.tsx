@@ -5,11 +5,12 @@ import Link from 'next/link';
 import React from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { useBackstop } from '../../hooks/api';
+import { ToggleSlider } from '../common/ToggleSlider';
 import { NavItem } from './NavItem';
 
 export const NavMenu = () => {
   const theme = useTheme();
-  const { viewType, lastPool } = useSettings();
+  const { viewType, lastPool, version, setVersion } = useSettings();
 
   const { data: backstop } = useBackstop();
   const poolId = (lastPool ? lastPool : backstop?.config?.rewardZone[0]) ?? '';
@@ -55,6 +56,13 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
+          <ToggleSlider
+            options={['V1', 'V2']}
+            selected={version}
+            palette={theme.palette.menu}
+            changeState={setVersion}
+          ></ToggleSlider>
+
           <Link href={`/auction/?poolId=${safePoolId}`}>
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Auctions

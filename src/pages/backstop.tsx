@@ -1,6 +1,6 @@
 import {
   BackstopClaimArgs,
-  BackstopContract,
+  BackstopContractV1,
   BackstopPoolEst,
   BackstopPoolUserEst,
   FixedMath,
@@ -75,7 +75,7 @@ const Backstop: NextPage = () => {
       ? (Number(lpBalance) / 1e7) * backstop.backstopToken.lpTokenPrice
       : undefined;
 
-  const backstopContract = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const backstopContract = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
   const claimArgs: BackstopClaimArgs = {
     from: walletAddress,
     pool_addresses: [safePoolId],

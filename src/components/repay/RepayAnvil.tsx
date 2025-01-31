@@ -1,7 +1,7 @@
 import {
   FixedMath,
   parseResult,
-  PoolContract,
+  PoolContractV1,
   PoolUser,
   Positions,
   PositionsEstimate,
@@ -95,7 +95,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     if (response) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+        setParsedSimResult(parseResult(response, PoolContractV1.parsers.submit));
       }
     }
     setLoadingEstimate(false);

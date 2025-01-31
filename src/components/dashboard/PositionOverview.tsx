@@ -1,4 +1,4 @@
-import { PoolClaimArgs, PoolContract, PositionsEstimate } from '@blend-capital/blend-sdk';
+import { PoolClaimArgs, PoolContractV1, PositionsEstimate } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
@@ -38,7 +38,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       ? userPoolData.estimateEmissions(pool)
       : { emissions: 0, claimedTokens: [] };
 
-  const poolContract = poolId ? new PoolContract(poolId) : undefined;
+  const poolContract = poolId ? new PoolContractV1(poolId) : undefined;
   const claimArgs: PoolClaimArgs = {
     from: walletAddress,
     reserve_token_ids: claimedTokens,

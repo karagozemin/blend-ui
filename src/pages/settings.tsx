@@ -50,7 +50,7 @@ export default function SettingsPage() {
 
   function handleAddTrackedPool(poolId: string) {
     if (pool && pool.id === poolId) {
-      trackPool(pool.id, pool.config.name);
+      trackPool(pool.id, pool.metadata.name);
       setPoolToAdd('');
     } else {
       setPoolIdError('Pool not found.');

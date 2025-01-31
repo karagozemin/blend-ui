@@ -50,7 +50,7 @@ const BackstopDeposit: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config?.name} />
+        <GoBackHeader name={pool?.metadata?.name} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>

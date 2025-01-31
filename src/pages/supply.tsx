@@ -50,7 +50,7 @@ const Supply: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader name={pool?.metadata.name} />
       </Row>
 
       <ReserveDetailsBar action="supply" poolId={safePoolId} activeReserveId={safeAssetId} />

@@ -27,7 +27,7 @@ const Asset: NextPage = () => {
   const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
   let safeAssetId = '';
   if (assetId === undefined) {
-    safeAssetId = pool ? pool.config.reserveList[0] : '';
+    safeAssetId = pool ? Array.from(pool.reserves.keys())[0] : '';
   } else if (typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId)) {
     safeAssetId = assetId;
   }

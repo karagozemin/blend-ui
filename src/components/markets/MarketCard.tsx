@@ -31,7 +31,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstopPool } = useBackstopPool(poolId);
-
+  console.log(backstop, pool, poolOracle, backstopPool);
   const [expand, setExpand] = useState(false);
   const [rotateArrow, setRotateArrow] = useState(false);
 
@@ -40,7 +40,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   useEffect(() => {
     if (pool !== undefined && backstopPool !== undefined && backstop !== undefined) {
       onLoaded(index);
-      trackPool(poolId, pool.config.name);
+      trackPool(poolId, pool.metadata.name);
     }
   }, [pool, backstopPool, backstop]);
 
@@ -49,6 +49,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   }
 
   const poolEst = poolOracle ? PoolEstimate.build(pool.reserves, poolOracle) : undefined;
+  console.log(poolEst);
   const backstopPoolEst = BackstopPoolEst.build(backstop.backstopToken, backstopPool.poolBalance);
 
   return (
@@ -67,7 +68,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
         }}
       >
         <Row>
-          <PoolHeader name={pool.config.name} sx={{ margin: '6px', padding: '6px' }} />
+          <PoolHeader name={pool.metadata.name} sx={{ margin: '6px', padding: '6px' }} />
 
           <Box
             sx={{

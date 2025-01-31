@@ -1,4 +1,4 @@
-import { BackstopContract, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
+import { BackstopContractV1, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, SxProps, Theme, Tooltip, Typography } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
@@ -28,7 +28,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
     useWallet();
   const { viewType } = useSettings();
 
-  const backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const backstop = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
   const actionArgs: PoolBackstopActionArgs = {
     from: walletAddress,
     pool_address: poolId,

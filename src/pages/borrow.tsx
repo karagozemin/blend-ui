@@ -44,7 +44,7 @@ const Borrow: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader name={pool?.metadata.name} />
       </Row>
       <ReserveDetailsBar action="borrow" poolId={safePoolId} activeReserveId={safeAssetId} />
       <Row>

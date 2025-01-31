@@ -37,6 +37,9 @@ export interface ISettingsContext {
   showJoinPool: boolean;
   setShowJoinPool: (showJoinPool: boolean) => void;
   blockedPools: string[];
+  version: 'V1' | 'V2';
+  setVersion: (version: 'V1' | 'V2') => void;
+  getVersion: () => string;
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
@@ -49,9 +52,10 @@ export const SettingsProvider = ({ children = null as any }) => {
   const [network, setNetwork] = useState<Network & { horizonUrl: string }>({
     rpc: DEFAULT_RPC,
     passphrase: DEFAULT_PASSPHRASE,
-    opts: undefined,
+    opts: { allowHttp: true },
     horizonUrl: DEFAULT_HORIZON,
   });
+  const [version, setVersion] = useState<'V1' | 'V2'>('V1');
 
   const [lastPool, setLastPool] = useLocalStorageState('lastPool', undefined);
   const [showLend, setShowLend] = useState<boolean>(true);
@@ -98,6 +102,14 @@ export const SettingsProvider = ({ children = null as any }) => {
     }
   }
 
+  function handleSetVersion(version: 'V1' | 'V2') {
+    setVersion(version);
+  }
+
+  function getVersion() {
+    return version;
+  }
+
   return (
     <SettingsContext.Provider
       value={{
@@ -116,6 +128,9 @@ export const SettingsProvider = ({ children = null as any }) => {
         showJoinPool,
         setShowJoinPool,
         blockedPools,
+        version,
+        setVersion: handleSetVersion,
+        getVersion,
       }}
     >
       {children}

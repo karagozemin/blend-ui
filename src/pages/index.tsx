@@ -11,7 +11,7 @@ const Markets: NextPage = () => {
   const { data: backstop } = useBackstop();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { blockedPools } = useSettings();
+  const { blockedPools, version } = useSettings();
 
   const rewardZone = [...(backstop?.config?.rewardZone ?? [])].reverse();
 

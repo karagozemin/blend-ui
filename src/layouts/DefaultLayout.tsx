@@ -31,7 +31,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (pool !== undefined) {
-      trackPool(pool.id, pool.config.name);
+      trackPool(pool.id, pool.metadata.name);
       setLastPool(pool.id);
     }
   }, [pool, trackPool]);
