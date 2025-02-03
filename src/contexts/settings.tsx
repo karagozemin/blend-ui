@@ -37,9 +37,9 @@ export interface ISettingsContext {
   showJoinPool: boolean;
   setShowJoinPool: (showJoinPool: boolean) => void;
   blockedPools: string[];
-  version: 'V1' | 'V2';
+  version: string | undefined;
   setVersion: (version: 'V1' | 'V2') => void;
-  getVersion: () => string;
+  getVersion: () => string | undefined;
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
@@ -55,7 +55,7 @@ export const SettingsProvider = ({ children = null as any }) => {
     opts: { allowHttp: true },
     horizonUrl: DEFAULT_HORIZON,
   });
-  const [version, setVersion] = useState<'V1' | 'V2'>('V1');
+  const [version, setVersion] = useLocalStorageState('version', 'V1');
 
   const [lastPool, setLastPool] = useLocalStorageState('lastPool', undefined);
   const [showLend, setShowLend] = useState<boolean>(true);

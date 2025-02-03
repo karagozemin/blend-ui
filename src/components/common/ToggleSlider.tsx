@@ -13,11 +13,9 @@ export const ToggleSlider: React.FC<ToggleSliderProps> = ({
   options,
   selected,
   changeState,
-  children,
   palette,
   sx,
   passedRef,
-  ...props
 }) => {
   const theme = useTheme();
   const [selectedOption, setOption] = React.useState(selected);
@@ -29,11 +27,12 @@ export const ToggleSlider: React.FC<ToggleSliderProps> = ({
   return (
     <Box
       sx={{
-        width: '100%',
         display: 'flex',
         justifyContent: 'center',
-        color: theme.palette.menu.main,
-        background: theme.palette.menu.opaque,
+        background: theme.palette.menu.main,
+        borderRadius: '4px',
+        margin: '4px',
+        padding: '4px',
         ...sx,
       }}
     >
@@ -43,13 +42,14 @@ export const ToggleSlider: React.FC<ToggleSliderProps> = ({
           ref={passedRef}
           variant="contained"
           sx={{
-            background:
-              option == selectedOption ? theme.palette.positive.opaque : theme.palette.menu.main,
-            color:
-              option == selectedOption
-                ? theme.palette.positive.main
-                : theme.palette.menu.contrastText,
-            '&:hover': { background: theme.palette.positive.opaque, color: 'white' },
+            background: option == selectedOption ? palette.opaque : theme.palette.menu.main,
+            color: option == selectedOption ? palette.main : theme.palette.menu.contrastText,
+            boxShadow: 'none',
+            '&:hover': {
+              background: option === selectedOption ? palette.opaque : theme.palette.menu.main,
+              color: option === selectedOption ? palette.main : theme.palette.menu.contrastText,
+              boxShadow: 'none',
+            },
             ...sx,
           }}
           onClick={() => handleChangeToggle(option)}

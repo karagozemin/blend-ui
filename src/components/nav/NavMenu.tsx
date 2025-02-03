@@ -1,6 +1,15 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Alert, IconButton, Menu, MenuItem, Snackbar, Typography, useTheme } from '@mui/material';
+import {
+  Alert,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Typography,
+  useTheme,
+} from '@mui/material';
 import Link from 'next/link';
 import React from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -56,12 +65,24 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <ToggleSlider
-            options={['V1', 'V2']}
-            selected={version}
-            palette={theme.palette.menu}
-            changeState={setVersion}
-          ></ToggleSlider>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="subtitle2" sx={{}}>
+              Select Blend Version
+            </Typography>
+            <ToggleSlider
+              options={['V1', 'V2']}
+              selected={version ?? 'V1'}
+              palette={theme.palette.positive}
+              changeState={setVersion}
+            ></ToggleSlider>
+          </Box>
 
           <Link href={`/auction/?poolId=${safePoolId}`}>
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
@@ -121,6 +142,25 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'left',
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ width: '90%', marginLeft: '6px' }}>
+              Select Blend Version
+            </Typography>
+            <ToggleSlider
+              options={['V1', 'V2']}
+              selected={version ?? 'V1'}
+              palette={theme.palette.positive}
+              changeState={setVersion}
+              sx={{ width: '90%' }}
+            ></ToggleSlider>
+          </Box>
           <NavItem
             onClick={handleClose}
             to={{ pathname: '/', query: { poolId: poolId } }}

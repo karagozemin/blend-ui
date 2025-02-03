@@ -31,7 +31,6 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstopPool } = useBackstopPool(poolId);
-  console.log(backstop, pool, poolOracle, backstopPool);
   const [expand, setExpand] = useState(false);
   const [rotateArrow, setRotateArrow] = useState(false);
 
@@ -49,7 +48,6 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   }
 
   const poolEst = poolOracle ? PoolEstimate.build(pool.reserves, poolOracle) : undefined;
-  console.log(poolEst);
   const backstopPoolEst = BackstopPoolEst.build(backstop.backstopToken, backstopPool.poolBalance);
 
   return (
