@@ -1,7 +1,7 @@
 import { Circle } from '@mui/icons-material';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
-import { toBalance, toPercentage } from '../../utils/formatter';
+import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -12,6 +12,8 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
+  const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);
   const emissionsPerAsset = reserve?.emissionsPerYearPerSuppliedAsset();
@@ -58,7 +60,7 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
             >
               <Typography sx={{ padding: '6px' }}>APR</Typography>
               <AprDisplay
-                assetSymbol={reserve.tokenMetadata.symbol}
+                assetSymbol={tokenSymbol}
                 assetApr={reserve.supplyApr}
                 emissionSymbol={'BLND'}
                 emissionApr={emissionApr}

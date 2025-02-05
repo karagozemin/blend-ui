@@ -3,7 +3,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
-import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
+import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
@@ -33,6 +33,9 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+  const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
+
   const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
@@ -89,7 +92,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         }}
       >
         <AprDisplay
-          assetSymbol={reserve.tokenMetadata.symbol}
+          assetSymbol={symbol}
           assetApr={reserve.borrowApr}
           emissionSymbol="BLND"
           emissionApr={emissionApr}

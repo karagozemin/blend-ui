@@ -3,8 +3,8 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { axisClasses } from '@mui/x-charts';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useState } from 'react';
-import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
-import { toPercentage } from '../../utils/formatter';
+import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import { toCompactAddress, toPercentage } from '../../utils/formatter';
 import { estimateEmissionsApr, estimateInterestRate } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
@@ -21,6 +21,9 @@ export const AssetGraphSupply: React.FC<AssetGraphProps> = ({ poolId, assetId, r
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
+  const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
+
   const [showMore, setShowMore] = useState(false);
 
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
@@ -82,7 +85,7 @@ export const AssetGraphSupply: React.FC<AssetGraphProps> = ({ poolId, assetId, r
             APR
           </TooltipText>
           <AprDisplay
-            assetSymbol={reserve.tokenMetadata.symbol}
+            assetSymbol={tokenSymbol}
             assetApr={reserve.supplyApr}
             emissionSymbol={'BLND'}
             emissionApr={emissionApr}

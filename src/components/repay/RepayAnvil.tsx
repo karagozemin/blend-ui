@@ -20,9 +20,10 @@ import {
   usePoolOracle,
   usePoolUser,
   useTokenBalance,
+  useTokenMetadata,
 } from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { toBalance, toPercentage } from '../../utils/formatter';
+import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim } from '../../utils/txSim';
@@ -48,15 +49,12 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
   const reserve = pool?.reserves.get(assetId);
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const { data: horizonAccount } = useHorizonAccount();
-  const { data: tokenBalance } = useTokenBalance(
-    assetId,
-    reserve?.tokenMetadata?.asset,
-    horizonAccount
-  );
+  const { data: tokenBalance } = useTokenBalance(assetId, tokenMetadata?.asset, horizonAccount);
 
   const [toRepay, setToRepay] = useState<string>('');
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
@@ -65,7 +63,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const loading = isLoading || loadingEstimate;
 
   // calculate current wallet state
-  const stellar_reserve_amount = getAssetReserve(horizonAccount, reserve?.tokenMetadata?.asset);
+  const stellar_reserve_amount = getAssetReserve(horizonAccount, tokenMetadata?.asset);
   const freeUserBalanceScaled =
     FixedMath.toFloat(tokenBalance ?? BigInt(0), reserve?.config?.decimals) -
     stellar_reserve_amount;

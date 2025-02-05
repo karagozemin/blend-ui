@@ -13,8 +13,8 @@ import { Skeleton } from '../components/common/Skeleton';
 import { StackedTextBox } from '../components/common/StackedTextBox';
 import { PoolMenu } from '../components/pool/PoolMenu';
 import { useSettings, ViewType } from '../contexts';
-import { usePool, usePoolOracle } from '../hooks/api';
-import { toPercentage } from '../utils/formatter';
+import { usePool, usePoolOracle, useTokenMetadata } from '../hooks/api';
+import { toCompactAddress, toPercentage } from '../utils/formatter';
 
 const Asset: NextPage = () => {
   const router = useRouter();
@@ -31,6 +31,9 @@ const Asset: NextPage = () => {
   } else if (typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId)) {
     safeAssetId = assetId;
   }
+  const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
+
   const reserve = pool?.reserves.get(safeAssetId);
   const hasData = pool && poolOracle && reserve;
 
@@ -42,7 +45,7 @@ const Asset: NextPage = () => {
         </Section>
       </Row>
       <ReserveExploreBar poolId={safePoolId} assetId={safeAssetId} />
-      {reserve?.tokenMetadata.symbol === 'USDC' && <AllbridgeButton />}
+      {symbol === 'USDC' && <AllbridgeButton />}
       {hasData ? (
         <>
           <Divider />

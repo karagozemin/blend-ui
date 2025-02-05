@@ -18,6 +18,7 @@ import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
 import { useSettings } from '../contexts';
 import { usePool, usePoolOracle } from '../hooks/api';
 import { toBalance } from '../utils/formatter';
+import { MAINNET_USDC_CONTRACT_ADDRESS } from '../utils/token_display';
 
 const Dashboard: NextPage = () => {
   const router = useRouter();
@@ -52,9 +53,9 @@ const Dashboard: NextPage = () => {
       <PoolHealthBanner poolId={safePoolId} />
       <PoolExploreBar poolId={safePoolId} />
       {pool &&
-        Array.from(pool.reserves.values()).some(
-          (reserve) => reserve.tokenMetadata.symbol === 'USDC'
-        ) && <AllbridgeButton />}
+        Array.from(pool.reserves.keys()).some((assetId) => MAINNET_USDC_CONTRACT_ADDRESS) && (
+          <AllbridgeButton />
+        )}
       <Divider />
       <BackstopPreviewBar poolId={safePoolId} />
       <Divider />

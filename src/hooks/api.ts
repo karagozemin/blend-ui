@@ -4,6 +4,7 @@ import {
   BackstopPoolUser,
   BackstopPoolV1,
   BackstopPoolV2,
+  Network,
   Pool,
   PoolEvent,
   poolEventFromEventResponse,
@@ -12,7 +13,7 @@ import {
   PoolV1,
   PoolV2,
   Positions,
-  Reserve,
+  TokenMetadata,
   UserBalance,
 } from '@blend-capital/blend-sdk';
 import {
@@ -25,11 +26,19 @@ import {
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
-import { keepPreviousData, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+  UseQueryResult,
+} from '@tanstack/react-query';
 import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
-import { getTokenMetadataFromTOML, StellarTokenMetadata } from '../external/stellar-toml';
+import { getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';
+import { ReserveTokenMetadata } from '../utils/token';
 
 const DEFAULT_STALE_TIME = 30 * 1000;
 const USER_STALE_TIME = 60 * 1000;
@@ -123,10 +132,15 @@ export function usePool(poolId: string, enabled: boolean = true): UseQueryResult
     queryKey: ['pool', poolId],
     enabled: enabled && poolId !== '',
     queryFn: async () => {
-      if (version === 'V1') {
-        return await PoolV1.load(network, poolId);
-      } else {
-        return await PoolV2.load(network, poolId);
+      try {
+        if (version === 'V1') {
+          return await PoolV1.load(network, poolId);
+        } else {
+          return await PoolV2.load(network, poolId);
+        }
+      } catch (e: any) {
+        console.error('Error fetching pool data', e);
+        throw e;
       }
     },
   });
@@ -494,22 +508,63 @@ export function useSimulateOperation<T>(
 
 /**
  * Fetch the token metadata for the given reserve.
- * @param reserve - The reserve
+ * @param assetId - The reserve assetId
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the token metadata.
  */
-export function useTokenMetadataFromToml(
-  reserve: Reserve,
+export function useTokenMetadata(
+  assetId: string | undefined,
   enabled: boolean = true
-): UseQueryResult<StellarTokenMetadata, Error> {
+): UseQueryResult<ReserveTokenMetadata, Error> {
   const { network } = useSettings();
-  return useQuery({
-    staleTime: Infinity,
-    queryKey: ['tokenMetadata', reserve.assetId],
-    enabled,
-    queryFn: async () => {
-      const horizon = new Horizon.Server(network.horizonUrl, network.opts);
-      return await getTokenMetadataFromTOML(horizon, reserve);
-    },
+  return useQuery(createTokenMetadataQuery(network, assetId, enabled));
+}
+
+/**
+ * Fetch the token metadata for the list of assets.
+ * @param assetIds - The reserve assetId
+ * @param enabled - Whether the query is enabled (optional - defaults to true)
+ * @returns Query result with the token metadata.
+ */
+export function useTokenMetadataList(
+  assetIds: string[],
+  enabled: boolean = true
+): UseQueryResult<ReserveTokenMetadata, Error>[] {
+  const { network } = useSettings();
+  return useQueries({
+    queries: assetIds.map((assetId) => createTokenMetadataQuery(network, assetId, enabled)),
   });
+}
+
+/**
+ * Helper function to create a token metadata query.
+ */
+function createTokenMetadataQuery(
+  network: Network & {
+    horizonUrl: string;
+  },
+  assetId: string | undefined,
+  enabled: boolean = true
+): UseQueryOptions<ReserveTokenMetadata, Error> {
+  return {
+    staleTime: Infinity,
+    queryKey: ['tokenMetadata', assetId],
+    enabled: enabled && assetId !== undefined && assetId !== '',
+    queryFn: async () => {
+      console.log('Fetching token metadata for', assetId);
+      if (assetId === undefined || assetId === '') {
+        throw new Error('No assetId');
+      }
+      const horizon = new Horizon.Server(network.horizonUrl, network.opts);
+      const tokenMetadata = await TokenMetadata.load(network, assetId);
+      const tomlMetadata = await getTokenMetadataFromTOML(horizon, tokenMetadata);
+      const reserveTokenMeta: ReserveTokenMetadata = {
+        assetId: assetId,
+        ...tokenMetadata,
+        ...tomlMetadata,
+      };
+      console.log('Fetched token metadata for', assetId, reserveTokenMeta);
+      return reserveTokenMeta;
+    },
+  };
 }

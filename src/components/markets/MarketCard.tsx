@@ -43,6 +43,9 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
     }
   }, [pool, backstopPool, backstop]);
 
+  console.log('pool', pool);
+  console.log('backstop', backstop);
+  console.log('backstopPool', backstopPool);
   if (pool === undefined || backstopPool === undefined || backstop === undefined) {
     return <Skeleton height={'100px'} />;
   }

@@ -8,6 +8,7 @@ import {
   usePool,
   usePoolOracle,
   useTokenBalance,
+  useTokenMetadata,
 } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
@@ -32,9 +33,11 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   const { viewType } = useSettings();
 
   const { data: userAccount } = useHorizonAccount();
+  const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const { data: userTokenBalance } = useTokenBalance(
     reserve.assetId,
-    reserve.tokenMetadata.asset,
+    tokenMetadata?.asset,
     userAccount
   );
   const { data: backstop } = useBackstop();
@@ -98,7 +101,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             }}
           >
             <AprDisplay
-              assetSymbol={reserve.tokenMetadata.symbol}
+              assetSymbol={symbol}
               assetApr={reserve.supplyApr}
               emissionSymbol="BLND"
               emissionApr={emissionApr}

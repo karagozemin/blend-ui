@@ -2,7 +2,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Box, Menu, MenuItem, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { usePool } from '../../hooks/api';
+import { usePool, useTokenMetadata } from '../../hooks/api';
 import { toCompactAddress } from '../../utils/formatter';
 import { CustomButton } from './CustomButton';
 import { LetterIcon } from './LetterIcon';
@@ -21,6 +21,8 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
 
   const { data: pool } = usePool(poolId);
   const activeReserve = pool?.reserves?.get(activeReserveId);
+  const { data: tokenMetadata } = useTokenMetadata(activeReserveId);
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(activeReserveId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -61,7 +63,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
             <>
               <TokenIcon reserve={activeReserve} sx={{ height: '30px', width: '30px' }} />
               <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-                {`${capitalizedAction} ${activeReserve?.tokenMetadata?.symbol ?? 'unknown'}`}
+                {`${capitalizedAction} ${symbol}`}
               </Typography>
             </>
           ) : (
@@ -100,7 +102,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
           >
             <TokenIcon reserve={reserve} sx={{ height: '30px', width: '30px' }} />
             <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-              {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
+              {`${capitalizedAction} ${symbol}`}
             </Typography>
           </MenuItem>
         ))}

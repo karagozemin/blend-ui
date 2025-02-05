@@ -13,9 +13,15 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
-import { useHorizonAccount, usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
+import {
+  useHorizonAccount,
+  usePool,
+  usePoolOracle,
+  usePoolUser,
+  useTokenMetadata,
+} from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { toBalance, toPercentage } from '../../utils/formatter';
+import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim, SubmitError } from '../../utils/txSim';
@@ -42,9 +48,10 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
   const reserve = pool?.reserves.get(assetId);
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const { data: horizonAccount } = useHorizonAccount();
 
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
@@ -90,8 +97,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   });
 
   async function handleAddAssetTrustline() {
-    if (connected && reserve?.tokenMetadata?.asset) {
-      const reserveAsset = reserve?.tokenMetadata?.asset;
+    if (connected && tokenMetadata?.asset) {
+      const reserveAsset = tokenMetadata?.asset;
       await createTrustlines([reserveAsset]);
     }
   }
@@ -102,13 +109,13 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       palette={theme.palette.warning}
       sx={{ padding: '6px 24px', margin: '12px auto' }}
     >
-      Add {reserve?.tokenMetadata.asset?.code} Trustline
+      Add {symbol} Trustline
     </OpaqueButton>
   );
 
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
     useMemo(() => {
-      const hasTokenTrustline = !requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset);
+      const hasTokenTrustline = !requiresTrustline(horizonAccount, tokenMetadata?.asset);
       if (!hasTokenTrustline) {
         let submitError: SubmitError = {
           isSubmitDisabled: true,
@@ -214,7 +221,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             }}
           >
             <InputBar
-              symbol={reserve?.tokenMetadata?.symbol ?? ''}
+              symbol={symbol}
               value={toWithdraw}
               onValueChange={(v) => {
                 handleWithdrawAmountChange(v);
