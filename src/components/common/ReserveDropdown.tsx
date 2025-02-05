@@ -1,5 +1,5 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Box, Menu, MenuItem, Typography, useTheme } from '@mui/material';
+import { Box, Menu, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
 import { usePool, useTokenMetadata } from '../../hooks/api';
@@ -7,6 +7,7 @@ import { toCompactAddress } from '../../utils/formatter';
 import { CustomButton } from './CustomButton';
 import { LetterIcon } from './LetterIcon';
 import { PoolComponentProps } from './PoolComponentProps';
+import ReserveDropdownItem from './ReserveDropdownItem';
 import { TokenIcon } from './TokenIcon';
 
 export interface ReserveDropdown extends PoolComponentProps {
@@ -88,23 +89,12 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
         }}
       >
         {Array.from(pool?.reserves.values() ?? []).map((reserve) => (
-          <MenuItem
+          <ReserveDropdownItem
             key={reserve.assetId}
-            onClick={() => handleClickReserve(reserve.assetId)}
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              borderRadius: '5px',
-              paddingLeft: '6px',
-            }}
-          >
-            <TokenIcon reserve={reserve} sx={{ height: '30px', width: '30px' }} />
-            <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-              {`${capitalizedAction} ${symbol}`}
-            </Typography>
-          </MenuItem>
+            text={capitalizedAction}
+            reserve={reserve}
+            onClick={handleClickReserve}
+          />
         ))}
       </Menu>
     </>

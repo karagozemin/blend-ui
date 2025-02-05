@@ -150,7 +150,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
-  const { network, version } = useSettings();
+  const { network, version, backstopId } = useSettings();
 
   const { cleanWalletCache, cleanBackstopCache, cleanPoolCache, cleanBackstopPoolCache } =
     useQueryClientCacheCleaner();
@@ -442,11 +442,9 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+    if (connected && backstopId) {
       const backstop =
-        version === 'V1'
-          ? new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP)
-          : new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP);
+        version === 'V1' ? new BackstopContractV1(backstopId) : new BackstopContractV2(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -471,11 +469,9 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+    if (connected && backstopId) {
       const backstop =
-        version === 'V1'
-          ? new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP)
-          : new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP);
+        version === 'V1' ? new BackstopContractV1(backstopId) : new BackstopContractV2(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -500,11 +496,9 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+    if (connected && backstopId) {
       const backstop =
-        version === 'V1'
-          ? new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP)
-          : new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP);
+        version === 'V1' ? new BackstopContractV1(backstopId) : new BackstopContractV2(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -528,11 +522,9 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+    if (connected && backstopId) {
       const backstop =
-        version === 'V1'
-          ? new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP)
-          : new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP);
+        version === 'V1' ? new BackstopContractV1(backstopId) : new BackstopContractV2(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -556,11 +548,9 @@ export const WalletProvider = ({ children = null as any }) => {
     claimArgs: BackstopClaimArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+    if (connected && backstopId) {
       const backstop =
-        version === 'V1'
-          ? new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP)
-          : new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP);
+        version === 'V1' ? new BackstopContractV1(backstopId) : new BackstopContractV2(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);

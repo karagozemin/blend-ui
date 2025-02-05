@@ -38,6 +38,7 @@ export interface ISettingsContext {
   setShowJoinPool: (showJoinPool: boolean) => void;
   blockedPools: string[];
   version: string | undefined;
+  backstopId: string | undefined;
   setVersion: (version: 'V1' | 'V2') => void;
   getVersion: () => string | undefined;
 }
@@ -55,9 +56,10 @@ export const SettingsProvider = ({ children = null as any }) => {
     opts: { allowHttp: true },
     horizonUrl: DEFAULT_HORIZON,
   });
-  const [version, setVersion] = useLocalStorageState('version', 'V1');
 
+  const [version, setVersion] = useLocalStorageState('version', 'V1');
   const [lastPool, setLastPool] = useLocalStorageState('lastPool', undefined);
+
   const [showLend, setShowLend] = useState<boolean>(true);
   const [showJoinPool, setShowJoinPool] = useState<boolean>(true);
   const [trackedPoolsString, setTrackedPoolsString] = useLocalStorageState(
@@ -69,6 +71,9 @@ export const SettingsProvider = ({ children = null as any }) => {
   const [blockedPools, setBlockedPools] = useState<string[]>(
     (process.env.NEXT_PUBLIC_BLOCKED_POOLS || '').split(',')
   );
+
+  const backstopId =
+    version === 'V1' ? process.env.NEXT_PUBLIC_BACKSTOP : process.env.NEXT_PUBLIC_BACKSTOP_V2;
 
   let viewType: ViewType;
   if (mobile) viewType = ViewType.MOBILE;
@@ -129,6 +134,7 @@ export const SettingsProvider = ({ children = null as any }) => {
         setShowJoinPool,
         blockedPools,
         version,
+        backstopId,
         setVersion: handleSetVersion,
         getVersion,
       }}

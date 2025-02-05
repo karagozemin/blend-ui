@@ -1,4 +1,11 @@
-import { BackstopToken, FixedMath, Reserve } from '@blend-capital/blend-sdk';
+import {
+  BackstopToken,
+  FixedMath,
+  Reserve,
+  ReserveData,
+  ReserveV1,
+  ReserveV2,
+} from '@blend-capital/blend-sdk';
 
 /**
  * Estimate the emissions apr for a reserve
@@ -20,51 +27,26 @@ export function estimateEmissionsApr(
 
 /**
  * Estimate the interest rate for a reserve given a utilization ratio
- * @param utilizationRatio utilization ratio as a float
+ * @param util utilization ratio as a float
+ * @param ir_mod interest rate modifier as a float
  * @param reserve The reserve to estimate the interest rate for
  */
-export function estimateInterestRate(utilizationRatio: number, reserve: Reserve): bigint {
-  const curUtil = FixedMath.toFixed(utilizationRatio, 7);
-  let curIr: bigint;
-  const targetUtil = BigInt(reserve.config.util);
-  const fixed_95_percent = BigInt(9_500_000);
-  const fixed_5_percent = BigInt(500_000);
-
-  // calculate current IR
-  if (curUtil <= targetUtil) {
-    const utilScalar = FixedMath.divCeil(curUtil, targetUtil, FixedMath.SCALAR_7);
-    const baseRate =
-      FixedMath.mulCeil(utilScalar, BigInt(reserve.config.r_one), FixedMath.SCALAR_7) +
-      BigInt(reserve.config.r_base);
-    curIr = FixedMath.mulCeil(baseRate, reserve.data.interestRateModifier, FixedMath.SCALAR_9);
-  } else if (curUtil <= fixed_95_percent) {
-    const utilScalar = FixedMath.divCeil(
-      curUtil - targetUtil,
-      fixed_95_percent - targetUtil,
-      FixedMath.SCALAR_7
-    );
-    const baseRate =
-      FixedMath.mulCeil(utilScalar, BigInt(reserve.config.r_two), FixedMath.SCALAR_7) +
-      BigInt(reserve.config.r_one) +
-      BigInt(reserve.config.r_base);
-    curIr = FixedMath.mulCeil(baseRate, reserve.data.interestRateModifier, FixedMath.SCALAR_9);
-  } else {
-    const utilScalar = FixedMath.divCeil(
-      curUtil - fixed_95_percent,
-      fixed_5_percent,
-      FixedMath.SCALAR_7
-    );
-    const extraRate = FixedMath.mulCeil(
-      utilScalar,
-      BigInt(reserve.config.r_three),
-      FixedMath.SCALAR_7
-    );
-    const intersection = FixedMath.mulCeil(
-      reserve.data.interestRateModifier,
-      BigInt(reserve.config.r_two) + BigInt(reserve.config.r_one) + BigInt(reserve.config.r_base),
-      FixedMath.SCALAR_9
-    );
-    curIr = extraRate + intersection;
-  }
-  return curIr;
+export function estimateInterestRate(util: number, ir_mod: number, reserve: Reserve): number {
+  const RATE_SCALAR = FixedMath.toFixed(1, reserve.rateDecimals);
+  // setup reserve with util and ir_mod
+  let ir_resData = new ReserveData(
+    RATE_SCALAR,
+    RATE_SCALAR,
+    FixedMath.toFixed(ir_mod, reserve.irmodDecimals),
+    FixedMath.toFixed(util, reserve.config.decimals),
+    FixedMath.toFixed(1, reserve.config.decimals),
+    BigInt(0),
+    0
+  );
+  let ir_reserve =
+    reserve.rateDecimals === 9
+      ? new ReserveV1('', '', reserve.config, ir_resData, undefined, undefined, 0, 0, 0)
+      : new ReserveV2('', '', reserve.config, ir_resData, undefined, undefined, 0, 0, 0);
+  ir_reserve.setAPR();
+  return ir_reserve.borrowApr;
 }

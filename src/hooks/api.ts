@@ -551,7 +551,6 @@ function createTokenMetadataQuery(
     queryKey: ['tokenMetadata', assetId],
     enabled: enabled && assetId !== undefined && assetId !== '',
     queryFn: async () => {
-      console.log('Fetching token metadata for', assetId);
       if (assetId === undefined || assetId === '') {
         throw new Error('No assetId');
       }
@@ -563,7 +562,6 @@ function createTokenMetadataQuery(
         ...tokenMetadata,
         ...tomlMetadata,
       };
-      console.log('Fetched token metadata for', assetId, reserveTokenMeta);
       return reserveTokenMeta;
     },
   };
