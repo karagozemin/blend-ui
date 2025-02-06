@@ -7,6 +7,7 @@ export interface ToggleSliderProps extends ButtonBaseProps {
   palette: PaletteColor;
   changeState: (value: any) => void;
   passedRef?: any;
+  text?: string[];
 }
 
 export const ToggleSlider: React.FC<ToggleSliderProps> = ({
@@ -16,11 +17,11 @@ export const ToggleSlider: React.FC<ToggleSliderProps> = ({
   palette,
   sx,
   passedRef,
+  text,
 }) => {
   const theme = useTheme();
-  const [selectedOption, setOption] = React.useState(selected);
+
   const handleChangeToggle = (selectOption: string) => {
-    setOption(selectOption);
     changeState(selectOption);
   };
 
@@ -43,19 +44,19 @@ export const ToggleSlider: React.FC<ToggleSliderProps> = ({
           variant="contained"
           sx={{
             height: '28px',
-            background: option == selectedOption ? palette.opaque : theme.palette.menu.main,
-            color: option == selectedOption ? palette.main : theme.palette.menu.contrastText,
+            background: option === selected ? palette.opaque : theme.palette.menu.main,
+            color: option === selected ? palette.main : theme.palette.menu.contrastText,
             boxShadow: 'none',
             '&:hover': {
-              background: option === selectedOption ? palette.opaque : theme.palette.menu.main,
-              color: option === selectedOption ? palette.main : theme.palette.menu.contrastText,
+              background: option === selected ? palette.opaque : theme.palette.menu.main,
+              color: option === selected ? palette.main : theme.palette.menu.contrastText,
               boxShadow: 'none',
             },
             ...sx,
           }}
           onClick={() => handleChangeToggle(option)}
         >
-          {option}
+          {text !== undefined ? text.at(index) ?? option : option}
         </Button>
       ))}
     </Box>

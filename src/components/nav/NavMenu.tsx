@@ -78,8 +78,8 @@ export const NavMenu = () => {
               Select Blend Version
             </Typography>
             <ToggleSlider
-              options={['1', '2']}
-              selected={version ?? '1'}
+              options={['v1', 'v2']}
+              selected={version}
               palette={theme.palette.positive}
               changeState={setVersion}
             ></ToggleSlider>

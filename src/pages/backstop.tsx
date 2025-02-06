@@ -401,7 +401,7 @@ const Backstop: NextPage = () => {
           </Row>
           <LinkBox
             sx={{ width: '100%', paddingRight: '12px' }}
-            to={{ pathname: 'backstop-q4w', query: { poolId: poolId } }}
+            to={{ pathname: 'backstop-q4w', query: { poolId: poolId, version } }}
           >
             <OpaqueButton
               palette={theme.palette.positive}

@@ -16,6 +16,7 @@ const Markets: NextPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { blockedPools, version, setVersion } = useSettings();
 
+  console.log('market version', version);
   const rewardZone = [...(backstop?.config?.rewardZone ?? [])].reverse();
 
   const safeRewardZone = rewardZone.filter((poolId) => !blockedPools.includes(poolId));
@@ -41,11 +42,11 @@ const Markets: NextPage = () => {
           }}
         >
           <ToggleSlider
-            options={['1', '2']}
-            selected={version ?? '1'}
+            options={['v1', 'v2']}
+            selected={version}
             palette={theme.palette.backstop}
             changeState={setVersion}
-          ></ToggleSlider>
+          />
         </Box>
       </Row>
       <Divider />

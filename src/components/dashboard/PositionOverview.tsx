@@ -1,4 +1,10 @@
-import { PoolClaimArgs, PoolContractV1, PositionsEstimate } from '@blend-capital/blend-sdk';
+import {
+  ContractErrorType,
+  parseError,
+  PoolClaimArgs,
+  PoolContractV1,
+  PositionsEstimate,
+} from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
@@ -24,7 +30,7 @@ import { StackedText } from '../common/StackedText';
 import { BorrowCapRing } from './BorrowCapRing';
 
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
   const theme = useTheme();
   const { connected, walletAddress, poolClaim, createTrustlines, restore } = useWallet();
 
@@ -58,6 +64,8 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const hasBLNDTrustline = !requiresTrustline(account, BLND_ASSET);
   const isRestore =
     isLoading === false && simResult !== undefined && rpc.Api.isSimulationRestore(simResult);
+  const isError =
+    isLoading === false && simResult !== undefined && rpc.Api.isSimulationError(simResult);
 
   const userEst = poolOracle
     ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions)
@@ -92,7 +100,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (hasBLNDTrustline && !isRestore) {
+    if (hasBLNDTrustline && !isRestore && !isError && version !== 'v2') {
       return (
         <CustomButton
           sx={{
@@ -120,6 +128,26 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
         </CustomButton>
       );
     } else {
+      let disabled = false;
+      let buttonText = '';
+      let buttonTooltip = undefined;
+      let onClick = undefined;
+      if (isRestore) {
+        buttonText = 'Restore Data';
+        onClick = handleRestore;
+      } else if (!hasBLNDTrustline) {
+        buttonText = 'Add BLND Trustline';
+        onClick = handleCreateTrustlineClick;
+      } else if (version === 'v2') {
+        buttonText = 'v2 Claim Disabled';
+        buttonTooltip = 'Claiming is disabled until the backstop swap to v2 is complete';
+        disabled = true;
+      } else if (isError) {
+        const claimError = parseError(simResult);
+        buttonText = 'Error checking claim';
+        buttonTooltip = 'Erorr while checking claim amount: ' + ContractErrorType[claimError.type];
+        disabled = true;
+      }
       return (
         <CustomButton
           sx={{
@@ -131,7 +159,8 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               color: theme.palette.warning.main,
             },
           }}
-          onClick={isRestore ? handleRestore : handleCreateTrustlineClick}
+          disabled={disabled}
+          onClick={onClick}
         >
           <Box
             sx={{
@@ -163,9 +192,10 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
             <StackedText
               title="Claim Pool Emissions"
               titleColor="inherit"
-              text={isRestore ? 'Restore Data' : 'Add BLND Trustline'}
+              text={buttonText}
               textColor="inherit"
               type="large"
+              tooltip={buttonTooltip}
             />
           </Box>
           <ArrowForwardIcon fontSize="inherit" />
