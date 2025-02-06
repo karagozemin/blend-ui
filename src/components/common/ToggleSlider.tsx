@@ -42,6 +42,7 @@ export const ToggleSlider: React.FC<ToggleSliderProps> = ({
           ref={passedRef}
           variant="contained"
           sx={{
+            height: '28px',
             background: option == selectedOption ? palette.opaque : theme.palette.menu.main,
             color: option == selectedOption ? palette.main : theme.palette.menu.contrastText,
             boxShadow: 'none',

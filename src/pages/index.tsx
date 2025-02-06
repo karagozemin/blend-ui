@@ -1,17 +1,20 @@
+import { Box, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useState } from 'react';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
+import { ToggleSlider } from '../components/common/ToggleSlider';
 import { MarketCard } from '../components/markets/MarketCard';
 import { useSettings } from '../contexts';
 import { useBackstop } from '../hooks/api';
 
 const Markets: NextPage = () => {
+  const theme = useTheme();
   const { data: backstop } = useBackstop();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { blockedPools, version } = useSettings();
+  const { blockedPools, version, setVersion } = useSettings();
 
   const rewardZone = [...(backstop?.config?.rewardZone ?? [])].reverse();
 
@@ -25,10 +28,28 @@ const Markets: NextPage = () => {
 
   return (
     <>
-      <Row>
+      <Row sx={{ justifyContent: 'flex-start' }}>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
           Markets
         </SectionBase>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {/* <Typography variant="subtitle2" sx={{}}>
+            Select Blend Version
+          </Typography> */}
+          <ToggleSlider
+            options={['V1', 'V2']}
+            selected={version ?? 'V1'}
+            palette={theme.palette.backstop}
+            changeState={setVersion}
+          ></ToggleSlider>
+        </Box>
       </Row>
       <Divider />
       {safeRewardZone.slice(0, currentIndex + 1).map((poolId, index) => {
