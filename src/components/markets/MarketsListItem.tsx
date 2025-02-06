@@ -18,7 +18,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
 
   const tableNum = viewType == ViewType.REGULAR ? 6 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -37,7 +37,7 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({
         },
         ...sx,
       }}
-      to={{ pathname: '/asset', query: { poolId: poolId, assetId: reserve.assetId } }}
+      to={{ pathname: '/asset', query: { poolId: poolId, assetId: reserve.assetId, version } }}
       {...props}
     >
       <Box

@@ -25,6 +25,7 @@ import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
+import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import {
   useBackstop,
@@ -40,6 +41,7 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
+  const { version } = useSettings();
   const { connected, walletAddress, backstopClaim, restore } = useWallet();
 
   const { poolId } = router.query;
@@ -342,7 +344,7 @@ const Backstop: NextPage = () => {
             </LinkBox>
             <LinkBox
               sx={{ width: SectionSize.TILE }}
-              to={{ pathname: '/backstop-deposit', query: { poolId: poolId } }}
+              to={{ pathname: '/backstop-deposit', query: { poolId: poolId, version } }}
             >
               <OpaqueButton palette={theme.palette.backstop} sx={{ width: '100%', padding: '6px' }}>
                 Backstop Deposit

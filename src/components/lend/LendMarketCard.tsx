@@ -30,7 +30,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
 
   const { data: userAccount } = useHorizonAccount();
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
@@ -67,7 +67,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId } }}
+        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId, version } }}
       >
         <CustomButton
           sx={{

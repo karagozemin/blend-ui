@@ -24,7 +24,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
 
   const { data: backstop } = useBackstop();
   const { data: pool } = usePool(poolId);
@@ -60,7 +60,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId } }}
+        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId, version } }}
       >
         <CustomButton
           sx={{

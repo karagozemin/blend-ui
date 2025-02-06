@@ -10,10 +10,11 @@ import { NavMenu } from './NavMenu';
 import { WalletMenu } from './WalletMenu';
 
 export const NavBar = () => {
-  const { viewType, lastPool } = useSettings();
+  const { viewType, lastPool, version } = useSettings();
 
   const { data: backstop } = useBackstop();
-  const poolId = (lastPool ? lastPool : backstop?.config?.rewardZone[0]) ?? '';
+  const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
+  const lastVersion = lastPool ? lastPool.version : version;
 
   return (
     <Row sx={{ height: '62px' }}>
@@ -35,14 +36,18 @@ export const NavBar = () => {
           }}
         >
           <Section width={SectionSize.LARGE}>
-            <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '33%' }} />
             <NavItem
-              to={{ pathname: '/dashboard', query: { poolId: poolId } }}
+              to={{ pathname: '/', query: { version: lastVersion } }}
+              title="Markets"
+              sx={{ width: '33%' }}
+            />
+            <NavItem
+              to={{ pathname: '/dashboard', query: { poolId: poolId, version: lastVersion } }}
               title="Dashboard"
               sx={{ width: '33%' }}
             />
             <NavItem
-              to={{ pathname: '/backstop', query: { poolId: poolId } }}
+              to={{ pathname: '/backstop', query: { poolId: poolId, version: lastVersion } }}
               title="Backstop"
               sx={{ width: '33%' }}
             />

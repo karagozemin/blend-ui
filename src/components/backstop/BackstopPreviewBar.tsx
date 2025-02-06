@@ -14,7 +14,7 @@ import { StackedText } from '../common/StackedText';
 import { PoolStatusBox } from '../pool/PoolStatusBox';
 
 export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
   const theme = useTheme();
 
   const { data: pool } = usePool(poolId);
@@ -90,7 +90,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
       </Box>
       <LinkBox
         sx={{ width: viewTypeRegular ? '45%' : '100%', display: 'flex' }}
-        to={{ pathname: '/backstop', query: { poolId: poolId } }}
+        to={{ pathname: '/backstop', query: { poolId: poolId, version } }}
       >
         <CustomButton
           sx={{

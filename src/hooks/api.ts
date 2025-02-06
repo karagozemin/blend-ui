@@ -133,7 +133,7 @@ export function usePool(poolId: string, enabled: boolean = true): UseQueryResult
     enabled: enabled && poolId !== '',
     queryFn: async () => {
       try {
-        if (version === 'V1') {
+        if (version === '1') {
           return await PoolV1.load(network, poolId);
         } else {
           return await PoolV2.load(network, poolId);
@@ -212,7 +212,7 @@ export function useBackstop(enabled: boolean = true): UseQueryResult<Backstop, E
     queryKey: ['backstop', version],
     enabled,
     queryFn: async () => {
-      let res = await Backstop.load(network, version == 'V1' ? BACKSTOP_ID : BACKSTOP_ID_V2);
+      let res = await Backstop.load(network, version == '1' ? BACKSTOP_ID : BACKSTOP_ID_V2);
       return res;
     },
   });
@@ -234,7 +234,7 @@ export function useBackstopPool(
     queryKey: ['backstopPool', poolId],
     enabled,
     queryFn: async () => {
-      if (version == 'V1') return await BackstopPoolV1.load(network, BACKSTOP_ID, poolId);
+      if (version == '1') return await BackstopPoolV1.load(network, BACKSTOP_ID, poolId);
       else return await BackstopPoolV2.load(network, BACKSTOP_ID_V2, poolId);
     },
   });
@@ -266,7 +266,7 @@ export function useBackstopPoolUser(
       if (walletAddress !== '') {
         return await BackstopPoolUser.load(
           network,
-          version == 'V1' ? BACKSTOP_ID : BACKSTOP_ID_V2,
+          version == '1' ? BACKSTOP_ID : BACKSTOP_ID_V2,
           poolId,
           walletAddress
         );

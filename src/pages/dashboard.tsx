@@ -53,9 +53,9 @@ const Dashboard: NextPage = () => {
       <PoolHealthBanner poolId={safePoolId} />
       <PoolExploreBar poolId={safePoolId} />
       {pool &&
-        Array.from(pool.reserves.keys()).some((assetId) => MAINNET_USDC_CONTRACT_ADDRESS) && (
-          <AllbridgeButton />
-        )}
+        Array.from(pool.reserves.keys()).some(
+          (assetId) => assetId === MAINNET_USDC_CONTRACT_ADDRESS
+        ) && <AllbridgeButton />}
       <Divider />
       <BackstopPreviewBar poolId={safePoolId} />
       <Divider />

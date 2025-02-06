@@ -25,7 +25,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
   const router = useRouter();
 
   const assetFloat = reserve.toAssetFromDTokenFloat(dTokens);
@@ -66,7 +66,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         if (viewType === ViewType.MOBILE) {
           router.push({
             pathname: '/repay',
-            query: { poolId: poolId, assetId: reserve.assetId },
+            query: { poolId: poolId, assetId: reserve.assetId, version },
           });
         }
       }}
@@ -103,7 +103,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
 
       {viewType !== ViewType.MOBILE && (
         <LinkBox
-          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}
+          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId, version } }}
           sx={{
             display: 'flex',
             justifyContent: 'end',
@@ -131,7 +131,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
       )}
       {viewType === ViewType.MOBILE && (
         <LinkBox
-          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}
+          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId, version } }}
           sx={{
             display: 'flex',
             justifyContent: 'center',

@@ -27,6 +27,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
   const router = useRouter();
+  const { version } = useSettings();
 
   const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
   const { data: backstop } = useBackstop();
@@ -65,7 +66,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         if (viewTypeIsMobile) {
           router.push({
             pathname: '/withdraw',
-            query: { poolId: poolId, assetId: reserve.assetId },
+            query: { poolId: poolId, assetId: reserve.assetId, version },
           });
         }
       }}

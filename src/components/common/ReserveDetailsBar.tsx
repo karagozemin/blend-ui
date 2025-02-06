@@ -13,7 +13,7 @@ export const ReserveDetailsBar: React.FC<ReserveDropdown> = ({
   activeReserveId,
   action,
 }) => {
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
   const theme = useTheme();
   return (
     <Row>
@@ -25,7 +25,7 @@ export const ReserveDetailsBar: React.FC<ReserveDropdown> = ({
           <Section width={SectionSize.SMALL}>
             <LinkBox
               sx={{ width: '100%', height: '100%' }}
-              to={{ pathname: 'asset', query: { poolId, assetId: activeReserveId } }}
+              to={{ pathname: 'asset', query: { poolId, assetId: activeReserveId, version } }}
             >
               <OpaqueButton
                 palette={theme.palette.primary}
@@ -56,7 +56,7 @@ export const ReserveDetailsBar: React.FC<ReserveDropdown> = ({
           >
             <LinkBox
               sx={{ width: '100%', height: '100%' }}
-              to={{ pathname: 'asset', query: { poolId, assetId: activeReserveId } }}
+              to={{ pathname: 'asset', query: { poolId, assetId: activeReserveId, version } }}
             >
               <OpaqueButton
                 palette={theme.palette.primary}
