@@ -143,25 +143,6 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'left',
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ width: '90%', marginLeft: '6px' }}>
-              Select Blend Version
-            </Typography>
-            <ToggleSlider
-              options={['V1', 'V2']}
-              selected={version ?? 'V1'}
-              palette={theme.palette.positive}
-              changeState={setVersion}
-              sx={{ width: '90%' }}
-            ></ToggleSlider>
-          </Box>
           <NavItem
             onClick={handleClose}
             to={{ pathname: '/', query: { poolId: poolId, version: lastVersion } }}
