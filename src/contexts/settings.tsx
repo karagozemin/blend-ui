@@ -19,6 +19,7 @@ export enum ViewType {
 export interface TrackedPool {
   id: string;
   name: string;
+  version: string;
 }
 
 export interface ISettingsContext {
@@ -30,7 +31,7 @@ export interface ISettingsContext {
   lastPool: string | undefined;
   setLastPool: (poolId: string) => void;
   trackedPools: TrackedPool[];
-  trackPool: (id: string, name: string | undefined) => void;
+  trackPool: (id: string, name: string | undefined, version: string) => void;
   untrackPool: (id: string) => void;
   showLend: boolean;
   setShowLend: (showLend: boolean) => void;
@@ -92,10 +93,10 @@ export const SettingsProvider = ({ children = null as any }) => {
     return new rpc.Server(network.horizonUrl, network.opts);
   }
 
-  function trackPool(id: string, name: string | undefined) {
+  function trackPool(id: string, name: string | undefined, version: string) {
     if (name !== undefined) {
       if (trackedPools.find((pool) => pool.id === id)) return;
-      setTrackedPoolsString(JSON.stringify([...trackedPools, { id, name }]));
+      setTrackedPoolsString(JSON.stringify([...trackedPools, { id, name, version }]));
     }
   }
 

@@ -25,10 +25,10 @@ export interface MarketCardProps extends PoolComponentProps {
 
 export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded, sx }) => {
   const theme = useTheme();
-  const { trackPool } = useSettings();
+  const { trackPool, version } = useSettings();
 
   const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: pool } = usePool(poolId, version ?? 'V1');
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstopPool } = useBackstopPool(poolId);
   const [expand, setExpand] = useState(false);
@@ -39,7 +39,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   useEffect(() => {
     if (pool !== undefined && backstopPool !== undefined && backstop !== undefined) {
       onLoaded(index);
-      trackPool(poolId, pool.metadata.name);
+      trackPool(poolId, pool.metadata.name, version ?? 'V1');
     }
   }, [pool, backstopPool, backstop]);
 

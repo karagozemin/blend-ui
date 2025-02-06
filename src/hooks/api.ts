@@ -125,8 +125,12 @@ export function useCurrentBlockNumber(): UseQueryResult<number, Error> {
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the pool data.
  */
-export function usePool(poolId: string, enabled: boolean = true): UseQueryResult<Pool, Error> {
-  const { network, version } = useSettings();
+export function usePool(
+  poolId: string,
+  version: string,
+  enabled: boolean = true
+): UseQueryResult<Pool, Error> {
+  const { network } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['pool', poolId],

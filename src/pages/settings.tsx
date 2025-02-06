@@ -19,8 +19,8 @@ export default function SettingsPage() {
   const [newOpts, setNewOpts] = useState<rpc.Server.Options | undefined>(undefined);
   const [poolToAdd, setPoolToAdd] = useState<string>('');
   const [poolIdError, setPoolIdError] = useState('');
-  const { data: pool } = usePool(poolToAdd, poolToAdd.length > 0);
-
+  const { data: poolV2, isError } = usePool(poolToAdd, 'V2', poolToAdd.length > 0);
+  const { data: poolV1 } = usePool(poolToAdd, 'V1', isError);
   function fetchFromWallet() {
     getNetworkDetails().then((networkDetails) => {
       if (networkDetails.rpc) {
@@ -49,8 +49,11 @@ export default function SettingsPage() {
   }
 
   function handleAddTrackedPool(poolId: string) {
-    if (pool && pool.id === poolId) {
-      trackPool(pool.id, pool.metadata.name);
+    if (poolV2 && poolV2.id === poolId) {
+      trackPool(poolV2.id, poolV2.metadata.name, 'V2');
+      setPoolToAdd('');
+    } else if (poolV1 && poolV1.id === poolId) {
+      trackPool(poolV1.id, poolV1.metadata.name, 'V1');
       setPoolToAdd('');
     } else {
       setPoolIdError('Pool not found.');
