@@ -1,4 +1,4 @@
-import { Box, useTheme } from '@mui/material';
+import { useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useState } from 'react';
 import { Divider } from '../components/common/Divider';
@@ -28,25 +28,20 @@ const Markets: NextPage = () => {
 
   return (
     <>
-      <Row sx={{ justifyContent: 'flex-start' }}>
+      <Row sx={{ alignItems: 'center' }}>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
           Markets
         </SectionBase>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <ToggleSlider
-            options={['v1', 'v2']}
-            selected={version}
-            palette={theme.palette.backstop}
-            changeState={setVersion}
-          />
-        </Box>
+
+        <ToggleSlider
+          options={[
+            { optionName: 'v1', palette: theme.palette.primary },
+            { optionName: 'v2', palette: theme.palette.backstop },
+          ]}
+          selected={version}
+          changeState={setVersion}
+          sx={{ height: '24px', width: '80px' }}
+        />
       </Row>
       <Divider />
       {safeRewardZone.slice(0, currentIndex + 1).map((poolId, index) => {
