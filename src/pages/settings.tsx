@@ -178,7 +178,13 @@ export default function SettingsPage() {
                 borderRadius: '5px',
               }}
             >
-              <TrackedPool key={pool.id} name={pool.name} id={pool.id} sx={{ flex: 1 }} />
+              <TrackedPool
+                key={pool.id}
+                name={pool.name}
+                id={pool.id}
+                version={pool.version}
+                sx={{ flex: 1 }}
+              />
               <OpaqueButton
                 onClick={() => untrackPool(pool.id)}
                 palette={theme.palette.error}

@@ -42,7 +42,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         onClick={handleClickDropdown}
         sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
       >
-        <PoolHeader name={trackedPool?.name ?? 'Unkown'} />
+        <PoolHeader name={trackedPool?.name ?? 'Unknown'} version={trackedPool?.version ?? 'v1'} />
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
       <Menu
@@ -60,7 +60,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
             if (!blockedPools.includes(pool.id))
               return (
                 <MenuItem onClick={() => handleClickMenuItem(pool.id)} key={pool.id}>
-                  <PoolHeader name={pool.name} />
+                  <PoolHeader name={pool.name} version={pool.version} />
                 </MenuItem>
               );
           })}
