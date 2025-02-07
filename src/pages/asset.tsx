@@ -1,4 +1,5 @@
-import { Typography, useTheme } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Box, Button, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AssetBorrowInfo } from '../components/asset/AssetBorrowInfo';
@@ -49,6 +50,48 @@ const Asset: NextPage = () => {
       {hasData ? (
         <>
           <Divider />
+          <Section
+            width={SectionSize.FULL}
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              marginBottom: '12px',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: theme.palette.background.paper,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+              }}
+            >
+              <Typography sx={{ padding: '6px' }}>Oracle Price</Typography>
+              <Button
+                sx={{
+                  alignItems: 'center',
+                  padding: 0,
+                  cursor: 'pointer',
+                  minWidth: '0px',
+                  color: theme.palette.text.primary,
+                }}
+                onClick={() =>
+                  window.open(
+                    `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${pool.metadata.oracle}`,
+                    '_blank'
+                  )
+                }
+              >
+                <OpenInNewIcon fontSize="inherit" />
+              </Button>
+            </Box>
+
+            <Typography sx={{ padding: '6px' }}>
+              {`$${poolOracle.getPriceFloat(reserve.assetId)?.toFixed(2) ?? ''}`}
+            </Typography>
+          </Section>
+
           <Row
             sx={{
               display: 'flex',
