@@ -1,25 +1,15 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import {
-  Alert,
-  Box,
-  IconButton,
-  Menu,
-  MenuItem,
-  Snackbar,
-  Typography,
-  useTheme,
-} from '@mui/material';
+import { Alert, IconButton, Menu, MenuItem, Snackbar, Typography, useTheme } from '@mui/material';
 import Link from 'next/link';
 import React from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { useBackstop } from '../../hooks/api';
-import { ToggleSlider } from '../common/ToggleSlider';
 import { NavItem } from './NavItem';
 
 export const NavMenu = () => {
   const theme = useTheme();
-  const { viewType, lastPool, version, setVersion } = useSettings();
+  const { viewType, lastPool, version } = useSettings();
 
   const { data: backstop } = useBackstop();
   const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
@@ -66,25 +56,6 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="subtitle2" sx={{}}>
-              Select Blend Version
-            </Typography>
-            <ToggleSlider
-              options={['v1', 'v2']}
-              selected={version}
-              palette={theme.palette.positive}
-              changeState={setVersion}
-            ></ToggleSlider>
-          </Box>
-
           <Link href={`/auction/?poolId=${safePoolId}`}>
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Auctions

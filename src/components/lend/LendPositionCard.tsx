@@ -102,7 +102,10 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
       </Box>
       {viewType !== ViewType.MOBILE && (
         <LinkBox
-          to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
+          to={{
+            pathname: '/withdraw',
+            query: { poolId: poolId, assetId: reserve.assetId, version },
+          }}
           sx={{
             display: 'flex',
             justifyContent: 'end',

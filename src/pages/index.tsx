@@ -16,7 +16,6 @@ const Markets: NextPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { blockedPools, version, setVersion } = useSettings();
 
-  console.log('market version', version);
   const rewardZone = [...(backstop?.config?.rewardZone ?? [])].reverse();
 
   const safeRewardZone = rewardZone.filter((poolId) => !blockedPools.includes(poolId));

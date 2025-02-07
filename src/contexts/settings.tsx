@@ -91,7 +91,6 @@ export const SettingsProvider = ({ children = null as any }) => {
     (process.env.NEXT_PUBLIC_BLOCKED_POOLS || '').split(',')
   );
   const version = routerVersion === 'v1' || routerVersion === 'v2' ? routerVersion : 'v1';
-  console.log('settings version', version);
 
   const backstopId =
     version === 'v1' ? process.env.NEXT_PUBLIC_BACKSTOP : process.env.NEXT_PUBLIC_BACKSTOP_V2;

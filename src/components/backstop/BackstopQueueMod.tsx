@@ -1,5 +1,6 @@
 import { FixedMath } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
+import { useSettings } from '../../contexts';
 import { useBackstop, useBackstopPool, useBackstopPoolUser } from '../../hooks/api';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
@@ -8,6 +9,7 @@ import { BackstopQueueItem } from './BackstopQueueItem';
 
 export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
+  const { version } = useSettings();
 
   const { data: backstop } = useBackstop();
   const { data: backstopPoolData } = useBackstopPool(poolId);
@@ -25,6 +27,8 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const sharesToTokens =
     Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares);
+
+  const totalQ4WEntries = backstopUserData.balance.q4w.length;
 
   return (
     <Row>
@@ -49,20 +53,30 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
             poolId={poolId}
             q4w={{ exp: BigInt(0), amount: backstopUserData.balance.unlockedQ4W }}
             inTokens={FixedMath.toFloat(backstopUserData.balance.unlockedQ4W) * sharesToTokens}
-            first={true}
+            canUnqueue={false}
           />
         )}
         {backstopUserData.balance.q4w
           .sort((a, b) => Number(a.exp) - Number(b.exp))
-          .map((q4w, index) => (
-            <BackstopQueueItem
-              key={Number(q4w.exp)}
-              poolId={poolId}
-              q4w={q4w}
-              inTokens={FixedMath.toFloat(q4w.amount) * sharesToTokens}
-              first={backstopUserData.balance.unlockedQ4W == BigInt(0) && index == 0}
-            />
-          ))}
+          .map((q4w, index) => {
+            let canUnqueue = false;
+            if (version == 'v2') {
+              // v2 unqueues from the most recently queued entry
+              canUnqueue = totalQ4WEntries - 1 === index;
+            } else {
+              // v1 unqueues from the oldest entry (which can be unlocked)
+              canUnqueue = backstopUserData.balance.unlockedQ4W === BigInt(0) && index === 0;
+            }
+            return (
+              <BackstopQueueItem
+                key={Number(q4w.exp)}
+                poolId={poolId}
+                q4w={q4w}
+                inTokens={FixedMath.toFloat(q4w.amount) * sharesToTokens}
+                canUnqueue={canUnqueue}
+              />
+            );
+          })}
       </Section>
     </Row>
   );
