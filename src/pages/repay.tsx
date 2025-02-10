@@ -54,7 +54,7 @@ const Repay: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.metadata.name} />
+        <GoBackHeader poolId={safePoolId} />
       </Row>
       <ReserveDetailsBar action="repay" poolId={safePoolId} activeReserveId={safeAssetId} />
       <Row>
