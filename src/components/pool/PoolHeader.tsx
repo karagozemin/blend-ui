@@ -1,6 +1,6 @@
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
+import { VersionTag } from '../common/VersionTag';
 import { PoolIcon } from './PoolIcon';
-import { PoolVersion } from './PoolVersion';
 
 export interface PoolHeaderProps extends BoxProps {
   name: string;
@@ -25,7 +25,7 @@ export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, version, sx, ...pr
       <Typography variant="h3" sx={{ marginLeft: '6px' }}>
         {`${name} Pool`}
       </Typography>
-      <PoolVersion version={version} />
+      <VersionTag version={version} sx={{ marginLeft: '6px' }} />
     </Box>
   );
 };
