@@ -1,12 +1,13 @@
 import {
   BackstopClaimArgs,
-  BackstopContract,
+  BackstopContractV1,
+  BackstopContractV2,
   ContractErrorType,
   Network,
   parseError,
   PoolBackstopActionArgs,
   PoolClaimArgs,
-  PoolContract,
+  PoolContractV2,
   Positions,
   SubmitArgs,
 } from '@blend-capital/blend-sdk';
@@ -148,7 +149,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
-  const { network } = useSettings();
+  const { network, version, backstopId } = useSettings();
 
   const { cleanWalletCache, cleanBackstopCache, cleanPoolCache, cleanBackstopPoolCache } =
     useQueryClientCacheCleaner();
@@ -391,7 +392,7 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const pool = new PoolContract(poolId);
+      const pool = version === 'v2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
       const operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -415,7 +416,7 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const pool = new PoolContract(poolId);
+      const pool = version === 'v2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
       const operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -438,9 +439,10 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
-      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
-      let operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
+    if (connected && backstopId) {
+      const backstop =
+        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+      const operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -464,9 +466,10 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
-      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
-      let operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
+    if (connected && backstopId) {
+      const backstop =
+        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+      const operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -490,9 +493,10 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
-      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
-      let operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
+    if (connected && backstopId) {
+      const backstop =
+        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+      const operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -515,9 +519,10 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
-      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
-      let operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
+    if (connected && backstopId) {
+      const backstop =
+        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+      const operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -540,9 +545,10 @@ export const WalletProvider = ({ children = null as any }) => {
     claimArgs: BackstopClaimArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
-      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
-      let operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
+    if (connected && backstopId) {
+      const backstop =
+        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+      const operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -572,7 +578,7 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       if (connected) {
         let cometClient = new CometClient(cometPoolId);
-        let operation = cometClient.depositTokenInGetLPOut(args);
+        const operation = cometClient.depositTokenInGetLPOut(args);
         if (sim) {
           return await simulateOperation(operation);
         }
@@ -593,7 +599,7 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       if (connected) {
         let cometClient = new CometClient(cometPoolId);
-        let operation = cometClient.join(args);
+        const operation = cometClient.join(args);
         if (sim) {
           return await simulateOperation(operation);
         }
@@ -614,7 +620,7 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       if (connected) {
         let cometClient = new CometClient(cometPoolId);
-        let operation = cometClient.exit(args);
+        const operation = cometClient.exit(args);
         if (sim) {
           return await simulateOperation(operation);
         }

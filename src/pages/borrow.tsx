@@ -10,8 +10,8 @@ import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useBackstop, usePool, usePoolOracle } from '../hooks/api';
-import { toBalance, toPercentage } from '../utils/formatter';
+import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../hooks/api';
+import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 import { getTokenLinkFromReserve } from '../utils/token';
 
@@ -26,7 +26,9 @@ const Borrow: NextPage = () => {
   const { data: pool } = usePool(safePoolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
+  const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
   const reserve = pool?.reserves.get(safeAssetId);
+  const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
 
   const maxUtilFloat = reserve ? FixedMath.toFloat(BigInt(reserve.config.max_util), 7) : 1;
   const totalSupplied = reserve ? reserve.totalSupplyFloat() : 0;
@@ -44,7 +46,7 @@ const Borrow: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader poolId={safePoolId} />
       </Row>
       <ReserveDetailsBar action="borrow" poolId={safePoolId} activeReserveId={safeAssetId} />
       <Row>
@@ -86,7 +88,7 @@ const Borrow: NextPage = () => {
                 }}
               >
                 <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                  {reserve?.tokenMetadata?.symbol ?? ''}
+                  {tokenSymbol}
                 </Typography>
                 <OpenInNewIcon fontSize="inherit" />
               </Link>
@@ -104,7 +106,7 @@ const Borrow: NextPage = () => {
             text={
               reserve ? (
                 <AprDisplay
-                  assetSymbol={reserve.tokenMetadata.symbol}
+                  assetSymbol={tokenSymbol}
                   assetApr={reserve.borrowApr}
                   emissionSymbol={'BLND'}
                   emissionApr={emissionApr}

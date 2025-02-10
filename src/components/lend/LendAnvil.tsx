@@ -1,7 +1,7 @@
 import {
   FixedMath,
   parseResult,
-  PoolContract,
+  PoolContractV1,
   PoolUser,
   Positions,
   PositionsEstimate,
@@ -21,9 +21,10 @@ import {
   usePoolUser,
   useQueryClientCacheCleaner,
   useTokenBalance,
+  useTokenMetadata,
 } from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
-import { toBalance, toPercentage } from '../../utils/formatter';
+import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim } from '../../utils/txSim';
@@ -51,15 +52,12 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
   const reserve = pool?.reserves.get(assetId);
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.tokenMetadata.symbol ?? 'token';
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const { data: horizonAccount } = useHorizonAccount();
-  const { data: tokenBalance } = useTokenBalance(
-    assetId,
-    reserve?.tokenMetadata?.asset,
-    horizonAccount
-  );
+  const { data: tokenBalance } = useTokenBalance(assetId, tokenMetadata?.asset, horizonAccount);
 
   const [toLend, setToLend] = useState<string>('');
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
@@ -72,7 +70,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   }
 
   // calculate current wallet state
-  const stellar_reserve_amount = getAssetReserve(horizonAccount, reserve?.tokenMetadata?.asset);
+  const stellar_reserve_amount = getAssetReserve(horizonAccount, tokenMetadata?.asset);
   const freeUserBalanceScaled =
     FixedMath.toFloat(tokenBalance ?? BigInt(0), reserve?.config?.decimals) -
     stellar_reserve_amount;
@@ -107,7 +105,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     if (response) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+        setParsedSimResult(parseResult(response, PoolContractV1.parsers.submit));
       }
     }
     setLoadingEstimate(false);
@@ -117,8 +115,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     return <Skeleton />;
   }
 
-  if (pool.config.status > 3) {
-    return <PoolStatusBanner status={pool.config.status} />;
+  if (pool.metadata.status > 3) {
+    return <PoolStatusBanner status={pool.metadata.status} />;
   }
 
   const curPositionsEstimate =

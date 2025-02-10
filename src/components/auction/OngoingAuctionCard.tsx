@@ -3,22 +3,21 @@ import {
   AuctionType,
   parseResult,
   Pool,
-  PoolContract,
+  PoolContractV1,
   Positions,
   PositionsEstimate,
   RequestType,
   SubmitArgs,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Asset, rpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
-import { useBackstop, useHorizonAccount, usePoolOracle, usePoolUser } from '../../hooks/api';
+import { useBackstop, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { calculateAuctionOracleProfit } from '../../utils/auction';
 import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
-import { requiresTrustline } from '../../utils/horizon';
-import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { getErrorFromSim } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { DividerSection } from '../common/DividerSection';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -48,87 +47,47 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
   currLedger,
 }) => {
   const theme = useTheme();
-  const { walletAddress, connected, poolSubmit, createTrustlines, isLoading, txType } = useWallet();
+  const { walletAddress, connected, poolSubmit, createTrustlines, isLoading } = useWallet();
+
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
-  const { data: horizonAccount } = useHorizonAccount();
   const { data: poolUser } = usePoolUser(pool);
+
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
 
   const positionEstimate =
     poolOracle && poolUser && PositionsEstimate.build(pool, poolOracle, poolUser.positions);
-  const { scaledAuction, auctionValue, newPositionEstimate, trustlinesToAdd, hasTokenTrustline } =
-    useMemo(() => {
-      const scaledAuction = auction.scale(currLedger + 1)[0];
-      const auctionValue =
-        poolOracle &&
-        backstop &&
-        calculateAuctionOracleProfit(
-          scaledAuction.data,
-          scaledAuction.type,
-          pool,
-          poolOracle,
-          backstop.backstopToken
-        );
-      const newPositionEstimate =
-        poolOracle && parsedSimResult && PositionsEstimate.build(pool, poolOracle, parsedSimResult);
+  const { scaledAuction, auctionValue, newPositionEstimate } = useMemo(() => {
+    const scaledAuction = auction.scale(currLedger + 1)[0];
+    const auctionValue =
+      poolOracle &&
+      backstop &&
+      calculateAuctionOracleProfit(
+        scaledAuction.data,
+        scaledAuction.type,
+        pool,
+        poolOracle,
+        backstop.backstopToken
+      );
+    const newPositionEstimate =
+      poolOracle && parsedSimResult && PositionsEstimate.build(pool, poolOracle, parsedSimResult);
 
-      const trustlinesToAdd: Asset[] = [];
-      let hasTokenTrustline = true;
-      const auctionAssetSet = new Set(scaledAuction.data.lot.keys());
-      for (const asset of Array.from(scaledAuction.data.bid.keys())) {
-        auctionAssetSet.add(asset);
-      }
-      for (const asset of Array.from(auctionAssetSet)) {
-        const reserve = pool.reserves.get(asset);
-        if (requiresTrustline(horizonAccount, reserve?.tokenMetadata?.asset)) {
-          hasTokenTrustline = false;
-          if (reserve?.tokenMetadata?.asset) {
-            trustlinesToAdd.push(reserve.tokenMetadata.asset);
-          }
-          break;
-        }
-      }
-      return {
-        scaledAuction,
-        auctionValue,
-        newPositionEstimate,
-        trustlinesToAdd,
-        hasTokenTrustline,
-      };
-    }, [auction, simResponse, currLedger, poolOracle, backstop, pool, parsedSimResult]);
-
-  const handleAddAssetTrustline = async () => {
-    if (connected && trustlinesToAdd.length > 0) {
-      await createTrustlines(trustlinesToAdd);
+    const auctionAssetSet = new Set(scaledAuction.data.lot.keys());
+    for (const asset of Array.from(scaledAuction.data.bid.keys())) {
+      auctionAssetSet.add(asset);
     }
-  };
-  const AddTrustlineButton = (
-    <OpaqueButton
-      onClick={handleAddAssetTrustline}
-      palette={theme.palette.warning}
-      sx={{ margin: '6px', padding: '6px' }}
-    >
-      Add Trustlines
-    </OpaqueButton>
-  );
+    return {
+      scaledAuction,
+      auctionValue,
+      newPositionEstimate,
+    };
+  }, [auction, simResponse, currLedger, poolOracle, backstop, pool, parsedSimResult]);
+
   const { reason, disabledType, extraContent, isError } = useMemo(() => {
-    if (!hasTokenTrustline) {
-      let submitError: SubmitError = {
-        isSubmitDisabled: true,
-        isError: true,
-        isMaxDisabled: true,
-        reason: 'Missing trustline for auction asset.',
-        disabledType: 'warning',
-        extraContent: AddTrustlineButton,
-      };
-      return submitError;
-    } else {
-      return getErrorFromSim('1', 0, isLoading, simResponse, undefined);
-    }
-  }, [hasTokenTrustline, isLoading, loadingEstimate, simResponse, theme.palette.warning]);
+    return getErrorFromSim('1', 0, isLoading, simResponse, undefined);
+  }, [isLoading, loadingEstimate, simResponse, theme.palette.warning]);
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (!connected) return;
@@ -163,7 +122,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
     if (response && sim) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
-        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
+        setParsedSimResult(parseResult(response, PoolContractV1.parsers.submit));
       } else {
         console.error('Simulation failed', response);
       }

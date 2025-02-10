@@ -16,10 +16,12 @@ import {
   usePool,
   usePoolOracle,
   useTokenBalance,
+  useTokenMetadata,
 } from '../hooks/api';
-import { toBalance, toPercentage } from '../utils/formatter';
+import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 import { getTokenLinkFromReserve } from '../utils/token';
+import { MAINNET_USDC_CONTRACT_ADDRESS } from '../utils/token_display';
 
 const Supply: NextPage = () => {
   const theme = useTheme();
@@ -30,11 +32,13 @@ const Supply: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const { data: pool } = usePool(safePoolId);
+  const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
   const reserve = pool?.reserves.get(safeAssetId);
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: tokenBalance } = useTokenBalance(
     reserve?.assetId,
-    reserve?.tokenMetadata?.asset,
+    tokenMetadata?.asset,
     horizonAccount,
     reserve !== undefined
   );
@@ -50,11 +54,11 @@ const Supply: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader poolId={safePoolId} />
       </Row>
 
       <ReserveDetailsBar action="supply" poolId={safePoolId} activeReserveId={safeAssetId} />
-      {reserve?.tokenMetadata.symbol === 'USDC' && <AllbridgeButton />}
+      {safeAssetId === MAINNET_USDC_CONTRACT_ADDRESS && <AllbridgeButton />}
 
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
@@ -95,7 +99,7 @@ const Supply: NextPage = () => {
                 }}
               >
                 <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                  {reserve?.tokenMetadata?.symbol ?? ''}
+                  {symbol}
                 </Typography>
                 <OpenInNewIcon fontSize="inherit" />
               </Link>
@@ -110,7 +114,7 @@ const Supply: NextPage = () => {
             text={
               reserve ? (
                 <AprDisplay
-                  assetSymbol={reserve.tokenMetadata.symbol}
+                  assetSymbol={symbol}
                   assetApr={reserve.supplyApr}
                   emissionSymbol={'BLND'}
                   emissionApr={emissionApr}

@@ -10,7 +10,7 @@ import { GoBackHeader } from '../components/common/GoBackHeader';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useBackstop, useBackstopPool, useBackstopPoolUser, usePool } from '../hooks/api';
+import { useBackstop, useBackstopPool, useBackstopPoolUser } from '../hooks/api';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const BackstopQ4W: NextPage = () => {
@@ -20,7 +20,6 @@ const BackstopQ4W: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const { data: pool } = usePool(safePoolId);
   const { data: backstop } = useBackstop();
   const { data: backstopPoolData } = useBackstopPool(safePoolId);
   const { data: userBackstopPoolData } = useBackstopPoolUser(safePoolId);
@@ -38,7 +37,7 @@ const BackstopQ4W: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config?.name} />
+        <GoBackHeader poolId={safePoolId} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>

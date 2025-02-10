@@ -1,4 +1,5 @@
-import { Typography, useTheme } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Box, Button, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AssetBorrowInfo } from '../components/asset/AssetBorrowInfo';
@@ -13,8 +14,8 @@ import { Skeleton } from '../components/common/Skeleton';
 import { StackedTextBox } from '../components/common/StackedTextBox';
 import { PoolMenu } from '../components/pool/PoolMenu';
 import { useSettings, ViewType } from '../contexts';
-import { usePool, usePoolOracle } from '../hooks/api';
-import { toPercentage } from '../utils/formatter';
+import { usePool, usePoolOracle, useTokenMetadata } from '../hooks/api';
+import { toCompactAddress, toPercentage } from '../utils/formatter';
 
 const Asset: NextPage = () => {
   const router = useRouter();
@@ -27,10 +28,13 @@ const Asset: NextPage = () => {
   const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
   let safeAssetId = '';
   if (assetId === undefined) {
-    safeAssetId = pool ? pool.config.reserveList[0] : '';
+    safeAssetId = pool ? Array.from(pool.reserves.keys())[0] : '';
   } else if (typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId)) {
     safeAssetId = assetId;
   }
+  const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
+
   const reserve = pool?.reserves.get(safeAssetId);
   const hasData = pool && poolOracle && reserve;
 
@@ -42,10 +46,52 @@ const Asset: NextPage = () => {
         </Section>
       </Row>
       <ReserveExploreBar poolId={safePoolId} assetId={safeAssetId} />
-      {reserve?.tokenMetadata.symbol === 'USDC' && <AllbridgeButton />}
+      {symbol === 'USDC' && <AllbridgeButton />}
       {hasData ? (
         <>
           <Divider />
+          <Section
+            width={SectionSize.FULL}
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              marginBottom: '12px',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: theme.palette.background.paper,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+              }}
+            >
+              <Typography sx={{ padding: '6px' }}>Oracle Price</Typography>
+              <Button
+                sx={{
+                  alignItems: 'center',
+                  padding: 0,
+                  cursor: 'pointer',
+                  minWidth: '0px',
+                  color: theme.palette.text.primary,
+                }}
+                onClick={() =>
+                  window.open(
+                    `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${pool.metadata.oracle}`,
+                    '_blank'
+                  )
+                }
+              >
+                <OpenInNewIcon fontSize="inherit" />
+              </Button>
+            </Box>
+
+            <Typography sx={{ padding: '6px' }}>
+              {`$${poolOracle.getPriceFloat(reserve.assetId)?.toFixed(2) ?? ''}`}
+            </Typography>
+          </Section>
+
           <Row
             sx={{
               display: 'flex',

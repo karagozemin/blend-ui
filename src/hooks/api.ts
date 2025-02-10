@@ -2,13 +2,18 @@ import {
   Backstop,
   BackstopPool,
   BackstopPoolUser,
+  BackstopPoolV1,
+  BackstopPoolV2,
+  Network,
   Pool,
   PoolEvent,
   poolEventFromEventResponse,
   PoolOracle,
   PoolUser,
+  PoolV1,
+  PoolV2,
   Positions,
-  Reserve,
+  TokenMetadata,
   UserBalance,
 } from '@blend-capital/blend-sdk';
 import {
@@ -21,15 +26,24 @@ import {
   TransactionBuilder,
   xdr,
 } from '@stellar/stellar-sdk';
-import { keepPreviousData, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+  UseQueryResult,
+} from '@tanstack/react-query';
 import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
-import { getTokenMetadataFromTOML, StellarTokenMetadata } from '../external/stellar-toml';
+import { getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';
+import { ReserveTokenMetadata } from '../utils/token';
 
 const DEFAULT_STALE_TIME = 30 * 1000;
 const USER_STALE_TIME = 60 * 1000;
 const BACKSTOP_ID = process.env.NEXT_PUBLIC_BACKSTOP || '';
+const BACKSTOP_ID_V2 = process.env.NEXT_PUBLIC_BACKSTOP_V2 || '';
 
 //********** Query Client Data **********//
 
@@ -112,13 +126,22 @@ export function useCurrentBlockNumber(): UseQueryResult<number, Error> {
  * @returns Query result with the pool data.
  */
 export function usePool(poolId: string, enabled: boolean = true): UseQueryResult<Pool, Error> {
-  const { network } = useSettings();
+  const { network, version } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['pool', poolId],
     enabled: enabled && poolId !== '',
     queryFn: async () => {
-      return await Pool.load(network, poolId);
+      try {
+        if (version === 'v2') {
+          return await PoolV2.load(network, poolId);
+        } else {
+          return await PoolV1.load(network, poolId);
+        }
+      } catch (e: any) {
+        console.error('Error fetching pool data', e);
+        throw e;
+      }
     },
   });
 }
@@ -183,13 +206,14 @@ export function usePoolUser(
  * @returns Query result with the backstop data.
  */
 export function useBackstop(enabled: boolean = true): UseQueryResult<Backstop, Error> {
-  const { network } = useSettings();
+  const { network, version } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
-    queryKey: ['backstop'],
+    queryKey: ['backstop', version],
     enabled,
     queryFn: async () => {
-      return await Backstop.load(network, BACKSTOP_ID);
+      let res = await Backstop.load(network, version === 'v2' ? BACKSTOP_ID_V2 : BACKSTOP_ID);
+      return res;
     },
   });
 }
@@ -204,13 +228,14 @@ export function useBackstopPool(
   poolId: string,
   enabled: boolean = true
 ): UseQueryResult<BackstopPool, Error> {
-  const { network } = useSettings();
+  const { network, version } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['backstopPool', poolId],
     enabled,
     queryFn: async () => {
-      return await BackstopPool.load(network, BACKSTOP_ID, poolId);
+      if (version === 'v2') return await BackstopPoolV2.load(network, BACKSTOP_ID_V2, poolId);
+      else return await BackstopPoolV1.load(network, BACKSTOP_ID, poolId);
     },
   });
 }
@@ -225,7 +250,7 @@ export function useBackstopPoolUser(
   poolId: string,
   enabled: boolean = true
 ): UseQueryResult<BackstopPoolUser, Error> {
-  const { network } = useSettings();
+  const { network, version } = useSettings();
   const { walletAddress, connected } = useWallet();
   return useQuery({
     staleTime: USER_STALE_TIME,
@@ -239,7 +264,12 @@ export function useBackstopPoolUser(
     ),
     queryFn: async () => {
       if (walletAddress !== '') {
-        return await BackstopPoolUser.load(network, BACKSTOP_ID, poolId, walletAddress);
+        return await BackstopPoolUser.load(
+          network,
+          version == 'v2' ? BACKSTOP_ID_V2 : BACKSTOP_ID,
+          poolId,
+          walletAddress
+        );
       }
     },
   });
@@ -478,22 +508,61 @@ export function useSimulateOperation<T>(
 
 /**
  * Fetch the token metadata for the given reserve.
- * @param reserve - The reserve
+ * @param assetId - The reserve assetId
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the token metadata.
  */
-export function useTokenMetadataFromToml(
-  reserve: Reserve,
+export function useTokenMetadata(
+  assetId: string | undefined,
   enabled: boolean = true
-): UseQueryResult<StellarTokenMetadata, Error> {
+): UseQueryResult<ReserveTokenMetadata, Error> {
   const { network } = useSettings();
-  return useQuery({
-    staleTime: Infinity,
-    queryKey: ['tokenMetadata', reserve.assetId],
-    enabled,
-    queryFn: async () => {
-      const horizon = new Horizon.Server(network.horizonUrl, network.opts);
-      return await getTokenMetadataFromTOML(horizon, reserve);
-    },
+  return useQuery(createTokenMetadataQuery(network, assetId, enabled));
+}
+
+/**
+ * Fetch the token metadata for the list of assets.
+ * @param assetIds - The reserve assetId
+ * @param enabled - Whether the query is enabled (optional - defaults to true)
+ * @returns Query result with the token metadata.
+ */
+export function useTokenMetadataList(
+  assetIds: string[],
+  enabled: boolean = true
+): UseQueryResult<ReserveTokenMetadata, Error>[] {
+  const { network } = useSettings();
+  return useQueries({
+    queries: assetIds.map((assetId) => createTokenMetadataQuery(network, assetId, enabled)),
   });
+}
+
+/**
+ * Helper function to create a token metadata query.
+ */
+function createTokenMetadataQuery(
+  network: Network & {
+    horizonUrl: string;
+  },
+  assetId: string | undefined,
+  enabled: boolean = true
+): UseQueryOptions<ReserveTokenMetadata, Error> {
+  return {
+    staleTime: Infinity,
+    queryKey: ['tokenMetadata', assetId],
+    enabled: enabled && assetId !== undefined && assetId !== '',
+    queryFn: async () => {
+      if (assetId === undefined || assetId === '') {
+        throw new Error('No assetId');
+      }
+      const horizon = new Horizon.Server(network.horizonUrl, network.opts);
+      const tokenMetadata = await TokenMetadata.load(network, assetId);
+      const tomlMetadata = await getTokenMetadataFromTOML(horizon, tokenMetadata);
+      const reserveTokenMeta: ReserveTokenMetadata = {
+        assetId: assetId,
+        ...tokenMetadata,
+        ...tomlMetadata,
+      };
+      return reserveTokenMeta;
+    },
+  };
 }

@@ -11,7 +11,7 @@ export const PoolHealthBanner: React.FC<PoolComponentProps> = ({ poolId, ...prop
 
   return (
     <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-      <PoolStatusBanner status={pool?.config?.status} />
+      <PoolStatusBanner status={pool?.metadata?.status} />
       {isOracleError && (
         <Row>
           <PoolOracleError />

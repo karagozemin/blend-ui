@@ -25,13 +25,12 @@ export interface MarketCardProps extends PoolComponentProps {
 
 export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded, sx }) => {
   const theme = useTheme();
-  const { trackPool } = useSettings();
+  const { trackPool, version } = useSettings();
 
   const { data: backstop } = useBackstop();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstopPool } = useBackstopPool(poolId);
-
   const [expand, setExpand] = useState(false);
   const [rotateArrow, setRotateArrow] = useState(false);
 
@@ -40,7 +39,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   useEffect(() => {
     if (pool !== undefined && backstopPool !== undefined && backstop !== undefined) {
       onLoaded(index);
-      trackPool(poolId, pool.config.name);
+      trackPool(poolId, pool.metadata.name, version);
     }
   }, [pool, backstopPool, backstop]);
 
@@ -67,7 +66,11 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
         }}
       >
         <Row>
-          <PoolHeader name={pool.config.name} sx={{ margin: '6px', padding: '6px' }} />
+          <PoolHeader
+            name={pool.metadata.name}
+            version={version}
+            sx={{ margin: '6px', padding: '6px' }}
+          />
 
           <Box
             sx={{
@@ -116,7 +119,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
       <Row>
         <LinkBox
           sx={{ width: '100%', marginRight: '12px' }}
-          to={{ pathname: '/dashboard', query: { poolId: poolId } }}
+          to={{ pathname: '/dashboard', query: { poolId: poolId, version } }}
         >
           <OpaqueButton
             palette={theme.palette.primary}

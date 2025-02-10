@@ -1,6 +1,6 @@
 import {
   BackstopClaimArgs,
-  BackstopContract,
+  BackstopContractV1,
   BackstopPoolEst,
   BackstopPoolUserEst,
   FixedMath,
@@ -25,6 +25,7 @@ import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
+import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import {
   useBackstop,
@@ -40,6 +41,7 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
+  const { version } = useSettings();
   const { connected, walletAddress, backstopClaim, restore } = useWallet();
 
   const { poolId } = router.query;
@@ -75,7 +77,7 @@ const Backstop: NextPage = () => {
       ? (Number(lpBalance) / 1e7) * backstop.backstopToken.lpTokenPrice
       : undefined;
 
-  const backstopContract = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const backstopContract = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
   const claimArgs: BackstopClaimArgs = {
     from: walletAddress,
     pool_addresses: [safePoolId],
@@ -342,7 +344,7 @@ const Backstop: NextPage = () => {
             </LinkBox>
             <LinkBox
               sx={{ width: SectionSize.TILE }}
-              to={{ pathname: '/backstop-deposit', query: { poolId: poolId } }}
+              to={{ pathname: '/backstop-deposit', query: { poolId: poolId, version } }}
             >
               <OpaqueButton palette={theme.palette.backstop} sx={{ width: '100%', padding: '6px' }}>
                 Backstop Deposit
@@ -399,7 +401,7 @@ const Backstop: NextPage = () => {
           </Row>
           <LinkBox
             sx={{ width: '100%', paddingRight: '12px' }}
-            to={{ pathname: 'backstop-q4w', query: { poolId: poolId } }}
+            to={{ pathname: 'backstop-q4w', query: { poolId: poolId, version } }}
           >
             <OpaqueButton
               palette={theme.palette.positive}

@@ -10,9 +10,10 @@ import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { usePool } from '../hooks/api';
 import theme from '../theme';
+
 export default function SettingsPage() {
   const { getNetworkDetails, walletId } = useWallet();
-  const { network, setNetwork, trackPool, untrackPool, trackedPools } = useSettings();
+  const { network, setNetwork, trackPool, untrackPool, trackedPools, version } = useSettings();
 
   const [newNetworkRPCUrl, setNewNetworkRPCUrl] = useState<string>('');
   const [newHorizonUrl, setNewHorizonUrl] = useState<string>('');
@@ -50,7 +51,7 @@ export default function SettingsPage() {
 
   function handleAddTrackedPool(poolId: string) {
     if (pool && pool.id === poolId) {
-      trackPool(pool.id, pool.config.name);
+      trackPool(pool.id, pool.metadata.name, version);
       setPoolToAdd('');
     } else {
       setPoolIdError('Pool not found.');
@@ -79,6 +80,7 @@ export default function SettingsPage() {
       setPoolIdError('');
     }
   };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       validatePoolId(poolToAdd);
@@ -176,7 +178,13 @@ export default function SettingsPage() {
                 borderRadius: '5px',
               }}
             >
-              <TrackedPool key={pool.id} name={pool.name} id={pool.id} sx={{ flex: 1 }} />
+              <TrackedPool
+                key={pool.id}
+                name={pool.name}
+                id={pool.id}
+                version={pool.version}
+                sx={{ flex: 1 }}
+              />
               <OpaqueButton
                 onClick={() => untrackPool(pool.id)}
                 palette={theme.palette.error}

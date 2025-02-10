@@ -4,7 +4,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 
-import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
+import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
@@ -24,7 +24,14 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
+
+  const { data: backstop } = useBackstop();
+  const { data: pool } = usePool(poolId);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+  const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
 
   const available = reserve.totalSupplyFloat() - reserve.totalLiabilitiesFloat();
 
@@ -33,10 +40,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const liabilityFactor = reserve.getLiabilityFactor();
 
   const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
-  const { data: poolOracle } = usePoolOracle(pool);
-  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
@@ -56,7 +60,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId } }}
+        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId, version } }}
       >
         <CustomButton
           sx={{
@@ -87,7 +91,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
             }}
           >
             <AprDisplay
-              assetSymbol={reserve.tokenMetadata.symbol}
+              assetSymbol={symbol}
               assetApr={reserve.borrowApr}
               emissionSymbol="BLND"
               emissionApr={emissionApr}

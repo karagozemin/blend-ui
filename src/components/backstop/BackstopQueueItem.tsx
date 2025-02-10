@@ -1,4 +1,4 @@
-import { BackstopContract, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
+import { BackstopContractV1, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, SxProps, Theme, Tooltip, Typography } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
@@ -16,32 +16,30 @@ import { Row } from '../common/Row';
 export interface BackstopQueueItemProps extends PoolComponentProps {
   q4w: Q4W;
   inTokens: number;
-  first: boolean;
+  canUnqueue: boolean;
 }
 export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   q4w,
   inTokens,
-  first,
+  canUnqueue,
   poolId,
 }) => {
   const { connected, walletAddress, backstopDequeueWithdrawal, backstopWithdraw, restore } =
     useWallet();
-  const { viewType } = useSettings();
+  const { viewType, version } = useSettings();
 
-  const backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const backstop = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
   const actionArgs: PoolBackstopActionArgs = {
     from: walletAddress,
     pool_address: poolId,
     amount: q4w.amount,
   };
   // the BackstopQueueMod sets the expiration for unlocked withdrawals to 0
+  // user can take an action if the Q4W has unlocked or if they can unqueue the entry
+  const enabled = q4w.exp === BigInt(0) || canUnqueue;
   const sim_op =
     q4w.exp === BigInt(0) ? backstop.withdraw(actionArgs) : backstop.dequeueWithdrawal(actionArgs);
-  const {
-    data: simResult,
-    isLoading,
-    refetch: refetchSim,
-  } = useSimulateOperation(sim_op, q4w.exp === BigInt(0) || first);
+  const { data: simResult, isLoading, refetch: refetchSim } = useSimulateOperation(sim_op, enabled);
   const isRestore =
     isLoading === false && simResult !== undefined && rpc.Api.isSimulationRestore(simResult);
 
@@ -79,9 +77,11 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   };
 
   const queueItemActionButton = (sx: SxProps<Theme>) => {
-    const needsTooltip = !first || isRestore;
-    const tooltipMessage = !first
-      ? 'You can only unqueue the oldest withdrawal'
+    const needsTooltip = !enabled || isRestore;
+    const tooltipMessage = !enabled
+      ? version === 'v2'
+        ? 'You can only unqueue the oldest withdrawal'
+        : 'You can only unqueue the most recent withdrawal'
       : 'This transaction ran into expired entries which need to be restored before proceeding.';
 
     return needsTooltip ? (
@@ -106,7 +106,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
             <OpaqueButton
               onClick={() => handleClick()}
               palette={theme.palette.positive}
-              disabled={!first}
+              disabled={!enabled}
               sx={{ width: '100%' }}
             >
               {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
@@ -118,7 +118,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
       <OpaqueButton
         onClick={() => handleClick()}
         palette={theme.palette.positive}
-        disabled={!first}
+        disabled={!enabled}
         sx={sx}
       >
         {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}

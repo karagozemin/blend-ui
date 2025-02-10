@@ -8,8 +8,8 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
-import { useBackstop, usePool, usePoolOracle, usePoolUser } from '../hooks/api';
-import { toBalance, toPercentage } from '../utils/formatter';
+import { useBackstop, usePool, usePoolOracle, usePoolUser, useTokenMetadata } from '../hooks/api';
+import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 
 const Withdraw: NextPage = () => {
@@ -24,7 +24,9 @@ const Withdraw: NextPage = () => {
   const { data: poolUser } = usePoolUser(pool);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
+  const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
   const reserve = pool?.reserves.get(safeAssetId);
+  const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
 
   const currentDeposit = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
   const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerSuppliedAsset() : 0;
@@ -36,7 +38,7 @@ const Withdraw: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader poolId={safePoolId} />
       </Row>
       <ReserveDetailsBar action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
 
@@ -61,7 +63,7 @@ const Withdraw: NextPage = () => {
             </Box>
             <Box>
               <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                {reserve?.tokenMetadata?.symbol ?? ''}
+                {tokenSymbol}
               </Typography>
             </Box>
           </Box>
@@ -74,7 +76,7 @@ const Withdraw: NextPage = () => {
             text={
               reserve ? (
                 <AprDisplay
-                  assetSymbol={reserve.tokenMetadata.symbol}
+                  assetSymbol={tokenSymbol}
                   assetApr={reserve.supplyApr}
                   emissionSymbol={'BLND'}
                   emissionApr={emissionApr}

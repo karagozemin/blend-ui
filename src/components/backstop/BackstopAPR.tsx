@@ -26,7 +26,7 @@ export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId }) => {
       backstopPoolData.poolBalance
     );
     estBackstopApr =
-      (FixedMath.toFloat(BigInt(pool.config.backstopRate), 7) *
+      (FixedMath.toFloat(BigInt(pool.metadata.backstopRate), 7) *
         poolEst.avgBorrowApr *
         poolEst.totalBorrowed) /
       backstopPoolEst.totalSpotValue;

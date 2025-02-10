@@ -1,12 +1,14 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Box, Menu, MenuItem, Typography, useTheme } from '@mui/material';
+import { Box, Menu, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { usePool } from '../../hooks/api';
+import { useSettings } from '../../contexts';
+import { usePool, useTokenMetadata } from '../../hooks/api';
 import { toCompactAddress } from '../../utils/formatter';
 import { CustomButton } from './CustomButton';
 import { LetterIcon } from './LetterIcon';
 import { PoolComponentProps } from './PoolComponentProps';
+import ReserveDropdownItem from './ReserveDropdownItem';
 import { TokenIcon } from './TokenIcon';
 
 export interface ReserveDropdown extends PoolComponentProps {
@@ -18,9 +20,12 @@ export interface ReserveDropdown extends PoolComponentProps {
 export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, activeReserveId }) => {
   const theme = useTheme();
   const router = useRouter();
+  const { version } = useSettings();
 
   const { data: pool } = usePool(poolId);
   const activeReserve = pool?.reserves?.get(activeReserveId);
+  const { data: tokenMetadata } = useTokenMetadata(activeReserveId);
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(activeReserveId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -37,7 +42,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
 
   const handleClickReserve = (reserveId: string) => {
     handleClose();
-    router.push({ pathname: `/${action}`, query: { poolId: poolId, assetId: reserveId } });
+    router.push({ pathname: `/${action}`, query: { poolId: poolId, assetId: reserveId, version } });
   };
 
   return (
@@ -61,7 +66,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
             <>
               <TokenIcon reserve={activeReserve} sx={{ height: '30px', width: '30px' }} />
               <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-                {`${capitalizedAction} ${activeReserve?.tokenMetadata?.symbol ?? 'unknown'}`}
+                {`${capitalizedAction} ${symbol}`}
               </Typography>
             </>
           ) : (
@@ -86,23 +91,12 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
         }}
       >
         {Array.from(pool?.reserves.values() ?? []).map((reserve) => (
-          <MenuItem
+          <ReserveDropdownItem
             key={reserve.assetId}
-            onClick={() => handleClickReserve(reserve.assetId)}
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              borderRadius: '5px',
-              paddingLeft: '6px',
-            }}
-          >
-            <TokenIcon reserve={reserve} sx={{ height: '30px', width: '30px' }} />
-            <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-              {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
-            </Typography>
-          </MenuItem>
+            text={capitalizedAction}
+            reserve={reserve}
+            onClick={handleClickReserve}
+          />
         ))}
       </Menu>
     </>

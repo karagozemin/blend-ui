@@ -15,8 +15,9 @@ import {
   usePoolOracle,
   usePoolUser,
   useTokenBalance,
+  useTokenMetadata,
 } from '../hooks/api';
-import { toBalance, toPercentage } from '../utils/formatter';
+import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 
 const Repay: NextPage = () => {
@@ -28,11 +29,13 @@ const Repay: NextPage = () => {
 
   const { data: pool } = usePool(safePoolId);
   const { data: poolUser } = usePoolUser(pool);
+  const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
   const reserve = pool?.reserves.get(safeAssetId);
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: tokenBalance } = useTokenBalance(
     reserve?.assetId,
-    reserve?.tokenMetadata?.asset,
+    tokenMetadata?.asset,
     horizonAccount,
     reserve !== undefined
   );
@@ -51,7 +54,7 @@ const Repay: NextPage = () => {
   return (
     <>
       <Row>
-        <GoBackHeader name={pool?.config.name} />
+        <GoBackHeader poolId={safePoolId} />
       </Row>
       <ReserveDetailsBar action="repay" poolId={safePoolId} activeReserveId={safeAssetId} />
       <Row>
@@ -75,7 +78,7 @@ const Repay: NextPage = () => {
             </Box>
             <Box>
               <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                {reserve?.tokenMetadata?.symbol ?? ''}
+                {symbol}
               </Typography>
             </Box>
           </Box>
@@ -88,7 +91,7 @@ const Repay: NextPage = () => {
             text={
               reserve ? (
                 <AprDisplay
-                  assetSymbol={reserve.tokenMetadata.symbol}
+                  assetSymbol={symbol}
                   assetApr={reserve.borrowApr}
                   emissionSymbol={'BLND'}
                   emissionApr={emissionApr}

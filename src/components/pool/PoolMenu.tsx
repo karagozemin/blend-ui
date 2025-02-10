@@ -10,13 +10,13 @@ import { PoolHeader } from './PoolHeader';
 export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const router = useRouter();
-  const { trackedPools, blockedPools } = useSettings();
+  const { trackedPools, blockedPools, version } = useSettings();
   const pathname = router.pathname;
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const curName = trackedPools.find((pool) => pool.id === poolId)?.name ?? 'Unknown Pool';
+  const trackedPool = trackedPools.find((pool) => pool.id === poolId);
 
   const handleClickDropdown = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -28,7 +28,11 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const handleClickMenuItem = (poolId: string) => {
     handleClose();
-    router.push({ pathname: pathname, query: { poolId: poolId } });
+    const selectedPool = trackedPools.find((pool) => pool.id === poolId);
+    router.push({
+      pathname: pathname,
+      query: { poolId: poolId, version: selectedPool?.version ?? version },
+    });
   };
 
   return (
@@ -38,7 +42,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         onClick={handleClickDropdown}
         sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
       >
-        <PoolHeader name={curName} />
+        <PoolHeader name={trackedPool?.name ?? 'Unknown'} version={trackedPool?.version ?? 'v1'} />
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
       <Menu
@@ -56,7 +60,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
             if (!blockedPools.includes(pool.id))
               return (
                 <MenuItem onClick={() => handleClickMenuItem(pool.id)} key={pool.id}>
-                  <PoolHeader name={pool.name} />
+                  <PoolHeader name={pool.name} version={pool.version} />
                 </MenuItem>
               );
           })}

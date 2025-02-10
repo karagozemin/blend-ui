@@ -1,7 +1,13 @@
 import { AuctionType, Pool, PoolUser, Positions } from '@blend-capital/blend-sdk';
 import { BoxProps } from '@mui/material';
-import { useBackstop, useHorizonAccount, usePoolUser, useTokenBalance } from '../../hooks/api';
-import { toBalance } from '../../utils/formatter';
+import {
+  useBackstop,
+  useHorizonAccount,
+  usePoolUser,
+  useTokenBalance,
+  useTokenMetadata,
+} from '../../hooks/api';
+import { toBalance, toCompactAddress } from '../../utils/formatter';
 import { ValueChange } from '../common/ValueChange';
 
 export interface LotBalanceChangeProps extends BoxProps {
@@ -28,9 +34,12 @@ export const LotBalanceChange: React.FC<LotBalanceChangeProps> = ({
     auctionType === AuctionType.BadDebt
   );
   const { data: poolUser } = usePoolUser(pool);
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
+  const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
+  const tokenDecimals = tokenMetadata?.decimals ?? 7;
   const { data: tokenBalance } = useTokenBalance(
     assetId,
-    pool.reserves.get(assetId)?.tokenMetadata.asset,
+    tokenMetadata?.asset,
     horizonAccount,
     auctionType === AuctionType.Interest
   );
@@ -43,12 +52,8 @@ export const LotBalanceChange: React.FC<LotBalanceChangeProps> = ({
           <ValueChange
             key={assetId}
             title={`${assetId} balance change`}
-            curValue={`${toBalance(tokenBalance, reserve.tokenMetadata.decimals)} ${
-              reserve.tokenMetadata.symbol
-            }`}
-            newValue={`${toBalance(tokenBalance + lotAmount, reserve.tokenMetadata.decimals)} ${
-              reserve.tokenMetadata.symbol
-            }`}
+            curValue={`${toBalance(tokenBalance, tokenDecimals)} ${tokenSymbol}`}
+            newValue={`${toBalance(tokenBalance + lotAmount, tokenDecimals)} ${tokenSymbol}`}
           />
         );
     }
@@ -69,13 +74,9 @@ export const LotBalanceChange: React.FC<LotBalanceChangeProps> = ({
         return (
           <ValueChange
             key={assetId}
-            title={`${reserve.tokenMetadata.symbol} collateral`}
-            curValue={`${toBalance(poolUser.getCollateralFloat(reserve))} ${
-              reserve.tokenMetadata.symbol
-            }`}
-            newValue={`${toBalance(newPoolUser.getCollateralFloat(reserve))} ${
-              reserve.tokenMetadata.symbol
-            }`}
+            title={`${tokenSymbol} collateral`}
+            curValue={`${toBalance(poolUser.getCollateralFloat(reserve))} ${tokenSymbol}`}
+            newValue={`${toBalance(newPoolUser.getCollateralFloat(reserve))} ${tokenSymbol}`}
           />
         );
       }

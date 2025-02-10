@@ -3,7 +3,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
-import { useBackstop, usePool, usePoolOracle } from '../../hooks/api';
+import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
@@ -27,11 +27,14 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
   const router = useRouter();
+  const { version } = useSettings();
 
   const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
   const { data: backstop } = useBackstop();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
+  const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
   const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
   const emissionApr =
@@ -63,7 +66,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         if (viewTypeIsMobile) {
           router.push({
             pathname: '/withdraw',
-            query: { poolId: poolId, assetId: reserve.assetId },
+            query: { poolId: poolId, assetId: reserve.assetId, version },
           });
         }
       }}
@@ -89,7 +92,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         }}
       >
         <AprDisplay
-          assetSymbol={reserve.tokenMetadata.symbol}
+          assetSymbol={symbol}
           assetApr={reserve.supplyApr}
           emissionSymbol="BLND"
           emissionApr={emissionApr}
@@ -99,7 +102,10 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
       </Box>
       {viewType !== ViewType.MOBILE && (
         <LinkBox
-          to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
+          to={{
+            pathname: '/withdraw',
+            query: { poolId: poolId, assetId: reserve.assetId, version },
+          }}
           sx={{
             display: 'flex',
             justifyContent: 'end',

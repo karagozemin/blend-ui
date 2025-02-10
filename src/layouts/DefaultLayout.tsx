@@ -12,7 +12,7 @@ import { useSettings, ViewType } from '../contexts';
 import { useBackstop, usePool } from '../hooks/api';
 
 export default function DefaultLayout({ children }: { children: ReactNode }) {
-  const { viewType, setLastPool, trackPool } = useSettings();
+  const { viewType, trackPool, version: settingsVersion, setLastPool } = useSettings();
   const router = useRouter();
   const { poolId } = router.query;
   const safePoolId =
@@ -31,8 +31,8 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (pool !== undefined) {
-      trackPool(pool.id, pool.config.name);
-      setLastPool(pool.id);
+      trackPool(pool.id, pool.metadata.name, settingsVersion);
+      setLastPool(pool.id, pool.metadata.name, settingsVersion);
     }
   }, [pool, trackPool]);
 
