@@ -8,7 +8,7 @@ import { TokenHeader } from '../common/TokenHeader';
 export interface BidItemProps extends BoxProps {
   reserve: Reserve | undefined;
   type: string;
-  amount: bigint;
+  amount: number;
 }
 export const BidListItem: React.FC<BidItemProps> = ({ reserve, type, amount, ...props }) => {
   const theme = useTheme();
@@ -68,7 +68,9 @@ export const BidListItem: React.FC<BidItemProps> = ({ reserve, type, amount, ...
           justifyContent: 'right',
         }}
       >
-        <Typography variant="body1">{toBalance(amount, reserve?.config.decimals ?? 7)}</Typography>
+        <Typography variant="body1">
+          {`$${toBalance(amount, reserve?.config.decimals ?? 7)}`}
+        </Typography>
       </Box>
     </Box>
   );

@@ -8,7 +8,7 @@ import { TokenHeader } from '../common/TokenHeader';
 export interface LotItemProps extends BoxProps {
   reserve: Reserve | undefined;
   type: string;
-  amount: bigint;
+  amount: number;
 }
 export const LotListItem: React.FC<LotItemProps> = ({ reserve, amount, type, ...props }) => {
   const theme = useTheme();
@@ -71,7 +71,7 @@ export const LotListItem: React.FC<LotItemProps> = ({ reserve, amount, type, ...
         }}
       >
         <Typography variant="body1" align="right">
-          {toBalance(amount, reserve?.config.decimals ?? 7)}
+          {`$${toBalance(amount, reserve?.config.decimals ?? 7)}`}
         </Typography>
       </Box>
     </Box>

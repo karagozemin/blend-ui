@@ -1,5 +1,8 @@
 import { AuctionType, Pool, ScaledAuction } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo } from 'react';
+import { useBackstop, usePoolOracle } from '../../hooks/api';
+import { calculateAuctionOracleProfit } from '../../utils/auction';
 import { toCompactAddress } from '../../utils/formatter';
 import { DividerSection } from '../common/DividerSection';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -17,7 +20,24 @@ export interface FilledAuctionCardProps extends PoolComponentProps {
 
 export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auction, sx }) => {
   const theme = useTheme();
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: backstop } = useBackstop();
+  const { auctionValue } = useMemo(() => {
+    const auctionValue =
+      poolOracle &&
+      backstop &&
+      calculateAuctionOracleProfit(
+        auction.data,
+        auction.type,
+        pool,
+        poolOracle,
+        backstop.backstopToken
+      );
 
+    return {
+      auctionValue,
+    };
+  }, [auction]);
   return (
     <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px', ...sx }}>
       <Box
@@ -67,7 +87,7 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
       </Box>
       <LotList
         pool={pool}
-        lot={auction.data.lot}
+        lot={auctionValue?.lot ?? new Map()}
         type={
           auction.type === AuctionType.Interest || auction.type === AuctionType.BadDebt
             ? 'Underlying'
@@ -77,7 +97,7 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
       <DividerSection />
       <BidList
         pool={pool}
-        bid={auction.data.bid}
+        bid={auctionValue?.bid ?? new Map()}
         type={auction.type === AuctionType.Interest ? 'Underlying' : 'Liability'}
       />
 

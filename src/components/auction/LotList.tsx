@@ -1,11 +1,12 @@
 import { Pool } from '@blend-capital/blend-sdk';
 import { Box, BoxProps, Typography } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
+import { TooltipText } from '../common/TooltipText';
 import { LotListItem } from './LotListItem';
 
 export interface LotListProps extends BoxProps {
   pool: Pool;
-  lot: Map<string, bigint>;
+  lot: Map<string, number>;
   type: string;
 }
 
@@ -67,9 +68,12 @@ export const LotList: React.FC<LotListProps> = ({ pool, lot, type }) => {
             justifyContent: 'right',
           }}
         >
-          <Typography variant="body2" color="text.secondary" align="right">
+          <TooltipText
+            tooltip="The dollar value of the lot asset. (This value reflects current oracle prices)"
+            width={headerWidth}
+          >
             Amount
-          </Typography>
+          </TooltipText>
         </Box>
       </Box>
       {Array.from(lot.entries()).map(([asset, amount]) => (
