@@ -12,12 +12,18 @@ import { useSettings, ViewType } from '../contexts';
 import { useBackstop, usePool } from '../hooks/api';
 
 export default function DefaultLayout({ children }: { children: ReactNode }) {
-  const { viewType, trackPool, version: settingsVersion, setLastPool } = useSettings();
+  const {
+    viewType,
+    trackPool,
+    version: settingsVersion,
+    setLastPool,
+    trackedPools,
+  } = useSettings();
   const router = useRouter();
-  const { poolId } = router.query;
+  const { poolId, version: routerVersion } = router.query;
   const safePoolId =
     typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : undefined;
-
+  const trackedPool = trackedPools.find((p) => p.id === safePoolId);
   const isTestnet = process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET;
 
   const { data: backstop } = useBackstop();
@@ -29,10 +35,16 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
       ? backstop.config.rewardZone[backstop.config.rewardZone.length - 1]
       : undefined;
 
+  const version = trackedPool
+    ? trackedPool.version
+    : routerVersion === 'v1' || routerVersion === 'v2'
+    ? routerVersion
+    : settingsVersion;
+
   useEffect(() => {
     if (pool !== undefined) {
-      trackPool(pool.id, pool.metadata.name, settingsVersion);
-      setLastPool(pool.id, pool.metadata.name, settingsVersion);
+      trackPool(pool.id, pool.metadata.name, version);
+      setLastPool(pool.id, pool.metadata.name, version);
     }
   }, [pool, trackPool]);
 
