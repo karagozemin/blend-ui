@@ -37,7 +37,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
 
   const version = trackedPool
     ? trackedPool.version
-    : routerVersion === 'v1' || routerVersion === 'v2'
+    : routerVersion === 'V1' || routerVersion === 'V2'
     ? routerVersion
     : settingsVersion;
 

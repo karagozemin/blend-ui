@@ -64,7 +64,6 @@ export function calculateAuctionOracleProfit(
         }
     }
   }
-  console.log(bid, lot);
   return {
     totalBidValue,
     totalLotValue,

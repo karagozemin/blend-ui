@@ -5,7 +5,7 @@ import { PoolIcon } from './PoolIcon';
 
 export interface PoolHeaderProps extends BoxProps {
   name: string;
-  version: 'v1' | 'v2';
+  version: 'V1' | 'V2';
 }
 
 export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, version, sx, ...props }) => {

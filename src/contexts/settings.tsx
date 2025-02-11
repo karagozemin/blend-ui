@@ -20,7 +20,7 @@ export enum ViewType {
 export interface TrackedPool {
   id: string;
   name: string;
-  version: 'v1' | 'v2';
+  version: 'V1' | 'V2';
 }
 
 export interface ISettingsContext {
@@ -30,18 +30,18 @@ export interface ISettingsContext {
   getRPCServer: () => rpc.Server;
   getHorizonServer: () => rpc.Server;
   lastPool: TrackedPool | undefined;
-  setLastPool: (id: string, name: string, version: 'v1' | 'v2') => void;
+  setLastPool: (id: string, name: string, version: 'V1' | 'V2') => void;
   trackedPools: TrackedPool[];
-  trackPool: (id: string, name: string, version: 'v1' | 'v2') => void;
+  trackPool: (id: string, name: string, version: 'V1' | 'V2') => void;
   untrackPool: (id: string) => void;
   showLend: boolean;
   setShowLend: (showLend: boolean) => void;
   showJoinPool: boolean;
   setShowJoinPool: (showJoinPool: boolean) => void;
   blockedPools: string[];
-  version: 'v1' | 'v2';
+  version: 'V1' | 'V2';
   backstopId: string | undefined;
-  setVersion: (version: 'v1' | 'v2') => void;
+  setVersion: (version: 'V1' | 'V2') => void;
   getVersion: () => string | undefined;
   isV2Enabled: boolean;
 }
@@ -91,10 +91,10 @@ export const SettingsProvider = ({ children = null as any }) => {
   const [blockedPools, _] = useState<string[]>(
     (process.env.NEXT_PUBLIC_BLOCKED_POOLS || '').split(',')
   );
-  const version = routerVersion === 'v1' || routerVersion === 'v2' ? routerVersion : 'v1';
+  const version = routerVersion === 'V1' || routerVersion === 'V2' ? routerVersion : 'V1';
 
   const backstopId =
-    version === 'v1' ? process.env.NEXT_PUBLIC_BACKSTOP : process.env.NEXT_PUBLIC_BACKSTOP_V2;
+    version === 'V1' ? process.env.NEXT_PUBLIC_BACKSTOP : process.env.NEXT_PUBLIC_BACKSTOP_V2;
 
   const isV2Enabled = process.env.NEXT_PUBLIC_BACKSTOP_V2 !== undefined;
 
@@ -115,7 +115,7 @@ export const SettingsProvider = ({ children = null as any }) => {
     return new rpc.Server(network.horizonUrl, network.opts);
   }
 
-  function trackPool(id: string, name: string, version: 'v1' | 'v2') {
+  function trackPool(id: string, name: string, version: 'V1' | 'V2') {
     let index = trackedPools.findIndex((pool) => pool.id === id);
     if (index !== -1) {
       if (trackedPools[index].version !== version || trackedPools[index].name !== name) {
@@ -136,14 +136,14 @@ export const SettingsProvider = ({ children = null as any }) => {
     }
   }
 
-  function setLastPool(id: string, name: string, version: 'v1' | 'v2') {
+  function setLastPool(id: string, name: string, version: 'V1' | 'V2') {
     setLastPoolString(JSON.stringify({ id, name, version }));
     if (routerVersion !== version) {
       handleSetVersion(version);
     }
   }
 
-  function handleSetVersion(version: 'v1' | 'v2') {
+  function handleSetVersion(version: 'V1' | 'V2') {
     router.replace({ query: { ...router.query, version } });
   }
 

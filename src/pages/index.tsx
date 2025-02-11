@@ -36,8 +36,8 @@ const Markets: NextPage = () => {
         {isV2Enabled && (
           <ToggleSlider
             options={[
-              { optionName: 'v1', palette: theme.palette.primary },
-              { optionName: 'v2', palette: theme.palette.backstop },
+              { optionName: 'V1', palette: theme.palette.primary },
+              { optionName: 'V2', palette: theme.palette.backstop },
             ]}
             selected={version}
             changeState={setVersion}

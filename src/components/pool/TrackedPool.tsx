@@ -7,7 +7,7 @@ import { PoolIcon } from './PoolIcon';
 export interface TrackedPoolProps extends BoxProps {
   name: string;
   id: string;
-  version: 'v1' | 'v2';
+  version: 'V1' | 'V2';
 }
 
 export const TrackedPool: React.FC<TrackedPoolProps> = ({ name, id, version, sx, ...props }) => {

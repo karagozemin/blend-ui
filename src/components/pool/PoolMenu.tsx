@@ -42,7 +42,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         onClick={handleClickDropdown}
         sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
       >
-        <PoolHeader name={trackedPool?.name ?? 'Unknown'} version={trackedPool?.version ?? 'v1'} />
+        <PoolHeader name={trackedPool?.name ?? 'Unknown'} version={trackedPool?.version ?? 'V1'} />
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
       <Menu
