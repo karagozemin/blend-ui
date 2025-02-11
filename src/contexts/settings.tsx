@@ -43,6 +43,7 @@ export interface ISettingsContext {
   backstopId: string | undefined;
   setVersion: (version: 'v1' | 'v2') => void;
   getVersion: () => string | undefined;
+  isV2Enabled: boolean;
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
@@ -94,6 +95,8 @@ export const SettingsProvider = ({ children = null as any }) => {
 
   const backstopId =
     version === 'v1' ? process.env.NEXT_PUBLIC_BACKSTOP : process.env.NEXT_PUBLIC_BACKSTOP_V2;
+
+  const isV2Enabled = process.env.NEXT_PUBLIC_BACKSTOP_V2 !== undefined;
 
   let viewType: ViewType;
   if (mobile) viewType = ViewType.MOBILE;
@@ -170,6 +173,7 @@ export const SettingsProvider = ({ children = null as any }) => {
         backstopId,
         setVersion: handleSetVersion,
         getVersion,
+        isV2Enabled,
       }}
     >
       {children}
