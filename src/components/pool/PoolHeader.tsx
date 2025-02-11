@@ -1,5 +1,4 @@
 import { Box, BoxProps, Typography } from '@mui/material';
-import { useSettings } from '../../contexts';
 import { VersionTag } from '../common/VersionTag';
 import { PoolIcon } from './PoolIcon';
 
@@ -9,7 +8,6 @@ export interface PoolHeaderProps extends BoxProps {
 }
 
 export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, version, sx, ...props }) => {
-  const { isV2Enabled } = useSettings();
   return (
     <Box
       sx={{
@@ -27,7 +25,7 @@ export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, version, sx, ...pr
         {`${name} Pool`}
       </Typography>
 
-      {isV2Enabled && <VersionTag version={version} sx={{ marginLeft: '6px' }} />}
+      <VersionTag version={version} sx={{ marginLeft: '6px' }} />
     </Box>
   );
 };

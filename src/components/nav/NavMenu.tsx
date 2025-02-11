@@ -56,7 +56,9 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Link href={`/auction/?poolId=${safePoolId}&version=${lastVersion}`}>
+          <Link
+            href={{ pathname: '/auction', query: { poolId: safePoolId, version: lastVersion } }}
+          >
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Auctions
             </MenuItem>
