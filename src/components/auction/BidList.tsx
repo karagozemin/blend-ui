@@ -1,7 +1,6 @@
 import { Pool } from '@blend-capital/blend-sdk';
 import { Box, BoxProps, Typography } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
-import { TooltipText } from '../common/TooltipText';
 import { BidListItem } from './BidListItem';
 
 export interface BidListProps extends BoxProps {
@@ -66,12 +65,9 @@ export const BidList: React.FC<BidListProps> = ({ pool, bid, type, bidValue }) =
             justifyContent: 'right',
           }}
         >
-          <TooltipText
-            tooltip="The dollar value of the bid asset. (This value reflects current oracle prices)"
-            width={headerWidth}
-          >
+          <Typography variant="body2" color="text.secondary" align="right">
             Amount
-          </TooltipText>
+          </Typography>
         </Box>
       </Box>
       {Array.from(bid.entries()).map(([asset, amount]) => (
