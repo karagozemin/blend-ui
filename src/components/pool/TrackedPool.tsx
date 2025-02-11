@@ -1,8 +1,8 @@
 import { Box, BoxProps, Typography } from '@mui/material';
 import { useSettings } from '../../contexts';
 import { Row } from '../common/Row';
+import { VersionTag } from '../common/VersionTag';
 import { PoolIcon } from './PoolIcon';
-import { PoolVersion } from './PoolVersion';
 
 export interface TrackedPoolProps extends BoxProps {
   name: string;
@@ -31,7 +31,7 @@ export const TrackedPool: React.FC<TrackedPoolProps> = ({ name, id, version, sx,
           <Typography variant="h3" sx={{ marginLeft: '6px' }}>
             {`${name} Pool`}
           </Typography>
-          {isV2Enabled && <PoolVersion version={version} />}
+          {isV2Enabled && <VersionTag version={version} sx={{ marginLeft: '6px' }} />}
         </Row>
         <Typography variant="h3" sx={{ marginLeft: '6px', wordBreak: 'break-word' }}>
           {`${id}`}

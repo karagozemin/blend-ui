@@ -1,23 +1,24 @@
-import { BoxProps, Typography, useTheme } from '@mui/material';
+import { Typography, TypographyProps, useTheme } from '@mui/material';
 
-export interface PoolVersionProps extends BoxProps {
+export interface VersionTagProps extends TypographyProps {
   version: 'v1' | 'v2';
 }
 
-export const PoolVersion: React.FC<PoolVersionProps> = ({ version, ...props }) => {
+export const VersionTag: React.FC<VersionTagProps> = ({ version, sx, ...props }) => {
   const theme = useTheme();
   return (
     <Typography
-      variant="h4"
+      variant="body1"
       sx={{
-        marginLeft: '6px',
-        fontSize: '12px',
         backgroundColor:
           version == 'v1' ? theme.palette.primary.opaque : theme.palette.backstop.opaque,
         color: version == 'v1' ? theme.palette.primary.main : theme.palette.backstop.main,
-        borderRadius: '4px',
-        padding: '2px',
+        borderRadius: '5px',
+        paddingLeft: '6px',
+        paddingRight: '6px',
+        ...sx,
       }}
+      {...props}
     >
       {version}
     </Typography>
