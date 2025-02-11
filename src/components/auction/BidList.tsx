@@ -6,11 +6,12 @@ import { BidListItem } from './BidListItem';
 
 export interface BidListProps extends BoxProps {
   pool: Pool;
-  bid: Map<string, number>;
+  bid: Map<string, bigint>;
+  bidValue: Map<string, number>;
   type: string;
 }
 
-export const BidList: React.FC<BidListProps> = ({ pool, bid, type }) => {
+export const BidList: React.FC<BidListProps> = ({ pool, bid, type, bidValue }) => {
   const { viewType } = useSettings();
   const headerNum = viewType == ViewType.REGULAR ? 3 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
@@ -74,7 +75,13 @@ export const BidList: React.FC<BidListProps> = ({ pool, bid, type }) => {
         </Box>
       </Box>
       {Array.from(bid.entries()).map(([asset, amount]) => (
-        <BidListItem key={asset} reserve={pool.reserves.get(asset)!} type={type} amount={amount} />
+        <BidListItem
+          key={asset}
+          reserve={pool.reserves.get(asset)!}
+          type={type}
+          amount={amount}
+          oracleValue={bidValue.get(asset)}
+        />
       ))}
     </Box>
   );

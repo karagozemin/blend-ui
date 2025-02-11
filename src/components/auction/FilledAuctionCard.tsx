@@ -99,7 +99,8 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
       </Box>
       <LotList
         pool={pool}
-        lot={auctionValue?.lot ?? new Map()}
+        lot={auction.data.lot}
+        lotValue={auctionValue?.lot ?? new Map()}
         type={
           auction.type === AuctionType.Interest || auction.type === AuctionType.BadDebt
             ? 'Underlying'
@@ -109,7 +110,8 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
       <DividerSection />
       <BidList
         pool={pool}
-        bid={auctionValue?.bid ?? new Map()}
+        bid={auction.data.bid}
+        bidValue={auctionValue?.bid ?? new Map()}
         type={auction.type === AuctionType.Interest ? 'Underlying' : 'Liability'}
       />
 
