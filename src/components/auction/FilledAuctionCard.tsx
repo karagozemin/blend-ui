@@ -84,6 +84,18 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
             sx={{ width: '50%' }}
           ></StackedTextBox>
         </Row>
+        <Row
+          sx={{
+            wordBreak: 'break-all',
+            borderRadius: '5px',
+          }}
+        >
+          <StackedTextBox
+            name="Filled Tx Hash"
+            text={` ${auction.fillHash} `}
+            sx={{ width: '100%' }}
+          ></StackedTextBox>
+        </Row>
       </Box>
       <LotList
         pool={pool}
