@@ -76,10 +76,6 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
         <Row>
           <StackedTextBox name="Started" text={` ${auction.data.block} `} sx={{ width: '50%' }} />
           <Box
-            component="a"
-            target="_blank"
-            rel="noopener"
-            href={`${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/tx/${auction.fillHash}`}
             sx={{
               width: '50%',
               display: 'flex',
@@ -91,20 +87,36 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
               borderRadius: '5px',
               color: theme.palette.text.primary,
               background: theme.palette.background.default,
-              textDecoration: 'none',
-              '&:hover': {
-                color: theme.palette.positive.main,
-                cursor: 'pointer',
-              },
             }}
           >
             <StackedText
               title={'Block Filled'}
               text={`${auction.scaleBlock}`}
               textColor="inherit"
-              sx={{ width: '100%', padding: '6px' }}
+              sx={{ width: '50%', padding: '6px' }}
             />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '6px' }}>
+            <Box
+              component="a"
+              href={`${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/tx/${auction.fillHash}`}
+              target="_blank"
+              rel="noopener"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px',
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                margin: '6px',
+                borderRadius: '5px',
+                color: theme.palette.text.primary,
+                textDecoration: 'none',
+                '&:hover': {
+                  color: theme.palette.positive.main,
+                  cursor: 'pointer',
+                },
+              }}
+            >
               <Typography variant="body2">View</Typography>
               <OpenInNewIcon fontSize="inherit" />
             </Box>
