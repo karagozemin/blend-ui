@@ -4,7 +4,13 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 
-import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolOracle,
+  useTokenMetadata,
+} from '../../hooks/api';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
@@ -29,8 +35,8 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const { data: backstop } = useBackstop();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
-  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
 
   const available = reserve.totalSupplyFloat() - reserve.totalLiabilitiesFloat();
@@ -39,10 +45,17 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const liabilityFactor = reserve.getLiabilityFactor();
 
-  const emissionsPerAsset = reserve.emissionsPerYearPerBorrowedAsset();
-
+  const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.borrowEmissions !== undefined && reserve
+      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+          reserve.totalLiabilities(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
-    backstop && emissionsPerAsset > 0 && oraclePrice
+    backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
 

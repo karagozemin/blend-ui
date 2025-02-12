@@ -1,6 +1,12 @@
 import { Circle } from '@mui/icons-material';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolOracle,
+  useTokenMetadata,
+} from '../../hooks/api';
 import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
@@ -13,10 +19,18 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
   const { data: tokenMetadata } = useTokenMetadata(assetId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);
-  const emissionsPerAsset = reserve?.emissionsPerYearPerSuppliedAsset();
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.supplyEmissions !== undefined && reserve
+      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+          reserve.totalSupply(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
     backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)

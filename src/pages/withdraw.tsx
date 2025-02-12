@@ -8,7 +8,14 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
-import { useBackstop, usePool, usePoolOracle, usePoolUser, useTokenMetadata } from '../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolOracle,
+  usePoolUser,
+  useTokenMetadata,
+} from '../hooks/api';
 import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 
@@ -21,6 +28,7 @@ const Withdraw: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const { data: pool } = usePool(safePoolId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
@@ -29,7 +37,14 @@ const Withdraw: NextPage = () => {
   const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
 
   const currentDeposit = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
-  const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerSuppliedAsset() : 0;
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.supplyEmissions !== undefined && reserve
+      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+          reserve.totalSupply(),
+          reserve.config.decimals
+        )
+      : 0;
   const oraclePrice = reserve ? poolOracle?.getPriceFloat(reserve.assetId) : 0;
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice

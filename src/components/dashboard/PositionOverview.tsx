@@ -13,6 +13,7 @@ import { useWallet } from '../../contexts/wallet';
 import {
   useHorizonAccount,
   usePool,
+  usePoolEmissions,
   usePoolOracle,
   usePoolUser,
   useSimulateOperation,
@@ -37,11 +38,12 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { data: account, refetch: refechAccount } = useHorizonAccount();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: userPoolData, refetch: refetchPoolUser } = usePoolUser(pool);
 
   const { emissions, claimedTokens } =
-    userPoolData && pool
-      ? userPoolData.estimateEmissions(pool)
+    userPoolData && pool && poolEmissions
+      ? userPoolData.estimateEmissions(pool, poolEmissions)
       : { emissions: 0, claimedTokens: [] };
 
   const poolContract = poolId ? new PoolContractV1(poolId) : undefined;

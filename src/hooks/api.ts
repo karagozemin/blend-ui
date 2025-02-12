@@ -13,6 +13,7 @@ import {
   PoolV1,
   PoolV2,
   Positions,
+  ReserveEmissions,
   TokenMetadata,
   UserBalance,
 } from '@blend-capital/blend-sdk';
@@ -198,6 +199,32 @@ export function usePoolUser(
   });
 }
 
+/**
+ * Fetch the user for the given pool and connected wallet.
+ * @param poolId - The pool ID
+ * @param enabled - Whether the query is enabled (optional - defaults to true)
+ * @returns Query result with the user positions.
+ */
+export function usePoolEmissions(
+  pool: Pool | undefined,
+  enabled: boolean = true
+): UseQueryResult<ReserveEmissions[], Error> {
+  const { network } = useSettings();
+  return useQuery({
+    staleTime: USER_STALE_TIME,
+    queryKey: ['poolEmissions', pool?.id],
+    enabled: enabled && pool !== undefined,
+    queryFn: async () => {
+      if (pool !== undefined) {
+        return await Promise.all(
+          Array.from(pool.reserves.values()).map((reserve) =>
+            ReserveEmissions.load(network, reserve)
+          )
+        );
+      }
+    },
+  });
+}
 //********** Backstop Data **********//
 
 /**

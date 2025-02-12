@@ -52,10 +52,11 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
+  const { data: horizonAccount } = useHorizonAccount();
+
   const reserve = pool?.reserves.get(assetId);
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
-  const { data: horizonAccount } = useHorizonAccount();
 
   const [toBorrow, setToBorrow] = useState<string>('');
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();

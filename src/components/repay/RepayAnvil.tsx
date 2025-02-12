@@ -50,9 +50,6 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
-  const reserve = pool?.reserves.get(assetId);
-  const decimals = reserve?.config.decimals ?? 7;
-  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: tokenBalance } = useTokenBalance(assetId, tokenMetadata?.asset, horizonAccount);
 
@@ -60,8 +57,11 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
-  const loading = isLoading || loadingEstimate;
 
+  const loading = isLoading || loadingEstimate;
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   // calculate current wallet state
   const stellar_reserve_amount = getAssetReserve(horizonAccount, tokenMetadata?.asset);
   const freeUserBalanceScaled =

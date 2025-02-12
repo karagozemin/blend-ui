@@ -12,6 +12,7 @@ import {
   useBackstop,
   useHorizonAccount,
   usePool,
+  usePoolEmissions,
   usePoolOracle,
   usePoolUser,
   useTokenBalance,
@@ -28,11 +29,12 @@ const Repay: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const { data: pool } = usePool(safePoolId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
+  const { data: horizonAccount } = useHorizonAccount();
   const reserve = pool?.reserves.get(safeAssetId);
   const symbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
-  const { data: horizonAccount } = useHorizonAccount();
   const { data: tokenBalance } = useTokenBalance(
     reserve?.assetId,
     tokenMetadata?.asset,
@@ -42,7 +44,14 @@ const Repay: NextPage = () => {
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
 
-  const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerBorrowedAsset() : 0;
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.borrowEmissions !== undefined && reserve
+      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+          reserve.totalLiabilities(),
+          reserve.config.decimals
+        )
+      : 0;
   const oraclePrice = reserve ? poolOracle?.getPriceFloat(reserve.assetId) : 0;
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice

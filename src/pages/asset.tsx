@@ -91,7 +91,44 @@ const Asset: NextPage = () => {
               {`$${poolOracle.getPriceFloat(reserve.assetId)?.toFixed(2) ?? ''}`}
             </Typography>
           </Section>
-
+          <Section width={SectionSize.FULL} sx={{ padding: '6px', display: 'flex' }}>
+            <Row
+              sx={{
+                padding: '6px',
+                margin: '6px',
+                borderRadius: '5px',
+                background: theme.palette.background.default,
+                alignItems: 'center',
+              }}
+            >
+              <Typography sx={{ padding: '6px' }}>Reserve Index</Typography>
+              <Typography sx={{ padding: '6px' }}>{reserve.config.index}</Typography>
+            </Row>
+            <Row
+              sx={{
+                padding: '6px',
+                margin: '6px',
+                borderRadius: '5px',
+                background: theme.palette.background.default,
+                alignItems: 'center',
+              }}
+            >
+              <Typography sx={{ padding: '6px' }}>Supply Emission Index</Typography>
+              <Typography sx={{ padding: '6px' }}>{reserve.getBTokenEmissionIndex()}</Typography>
+            </Row>
+            <Row
+              sx={{
+                padding: '6px',
+                margin: '6px',
+                borderRadius: '5px',
+                background: theme.palette.background.default,
+                alignItems: 'center',
+              }}
+            >
+              <Typography sx={{ padding: '6px' }}>Borrow Emission Index</Typography>
+              <Typography sx={{ padding: '6px' }}>{reserve.getDTokenEmissionIndex()}</Typography>
+            </Row>
+          </Section>
           <Row
             sx={{
               display: 'flex',

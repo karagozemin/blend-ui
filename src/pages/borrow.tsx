@@ -10,7 +10,13 @@ import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolOracle,
+  useTokenMetadata,
+} from '../hooks/api';
 import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 import { getTokenLinkFromReserve } from '../utils/token';
@@ -27,6 +33,7 @@ const Borrow: NextPage = () => {
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop();
   const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const reserve = pool?.reserves.get(safeAssetId);
   const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
 
@@ -37,7 +44,15 @@ const Borrow: NextPage = () => {
     : 0;
 
   const oraclePrice = reserve ? poolOracle?.getPriceFloat(reserve.assetId) : 0;
-  const emissionsPerAsset = reserve !== undefined ? reserve.emissionsPerYearPerBorrowedAsset() : 0;
+
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.borrowEmissions !== undefined && reserve
+      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+          reserve.totalLiabilities(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
     backstop && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)

@@ -3,7 +3,13 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
-import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolOracle,
+  useTokenMetadata,
+} from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
@@ -29,16 +35,25 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const router = useRouter();
   const { version } = useSettings();
 
-  const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
   const { data: backstop } = useBackstop();
   const { data: pool } = usePool(poolId);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
+
+  const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.supplyEmissions !== undefined && reserve
+      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+          reserve.totalSupply(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
-    backstop && emissionsPerAsset > 0 && oraclePrice
+    backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
