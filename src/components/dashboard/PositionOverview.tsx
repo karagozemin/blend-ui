@@ -100,7 +100,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (hasBLNDTrustline && !isRestore && !isError && version !== 'v2') {
+    if (hasBLNDTrustline && !isRestore && !isError && version !== 'V2') {
       return (
         <CustomButton
           sx={{
@@ -138,9 +138,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
-      } else if (version === 'v2') {
-        buttonText = 'v2 Claim Disabled';
-        buttonTooltip = 'Claiming is disabled until the backstop swap to v2 is complete';
+      } else if (version === 'V2') {
+        buttonText = 'V2 Claim Disabled';
+        buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;
       } else if (isError) {
         const claimError = parseError(simResult);

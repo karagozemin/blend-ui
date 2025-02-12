@@ -60,11 +60,11 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
           .sort((a, b) => Number(a.exp) - Number(b.exp))
           .map((q4w, index) => {
             let canUnqueue = false;
-            if (version == 'v2') {
-              // v2 unqueues from the most recently queued entry
+            if (version == 'V2') {
+              // V2 unqueues from the most recently queued entry
               canUnqueue = totalQ4WEntries - 1 === index;
             } else {
-              // v1 unqueues from the oldest entry (which can be unlocked)
+              // V1 unqueues from the oldest entry (which can be unlocked)
               canUnqueue = backstopUserData.balance.unlockedQ4W === BigInt(0) && index === 0;
             }
             return (

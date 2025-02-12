@@ -180,7 +180,8 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
       </Box>
       <LotList
         pool={pool}
-        lot={scaledAuction.data.lot}
+        lot={auction.data.lot}
+        lotValue={auctionValue?.lot ?? new Map()}
         type={
           auction.type === AuctionType.Interest || auction.type === AuctionType.BadDebt
             ? 'Underlying'
@@ -190,7 +191,8 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
       <DividerSection />
       <BidList
         pool={pool}
-        bid={scaledAuction.data.bid}
+        bid={auction.data.bid}
+        bidValue={auctionValue?.bid ?? new Map()}
         type={auction.type === AuctionType.Interest ? 'Underlying' : 'Liability'}
       />
 
@@ -209,7 +211,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
           {auctionValue && (
             <Value
               title="Oracle estimated profit"
-              value={`${toBalance(auctionValue.lot - auctionValue.bid, 3)}`}
+              value={`${toBalance(auctionValue.totalLotValue - auctionValue.totalBidValue, 3)}`}
             />
           )}
           <Value title="Block" value={simResponse?.latestLedger?.toString() ?? ''} />

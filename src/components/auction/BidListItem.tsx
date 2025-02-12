@@ -9,8 +9,15 @@ export interface BidItemProps extends BoxProps {
   reserve: Reserve | undefined;
   type: string;
   amount: bigint;
+  oracleValue: number | undefined;
 }
-export const BidListItem: React.FC<BidItemProps> = ({ reserve, type, amount, ...props }) => {
+export const BidListItem: React.FC<BidItemProps> = ({
+  reserve,
+  type,
+  amount,
+  oracleValue,
+  ...props
+}) => {
   const theme = useTheme();
   const { viewType } = useSettings();
 
@@ -66,9 +73,18 @@ export const BidListItem: React.FC<BidItemProps> = ({ reserve, type, amount, ...
           width: tableWidth,
           display: 'flex',
           justifyContent: 'right',
+          alignItems: 'flex-end',
+          flexDirection: 'column',
         }}
       >
-        <Typography variant="body1">{toBalance(amount, reserve?.config.decimals ?? 7)}</Typography>
+        <Typography variant="body1">
+          {`${toBalance(amount, reserve?.config.decimals ?? 7)}`}
+        </Typography>
+        {oracleValue && (
+          <Typography variant="body2" color="text.secondary">
+            {`$${toBalance(oracleValue, 2)}`}
+          </Typography>
+        )}
       </Box>
     </Box>
   );

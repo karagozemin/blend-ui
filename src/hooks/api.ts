@@ -133,7 +133,7 @@ export function usePool(poolId: string, enabled: boolean = true): UseQueryResult
     enabled: enabled && poolId !== '',
     queryFn: async () => {
       try {
-        if (version === 'v2') {
+        if (version === 'V2') {
           return await PoolV2.load(network, poolId);
         } else {
           return await PoolV1.load(network, poolId);
@@ -212,7 +212,7 @@ export function useBackstop(enabled: boolean = true): UseQueryResult<Backstop, E
     queryKey: ['backstop', version],
     enabled,
     queryFn: async () => {
-      let res = await Backstop.load(network, version === 'v2' ? BACKSTOP_ID_V2 : BACKSTOP_ID);
+      let res = await Backstop.load(network, version === 'V2' ? BACKSTOP_ID_V2 : BACKSTOP_ID);
       return res;
     },
   });
@@ -234,7 +234,7 @@ export function useBackstopPool(
     queryKey: ['backstopPool', poolId],
     enabled,
     queryFn: async () => {
-      if (version === 'v2') return await BackstopPoolV2.load(network, BACKSTOP_ID_V2, poolId);
+      if (version === 'V2') return await BackstopPoolV2.load(network, BACKSTOP_ID_V2, poolId);
       else return await BackstopPoolV1.load(network, BACKSTOP_ID, poolId);
     },
   });
@@ -266,7 +266,7 @@ export function useBackstopPoolUser(
       if (walletAddress !== '') {
         return await BackstopPoolUser.load(
           network,
-          version == 'v2' ? BACKSTOP_ID_V2 : BACKSTOP_ID,
+          version == 'V2' ? BACKSTOP_ID_V2 : BACKSTOP_ID,
           poolId,
           walletAddress
         );
@@ -367,6 +367,7 @@ const AUCTION_EVENT_FILTERS = [
   [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*'],
   [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
 ];
+const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*']];
 /**
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
@@ -400,6 +401,11 @@ export function useAuctionEventsLongQuery(
               type: 'contract',
               contractIds: [poolId],
               topics: AUCTION_EVENT_FILTERS,
+            },
+            {
+              type: 'contract',
+              contractIds: [poolId],
+              topics: AUCTION_EVENT_FILTERS_V2,
             },
           ],
           limit: 1000,
@@ -450,6 +456,11 @@ export function useAuctionEventsShortQuery(
               type: 'contract',
               contractIds: [poolId],
               topics: AUCTION_EVENT_FILTERS,
+            },
+            {
+              type: 'contract',
+              contractIds: [poolId],
+              topics: AUCTION_EVENT_FILTERS_V2,
             },
           ],
           limit: 1000,
