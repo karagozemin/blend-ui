@@ -12,7 +12,7 @@ export const GoBackHeader: React.FC<GoBackHeaderProps> = ({ poolId }) => {
   const { trackedPools } = useSettings();
   const trackedPool = trackedPools.find((pool) => pool.id === poolId);
   const name = trackedPool?.name ?? 'Unkown';
-  const version = trackedPool?.version ?? 'v1';
+  const version = trackedPool?.version ?? 'V1';
   return (
     <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
       <GoBackButton />

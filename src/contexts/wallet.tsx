@@ -392,7 +392,7 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const pool = version === 'v2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
+      const pool = version === 'V2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
       const operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -416,7 +416,7 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const pool = version === 'v2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
+      const pool = version === 'V2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
       const operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -441,7 +441,7 @@ export const WalletProvider = ({ children = null as any }) => {
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected && backstopId) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        version === 'V2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -468,7 +468,7 @@ export const WalletProvider = ({ children = null as any }) => {
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected && backstopId) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        version === 'V2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -495,7 +495,7 @@ export const WalletProvider = ({ children = null as any }) => {
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected && backstopId) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        version === 'V2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -521,7 +521,7 @@ export const WalletProvider = ({ children = null as any }) => {
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected && backstopId) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        version === 'V2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -547,7 +547,7 @@ export const WalletProvider = ({ children = null as any }) => {
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected && backstopId) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        version === 'V2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
       const operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);

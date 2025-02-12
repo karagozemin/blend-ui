@@ -9,8 +9,15 @@ export interface LotItemProps extends BoxProps {
   reserve: Reserve | undefined;
   type: string;
   amount: bigint;
+  oracleValue: number | undefined;
 }
-export const LotListItem: React.FC<LotItemProps> = ({ reserve, amount, type, ...props }) => {
+export const LotListItem: React.FC<LotItemProps> = ({
+  reserve,
+  amount,
+  type,
+  oracleValue,
+  ...props
+}) => {
   const theme = useTheme();
   const { viewType } = useSettings();
 
@@ -67,12 +74,19 @@ export const LotListItem: React.FC<LotItemProps> = ({ reserve, amount, type, ...
         sx={{
           width: tableWidth,
           display: 'flex',
-          justifyContent: 'right',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          flexDirection: 'column',
         }}
       >
-        <Typography variant="body1" align="right">
-          {toBalance(amount, reserve?.config.decimals ?? 7)}
+        <Typography variant="body1">
+          {`${toBalance(amount, reserve?.config.decimals ?? 7)}`}
         </Typography>
+        {oracleValue && (
+          <Typography variant="body2" color="text.secondary">
+            {`$${toBalance(oracleValue, 2)}`}
+          </Typography>
+        )}
       </Box>
     </Box>
   );

@@ -13,14 +13,25 @@ export function calculateAuctionOracleProfit(
   pool: Pool,
   oracle: PoolOracle,
   backstopToken: BackstopToken
-): { lot: number; bid: number } | undefined {
-  let lotValue = 0;
-  let bidValue = 0;
+):
+  | {
+      lot: Map<string, number>;
+      bid: Map<string, number>;
+      totalLotValue: number;
+      totalBidValue: number;
+    }
+  | undefined {
+  let lot = new Map<string, number>();
+  let bid = new Map<string, number>();
+  let totalLotValue = 0;
+  let totalBidValue = 0;
 
   for (const [asset, amount] of Array.from(auction.lot.entries())) {
     switch (type) {
       case AuctionType.BadDebt:
-        lotValue += FixedMath.toFloat(amount, 7) * backstopToken.lpTokenPrice;
+        const lotValue = FixedMath.toFloat(amount, 7) * backstopToken.lpTokenPrice;
+        lot.set(asset, lotValue);
+        totalLotValue += lotValue;
         break;
       default:
         const reserve = pool.reserves.get(asset);
@@ -28,14 +39,18 @@ export function calculateAuctionOracleProfit(
         if (reserve === undefined || price === undefined) {
           return undefined;
         } else {
-          lotValue += reserve.toAssetFromBTokenFloat(amount) * price;
+          const lotValue = reserve.toAssetFromDTokenFloat(amount) * price;
+          lot.set(asset, lotValue);
+          totalLotValue += lotValue;
         }
     }
   }
   for (const [asset, amount] of Array.from(auction.bid.entries())) {
     switch (type) {
       case AuctionType.Interest:
-        bidValue += FixedMath.toFloat(amount, 7) * backstopToken.lpTokenPrice;
+        const bidValue = FixedMath.toFloat(amount, 7) * backstopToken.lpTokenPrice;
+        bid.set(asset, bidValue);
+        totalBidValue += bidValue;
         break;
       default:
         const reserve = pool.reserves.get(asset);
@@ -43,13 +58,16 @@ export function calculateAuctionOracleProfit(
         if (reserve === undefined || price === undefined) {
           return undefined;
         } else {
-          bidValue += reserve.toAssetFromDTokenFloat(amount) * price;
+          const bidValue = reserve.toAssetFromDTokenFloat(amount) * price;
+          bid.set(asset, bidValue);
+          totalBidValue += bidValue;
         }
     }
   }
-
   return {
-    lot: lotValue,
-    bid: bidValue,
+    totalBidValue,
+    totalLotValue,
+    lot,
+    bid,
   };
 }
