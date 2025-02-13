@@ -1,7 +1,7 @@
 import { PositionsEstimate } from '@blend-capital/blend-sdk';
 import { Box, Typography } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
-import { usePool, usePoolOracle, usePoolUser } from '../../hooks/api';
+import { usePool, usePoolMeta, usePoolOracle, usePoolUser } from '../../hooks/api';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -12,7 +12,8 @@ import { LendPositionCard } from './LendPositionCard';
 export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
 
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUserData } = usePoolUser(pool);
 

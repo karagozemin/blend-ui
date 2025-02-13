@@ -16,6 +16,7 @@ import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import {
   useHorizonAccount,
   usePool,
+  usePoolMeta,
   usePoolOracle,
   usePoolUser,
   useTokenMetadata,
@@ -45,7 +46,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustlines, isLoading } =
     useWallet();
 
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
@@ -66,7 +68,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   }
 
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toWithdrawSubmit && connected && reserve) {
+    if (toWithdrawSubmit && connected && poolMeta && reserve) {
       let submitArgs: SubmitArgs = {
         from: walletAddress,
         to: walletAddress,
@@ -79,7 +81,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           },
         ],
       };
-      return await poolSubmit(poolId, submitArgs, sim);
+      return await poolSubmit(poolMeta, submitArgs, sim);
     }
   };
 

@@ -30,7 +30,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
 
   const estBackstopApr = poolEst
     ? ((pool.metadata.backstopRate / 1e7) * poolEst.avgBorrowApr * poolEst.totalBorrowed) /
@@ -154,7 +154,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
       <Row>
         <LinkBox
           sx={{ width: '100%', marginRight: '12px' }}
-          to={{ pathname: '/backstop', query: { poolId: pool.id, version } }}
+          to={{ pathname: '/backstop', query: { poolId: pool.id } }}
         >
           <OpaqueButton
             palette={theme.palette.backstop}

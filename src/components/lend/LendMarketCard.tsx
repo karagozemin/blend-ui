@@ -7,6 +7,7 @@ import {
   useHorizonAccount,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenBalance,
   useTokenMetadata,
@@ -31,8 +32,9 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
 
+  const { data: poolMeta } = usePoolMeta(poolId);
   const { data: userAccount } = useHorizonAccount();
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
   const { data: userTokenBalance } = useTokenBalance(
@@ -40,8 +42,8 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     tokenMetadata?.asset,
     userAccount
   );
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolEmissions } = usePoolEmissions(pool);
 
@@ -76,7 +78,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId, version } }}
+        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{

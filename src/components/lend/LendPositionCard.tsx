@@ -7,6 +7,7 @@ import {
   useBackstop,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
 } from '../../hooks/api';
@@ -33,10 +34,10 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
   const router = useRouter();
-  const { version } = useSettings();
 
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
   const { data: poolEmissions } = usePoolEmissions(pool);
@@ -81,7 +82,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         if (viewTypeIsMobile) {
           router.push({
             pathname: '/withdraw',
-            query: { poolId: poolId, assetId: reserve.assetId, version },
+            query: { poolId: poolId, assetId: reserve.assetId },
           });
         }
       }}
@@ -119,7 +120,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         <LinkBox
           to={{
             pathname: '/withdraw',
-            query: { poolId: poolId, assetId: reserve.assetId, version },
+            query: { poolId: poolId, assetId: reserve.assetId },
           }}
           sx={{
             display: 'flex',

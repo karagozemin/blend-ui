@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
-import { usePool } from '../../hooks/api';
+import { usePool, usePoolMeta } from '../../hooks/api';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Skeleton } from '../common/Skeleton';
 import { TooltipText } from '../common/TooltipText';
@@ -9,7 +9,8 @@ import { LendMarketCard } from './LendMarketCard';
 export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
 
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
 
   if (pool === undefined) {
     return <Skeleton />;

@@ -9,25 +9,18 @@ import { Row } from '../components/common/Row';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { NavBar } from '../components/nav/NavBar';
 import { useSettings, ViewType } from '../contexts';
-import { useBackstop, usePool } from '../hooks/api';
+import { useBackstop, usePoolMeta } from '../hooks/api';
 
 export default function DefaultLayout({ children }: { children: ReactNode }) {
-  const {
-    viewType,
-    trackPool,
-    version: settingsVersion,
-    setLastPool,
-    trackedPools,
-  } = useSettings();
+  const { viewType, trackPool, setLastPool } = useSettings();
   const router = useRouter();
-  const { poolId, version: routerVersion } = router.query;
+  const { poolId } = router.query;
   const safePoolId =
     typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : undefined;
-  const trackedPool = trackedPools.find((p) => p.id === safePoolId);
   const isTestnet = process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET;
 
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(safePoolId as string, safePoolId !== undefined);
+  const { data: poolMeta } = usePoolMeta(safePoolId as string, safePoolId !== undefined);
+  const { data: backstop } = useBackstop(poolMeta?.version);
 
   // get the last (oldest) pool in the reward zone
   const faucet_pool =
@@ -35,18 +28,12 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
       ? backstop.config.rewardZone[backstop.config.rewardZone.length - 1]
       : undefined;
 
-  const version = trackedPool
-    ? trackedPool.version
-    : routerVersion === 'V1' || routerVersion === 'V2'
-    ? routerVersion
-    : settingsVersion;
-
   useEffect(() => {
-    if (pool !== undefined) {
-      trackPool(pool.id, pool.metadata.name, version);
-      setLastPool(pool.id, pool.metadata.name, version);
+    if (poolMeta !== undefined) {
+      trackPool(poolMeta);
+      setLastPool(poolMeta);
     }
-  }, [pool, trackPool]);
+  }, [poolMeta, trackPool]);
 
   const mainWidth = viewType <= ViewType.COMPACT ? '100%' : '886px';
   const mainMargin = viewType <= ViewType.COMPACT ? '0px' : '62px';

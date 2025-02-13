@@ -17,6 +17,7 @@ import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import {
   useHorizonAccount,
   usePool,
+  usePoolMeta,
   usePoolOracle,
   usePoolUser,
   useTokenBalance,
@@ -46,7 +47,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
@@ -69,7 +71,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     stellar_reserve_amount;
 
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toRepay && connected && reserve) {
+    if (toRepay && connected && poolMeta && reserve) {
       let submitArgs: SubmitArgs = {
         from: walletAddress,
         to: walletAddress,
@@ -82,7 +84,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           },
         ],
       };
-      return await poolSubmit(poolId, submitArgs, sim);
+      return await poolSubmit(poolMeta, submitArgs, sim);
     }
   };
 

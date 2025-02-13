@@ -9,7 +9,15 @@ import { GoBackHeader } from '../components/common/GoBackHeader';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { useBackstop, useBackstopPool, useHorizonAccount, useTokenBalance } from '../hooks/api';
+import { NotPoolBar } from '../components/pool/NotPoolBar';
+import {
+  useBackstop,
+  useBackstopPool,
+  useHorizonAccount,
+  usePoolMeta,
+  useTokenBalance,
+} from '../hooks/api';
+import { NOT_BLEND_POOL_ERROR_MESSAGE } from '../hooks/types';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const BackstopDeposit: NextPage = () => {
@@ -19,8 +27,9 @@ const BackstopDeposit: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const { data: backstop } = useBackstop();
-  const { data: backstopPoolData } = useBackstopPool(safePoolId);
+  const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: backstopPoolData } = useBackstopPool(poolMeta);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: lpBalance } = useTokenBalance(
     backstop?.backstopToken?.id ?? '',
@@ -32,6 +41,10 @@ const BackstopDeposit: NextPage = () => {
     backstop !== undefined && backstopPoolData !== undefined
       ? BackstopPoolEst.build(backstop.backstopToken, backstopPoolData.poolBalance)
       : undefined;
+
+  if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+    return <NotPoolBar poolId={safePoolId} />;
+  }
 
   return (
     <>

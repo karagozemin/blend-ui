@@ -7,6 +7,7 @@ import {
   useBackstop,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
 } from '../../hooks/api';
@@ -27,15 +28,14 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   poolId,
   reserve,
   dTokens,
-  sx,
-  ...props
 }) => {
   const theme = useTheme();
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
   const router = useRouter();
 
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
   const { data: poolEmissions } = usePoolEmissions(pool);
@@ -80,7 +80,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         if (viewType === ViewType.MOBILE) {
           router.push({
             pathname: '/repay',
-            query: { poolId: poolId, assetId: reserve.assetId, version },
+            query: { poolId: poolId, assetId: reserve.assetId },
           });
         }
       }}
@@ -117,7 +117,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
 
       {viewType !== ViewType.MOBILE && (
         <LinkBox
-          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId, version } }}
+          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}
           sx={{
             display: 'flex',
             justifyContent: 'end',
@@ -145,7 +145,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
       )}
       {viewType === ViewType.MOBILE && (
         <LinkBox
-          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId, version } }}
+          to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}
           sx={{
             display: 'flex',
             justifyContent: 'center',

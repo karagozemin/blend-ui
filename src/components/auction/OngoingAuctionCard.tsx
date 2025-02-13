@@ -47,10 +47,10 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
   currLedger,
 }) => {
   const theme = useTheme();
-  const { walletAddress, connected, poolSubmit, createTrustlines, isLoading } = useWallet();
+  const { walletAddress, connected, poolSubmit, isLoading } = useWallet();
 
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(pool.version);
   const { data: poolUser } = usePoolUser(pool);
 
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
@@ -118,7 +118,11 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
       ],
     };
 
-    let response = await poolSubmit(pool.id, submitArgs, sim);
+    let response = await poolSubmit(
+      { id: pool.id, version: pool.version, ...pool.metadata },
+      submitArgs,
+      sim
+    );
     if (response && sim) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
