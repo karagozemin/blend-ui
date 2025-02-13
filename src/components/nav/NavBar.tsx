@@ -1,3 +1,4 @@
+import { Version } from '@blend-capital/blend-sdk';
 import { Box, IconButton } from '@mui/material';
 import Image from 'next/image';
 import { ViewType, useSettings } from '../../contexts';
@@ -10,11 +11,10 @@ import { NavMenu } from './NavMenu';
 import { WalletMenu } from './WalletMenu';
 
 export const NavBar = () => {
-  const { viewType, lastPool, version } = useSettings();
+  const { viewType, lastPool } = useSettings();
 
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(Version.V1);
   const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
-  const lastVersion = lastPool ? lastPool.version : version;
 
   return (
     <Row sx={{ height: '62px' }}>
@@ -36,18 +36,14 @@ export const NavBar = () => {
           }}
         >
           <Section width={SectionSize.LARGE}>
+            <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '33%' }} />
             <NavItem
-              to={{ pathname: '/', query: { version: lastVersion } }}
-              title="Markets"
-              sx={{ width: '33%' }}
-            />
-            <NavItem
-              to={{ pathname: '/dashboard', query: { poolId: poolId, version: lastVersion } }}
+              to={{ pathname: '/dashboard', query: { poolId } }}
               title="Dashboard"
               sx={{ width: '33%' }}
             />
             <NavItem
-              to={{ pathname: '/backstop', query: { poolId: poolId, version: lastVersion } }}
+              to={{ pathname: '/backstop', query: { poolId } }}
               title="Backstop"
               sx={{ width: '33%' }}
             />

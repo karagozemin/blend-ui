@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
-import { useBackstop, useBackstopPool, useBackstopPoolUser } from '../../hooks/api';
+import { useBackstop, useBackstopPool, useBackstopPoolUser, usePoolMeta } from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { toBalance } from '../../utils/formatter';
 import { getErrorFromSim, SubmitError } from '../../utils/txSim';
@@ -35,9 +35,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus, isLoading } =
     useWallet();
 
-  const { data: backstop } = useBackstop();
-  const { data: backstopPoolData } = useBackstopPool(poolId);
-  const { data: backstopUserData } = useBackstopPoolUser(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: backstopPoolData } = useBackstopPool(poolMeta);
+  const { data: backstopUserData } = useBackstopPoolUser(poolMeta);
 
   const [toQueue, setToQueue] = useState<string>('');
   const [toQueueShares, setToQueueShares] = useState<bigint>(BigInt(0));
@@ -117,13 +118,13 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   };
 
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (connected && toQueueShares !== BigInt(0)) {
+    if (connected && poolMeta && toQueueShares !== BigInt(0)) {
       let depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
         amount: toQueueShares,
       };
-      let response = await backstopQueueWithdrawal(depositArgs, sim);
+      let response = await backstopQueueWithdrawal(poolMeta, depositArgs, sim);
       if (response) {
         setSimResponse(response);
         if (rpc.Api.isSimulationSuccess(response)) {

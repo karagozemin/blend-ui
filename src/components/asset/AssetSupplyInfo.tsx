@@ -4,6 +4,7 @@ import {
   useBackstop,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
 } from '../../hooks/api';
@@ -15,9 +16,10 @@ import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 
 export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(poolMeta?.version);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
   const { data: poolEmissions } = usePoolEmissions(pool);
   const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);

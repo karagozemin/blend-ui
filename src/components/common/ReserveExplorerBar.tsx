@@ -1,7 +1,7 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
-import { usePool } from '../../hooks/api';
+import { usePool, usePoolMeta } from '../../hooks/api';
 import { getTokenLinkFromReserve } from '../../utils/token';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
@@ -13,9 +13,12 @@ import { SectionBase } from './SectionBase';
 export const ReserveExploreBar: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
-  const { data: pool } = usePool(poolId);
+
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const reserve = pool?.reserves.get(assetId);
   const link = reserve ? getTokenLinkFromReserve(reserve) : '';
+
   return (
     <Row width={'100%'}>
       {viewType === ViewType.REGULAR && (

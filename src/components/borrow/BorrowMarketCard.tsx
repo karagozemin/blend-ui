@@ -8,6 +8,7 @@ import {
   useBackstop,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
 } from '../../hooks/api';
@@ -30,10 +31,11 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
 
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
   const { data: poolEmissions } = usePoolEmissions(pool);
@@ -73,7 +75,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId, version } }}
+        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{

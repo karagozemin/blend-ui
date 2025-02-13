@@ -1,11 +1,11 @@
-import { BackstopContractV1, PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
+import { BackstopContractV1, PoolBackstopActionArgs, Q4W, Version } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, SxProps, Theme, Tooltip, Typography } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
 import { useEffect, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
-import { useSimulateOperation } from '../../hooks/api';
+import { usePoolMeta, useSimulateOperation } from '../../hooks/api';
 import theme from '../../theme';
 import { toBalance, toTimeSpan } from '../../utils/formatter';
 import { Icon } from '../common/Icon';
@@ -26,9 +26,14 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
 }) => {
   const { connected, walletAddress, backstopDequeueWithdrawal, backstopWithdraw, restore } =
     useWallet();
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
 
-  const backstop = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+  const { data: poolMeta } = usePoolMeta(poolId);
+
+  const backstop =
+    poolMeta?.version === Version.V2
+      ? new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
+      : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
   const actionArgs: PoolBackstopActionArgs = {
     from: walletAddress,
     pool_address: poolId,
@@ -60,11 +65,11 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   }, [q4w]);
 
   const handleClick = async () => {
-    if (connected) {
+    if (connected && poolMeta) {
       if (timeLeft > 0) {
-        await backstopDequeueWithdrawal(actionArgs, false);
+        await backstopDequeueWithdrawal(poolMeta, actionArgs, false);
       } else {
-        await backstopWithdraw(actionArgs, false);
+        await backstopWithdraw(poolMeta, actionArgs, false);
       }
     }
   };
@@ -79,7 +84,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   const queueItemActionButton = (sx: SxProps<Theme>) => {
     const needsTooltip = !enabled || isRestore;
     const tooltipMessage = !enabled
-      ? version === 'V2'
+      ? poolMeta?.version === Version.V2
         ? 'You can only unqueue the oldest withdrawal'
         : 'You can only unqueue the most recent withdrawal'
       : 'This transaction ran into expired entries which need to be restored before proceeding.';

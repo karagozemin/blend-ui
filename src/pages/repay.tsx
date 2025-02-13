@@ -7,17 +7,20 @@ import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
+import { NotPoolBar } from '../components/pool/NotPoolBar';
 import { RepayAnvil } from '../components/repay/RepayAnvil';
 import {
   useBackstop,
   useHorizonAccount,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   usePoolUser,
   useTokenBalance,
   useTokenMetadata,
 } from '../hooks/api';
+import { NOT_BLEND_POOL_ERROR_MESSAGE } from '../hooks/types';
 import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 
@@ -28,7 +31,8 @@ const Repay: NextPage = () => {
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const { data: pool } = usePool(safePoolId);
+  const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
@@ -42,7 +46,7 @@ const Repay: NextPage = () => {
     reserve !== undefined
   );
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(poolMeta?.version);
 
   const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
   const emissionsPerAsset =
@@ -59,6 +63,10 @@ const Repay: NextPage = () => {
       : undefined;
 
   const currentDebt = reserve && poolUser ? poolUser.getLiabilitiesFloat(reserve) : undefined;
+
+  if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+    return <NotPoolBar poolId={safePoolId} />;
+  }
 
   return (
     <>

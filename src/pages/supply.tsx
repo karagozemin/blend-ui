@@ -10,15 +10,18 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { LendAnvil } from '../components/lend/LendAnvil';
+import { NotPoolBar } from '../components/pool/NotPoolBar';
 import {
   useBackstop,
   useHorizonAccount,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenBalance,
   useTokenMetadata,
 } from '../hooks/api';
+import { NOT_BLEND_POOL_ERROR_MESSAGE } from '../hooks/types';
 import { toBalance, toCompactAddress, toPercentage } from '../utils/formatter';
 import { estimateEmissionsApr } from '../utils/math';
 import { getTokenLinkFromReserve } from '../utils/token';
@@ -32,7 +35,8 @@ const Supply: NextPage = () => {
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const { data: pool } = usePool(safePoolId);
+  const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
   const reserve = pool?.reserves.get(safeAssetId);
   const symbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
@@ -44,7 +48,7 @@ const Supply: NextPage = () => {
     reserve !== undefined
   );
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(poolMeta?.version);
   const { data: poolEmissions } = usePoolEmissions(pool);
 
   const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
@@ -60,6 +64,11 @@ const Supply: NextPage = () => {
     backstop && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
+
+  if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+    return <NotPoolBar poolId={safePoolId} />;
+  }
+
   return (
     <>
       <Row>

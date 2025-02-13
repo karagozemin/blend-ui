@@ -4,6 +4,7 @@ import {
   useBackstop,
   usePool,
   usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
 } from '../../hooks/api';
@@ -17,9 +18,11 @@ import { Skeleton } from '../common/Skeleton';
 
 export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { data: pool } = usePool(poolId);
+
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(poolMeta?.version);
   const { data: poolEmissions } = usePoolEmissions(pool);
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);

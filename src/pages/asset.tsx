@@ -12,9 +12,11 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { Skeleton } from '../components/common/Skeleton';
 import { StackedTextBox } from '../components/common/StackedTextBox';
+import { NotPoolBar } from '../components/pool/NotPoolBar';
 import { PoolMenu } from '../components/pool/PoolMenu';
 import { useSettings, ViewType } from '../contexts';
-import { usePool, usePoolOracle, useTokenMetadata } from '../hooks/api';
+import { usePool, usePoolMeta, usePoolOracle, useTokenMetadata } from '../hooks/api';
+import { NOT_BLEND_POOL_ERROR_MESSAGE } from '../hooks/types';
 import { toCompactAddress, toPercentage } from '../utils/formatter';
 
 const Asset: NextPage = () => {
@@ -24,8 +26,10 @@ const Asset: NextPage = () => {
 
   const { poolId, assetId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-  const { data: pool } = usePool(safePoolId);
-  const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
+
+  const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
+  const { data: pool } = usePool(poolMeta);
+  const { data: poolOracle } = usePoolOracle(pool);
   let safeAssetId = '';
   if (assetId === undefined) {
     safeAssetId = pool ? Array.from(pool.reserves.keys())[0] : '';
@@ -37,6 +41,10 @@ const Asset: NextPage = () => {
 
   const reserve = pool?.reserves.get(safeAssetId);
   const hasData = pool && poolOracle && reserve;
+
+  if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+    return <NotPoolBar poolId={safePoolId} />;
+  }
 
   return (
     <>

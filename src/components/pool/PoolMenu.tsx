@@ -1,3 +1,4 @@
+import { Version } from '@blend-capital/blend-sdk';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Menu, MenuItem, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
@@ -10,7 +11,7 @@ import { PoolHeader } from './PoolHeader';
 export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const router = useRouter();
-  const { trackedPools, blockedPools, version } = useSettings();
+  const { trackedPools, blockedPools } = useSettings();
   const pathname = router.pathname;
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -28,10 +29,9 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const handleClickMenuItem = (poolId: string) => {
     handleClose();
-    const selectedPool = trackedPools.find((pool) => pool.id === poolId);
     router.push({
       pathname: pathname,
-      query: { poolId: poolId, version: selectedPool?.version ?? version },
+      query: { poolId: poolId },
     });
   };
 
@@ -42,7 +42,10 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         onClick={handleClickDropdown}
         sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
       >
-        <PoolHeader name={trackedPool?.name ?? 'Unknown'} version={trackedPool?.version ?? 'V1'} />
+        <PoolHeader
+          name={trackedPool?.name ?? 'Unknown'}
+          version={trackedPool?.version ?? Version.V1}
+        />
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
       <Menu
