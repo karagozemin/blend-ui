@@ -457,6 +457,8 @@ const AUCTION_EVENT_FILTERS = [
   [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*'],
   [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
 ];
+const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*']];
+
 /**
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
@@ -493,6 +495,11 @@ export function useAuctionEventsLongQuery(
               type: 'contract',
               contractIds: [poolMeta.id],
               topics: AUCTION_EVENT_FILTERS,
+            },
+            {
+              type: 'contract',
+              contractIds: [poolMeta.id],
+              topics: AUCTION_EVENT_FILTERS_V2,
             },
           ],
           limit: 1000,
@@ -546,6 +553,11 @@ export function useAuctionEventsShortQuery(
               type: 'contract',
               contractIds: [poolMeta.id],
               topics: AUCTION_EVENT_FILTERS,
+            },
+            {
+              type: 'contract',
+              contractIds: [poolMeta.id],
+              topics: AUCTION_EVENT_FILTERS_V2,
             },
           ],
           limit: 1000,
