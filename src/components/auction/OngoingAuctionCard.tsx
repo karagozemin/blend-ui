@@ -47,10 +47,10 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
   currLedger,
 }) => {
   const theme = useTheme();
-  const { walletAddress, connected, poolSubmit, createTrustlines, isLoading } = useWallet();
+  const { walletAddress, connected, poolSubmit, isLoading } = useWallet();
 
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(pool.version);
   const { data: poolUser } = usePoolUser(pool);
 
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
@@ -118,7 +118,11 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
       ],
     };
 
-    let response = await poolSubmit(pool.id, submitArgs, sim);
+    let response = await poolSubmit(
+      { id: pool.id, version: pool.version, ...pool.metadata },
+      submitArgs,
+      sim
+    );
     if (response && sim) {
       setSimResponse(response);
       if (rpc.Api.isSimulationSuccess(response)) {
@@ -180,7 +184,8 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
       </Box>
       <LotList
         pool={pool}
-        lot={scaledAuction.data.lot}
+        lot={auction.data.lot}
+        lotValue={auctionValue?.lot ?? new Map()}
         type={
           auction.type === AuctionType.Interest || auction.type === AuctionType.BadDebt
             ? 'Underlying'
@@ -190,7 +195,8 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
       <DividerSection />
       <BidList
         pool={pool}
-        bid={scaledAuction.data.bid}
+        bid={auction.data.bid}
+        bidValue={auctionValue?.bid ?? new Map()}
         type={auction.type === AuctionType.Interest ? 'Underlying' : 'Liability'}
       />
 
@@ -209,7 +215,7 @@ export const OngoingAuctionCard: React.FC<OngoingAuctionCardProps> = ({
           {auctionValue && (
             <Value
               title="Oracle estimated profit"
-              value={`${toBalance(auctionValue.lot - auctionValue.bid, 3)}`}
+              value={`${toBalance(auctionValue.totalLotValue - auctionValue.totalBidValue, 3)}`}
             />
           )}
           <Value title="Block" value={simResponse?.latestLedger?.toString() ?? ''} />

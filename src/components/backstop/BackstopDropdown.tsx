@@ -2,7 +2,6 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Menu, MenuItem, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { useSettings } from '../../contexts';
 import { CustomButton } from '../common/CustomButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { BackstopHeader } from './BackstopHeader';
@@ -14,8 +13,6 @@ export interface BackstopComponentProps extends PoolComponentProps {
 export const BackstopDropdown: React.FC<BackstopComponentProps> = ({ type, poolId }) => {
   const theme = useTheme();
   const router = useRouter();
-
-  const { version } = useSettings();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -31,9 +28,9 @@ export const BackstopDropdown: React.FC<BackstopComponentProps> = ({ type, poolI
   const handleSelectItem = (type: 'deposit' | 'q4w') => {
     handleClose();
     if (type == 'deposit') {
-      router.push({ pathname: `/backstop-deposit`, query: { poolId: poolId, version } });
+      router.push({ pathname: `/backstop-deposit`, query: { poolId: poolId } });
     } else if (type == 'q4w') {
-      router.push({ pathname: `/backstop-q4w`, query: { poolId: poolId, version } });
+      router.push({ pathname: `/backstop-q4w`, query: { poolId: poolId } });
     }
   };
 

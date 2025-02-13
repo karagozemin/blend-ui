@@ -1,9 +1,9 @@
-import { Network } from '@blend-capital/blend-sdk';
+import { Network, Version } from '@blend-capital/blend-sdk';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
-import { useRouter } from 'next/router';
 import React, { useContext, useMemo, useState } from 'react';
 import { useLocalStorageState } from '../hooks';
+import { PoolMeta } from '../hooks/types';
 
 const DEFAULT_RPC = process.env.NEXT_PUBLIC_RPC_URL || 'https://soroban-testnet.stellar.org';
 const DEFAULT_HORIZON =
@@ -20,7 +20,7 @@ export enum ViewType {
 export interface TrackedPool {
   id: string;
   name: string;
-  version: 'v1' | 'v2';
+  version: Version;
 }
 
 export interface ISettingsContext {
@@ -30,30 +30,24 @@ export interface ISettingsContext {
   getRPCServer: () => rpc.Server;
   getHorizonServer: () => rpc.Server;
   lastPool: TrackedPool | undefined;
-  setLastPool: (id: string, name: string, version: 'v1' | 'v2') => void;
+  setLastPool: (poolMeta: PoolMeta) => void;
   trackedPools: TrackedPool[];
-  trackPool: (id: string, name: string, version: 'v1' | 'v2') => void;
+  trackPool: (poolMeta: PoolMeta) => void;
   untrackPool: (id: string) => void;
   showLend: boolean;
   setShowLend: (showLend: boolean) => void;
   showJoinPool: boolean;
   setShowJoinPool: (showJoinPool: boolean) => void;
   blockedPools: string[];
-  version: 'v1' | 'v2';
-  backstopId: string | undefined;
-  setVersion: (version: 'v1' | 'v2') => void;
-  getVersion: () => string | undefined;
+  isV2Enabled: boolean;
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
 
 export const SettingsProvider = ({ children = null as any }) => {
   const theme = useTheme();
-  const router = useRouter();
   const compact = useMediaQuery(theme.breakpoints.down('lg')); // hook causes refresh on change
   const mobile = useMediaQuery(theme.breakpoints.down('sm')); // hook causes refresh on change
-
-  const { version: routerVersion } = router.query;
 
   const [network, setNetwork] = useState<Network & { horizonUrl: string }>({
     rpc: DEFAULT_RPC,
@@ -90,10 +84,8 @@ export const SettingsProvider = ({ children = null as any }) => {
   const [blockedPools, _] = useState<string[]>(
     (process.env.NEXT_PUBLIC_BLOCKED_POOLS || '').split(',')
   );
-  const version = routerVersion === 'v1' || routerVersion === 'v2' ? routerVersion : 'v1';
 
-  const backstopId =
-    version === 'v1' ? process.env.NEXT_PUBLIC_BACKSTOP : process.env.NEXT_PUBLIC_BACKSTOP_V2;
+  const isV2Enabled = process.env.NEXT_PUBLIC_BACKSTOP_V2 !== undefined;
 
   let viewType: ViewType;
   if (mobile) viewType = ViewType.MOBILE;
@@ -112,16 +104,24 @@ export const SettingsProvider = ({ children = null as any }) => {
     return new rpc.Server(network.horizonUrl, network.opts);
   }
 
-  function trackPool(id: string, name: string, version: 'v1' | 'v2') {
-    let index = trackedPools.findIndex((pool) => pool.id === id);
+  function trackPool(poolMeta: PoolMeta) {
+    let index = trackedPools.findIndex((pool) => pool.id === poolMeta.id);
     if (index !== -1) {
-      if (trackedPools[index].version !== version || trackedPools[index].name !== name) {
-        trackedPools[index].version = version;
-        trackedPools[index].name = name;
+      if (
+        trackedPools[index].version !== poolMeta.version ||
+        trackedPools[index].name !== poolMeta.name
+      ) {
+        trackedPools[index].version = poolMeta.version;
+        trackedPools[index].name = poolMeta.name;
         setTrackedPoolsString(JSON.stringify(trackedPools));
       }
     } else {
-      setTrackedPoolsString(JSON.stringify([...trackedPools, { id, name }]));
+      setTrackedPoolsString(
+        JSON.stringify([
+          ...trackedPools,
+          { id: poolMeta.id, name: poolMeta.name, version: poolMeta.version },
+        ])
+      );
     }
   }
 
@@ -133,19 +133,10 @@ export const SettingsProvider = ({ children = null as any }) => {
     }
   }
 
-  function setLastPool(id: string, name: string, version: 'v1' | 'v2') {
-    setLastPoolString(JSON.stringify({ id, name, version }));
-    if (routerVersion !== version) {
-      handleSetVersion(version);
-    }
-  }
-
-  function handleSetVersion(version: 'v1' | 'v2') {
-    router.replace({ query: { ...router.query, version } });
-  }
-
-  function getVersion() {
-    return version;
+  function setLastPool(poolMeta: PoolMeta) {
+    setLastPoolString(
+      JSON.stringify({ id: poolMeta.id, name: poolMeta.name, version: poolMeta.version })
+    );
   }
 
   return (
@@ -166,10 +157,7 @@ export const SettingsProvider = ({ children = null as any }) => {
         showJoinPool,
         setShowJoinPool,
         blockedPools,
-        version,
-        backstopId,
-        setVersion: handleSetVersion,
-        getVersion,
+        isV2Enabled,
       }}
     >
       {children}

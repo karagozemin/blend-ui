@@ -17,9 +17,9 @@ import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import {
   useHorizonAccount,
   usePool,
+  usePoolMeta,
   usePoolOracle,
   usePoolUser,
-  useQueryClientCacheCleaner,
   useTokenBalance,
   useTokenMetadata,
 } from '../../hooks/api';
@@ -45,17 +45,14 @@ import { PoolStatusBanner } from '../pool/PoolStatusBanner';
 export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
-  const { cleanPoolCache } = useQueryClientCacheCleaner();
 
   const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
-  const reserve = pool?.reserves.get(assetId);
-  const decimals = reserve?.config.decimals ?? 7;
-  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: tokenBalance } = useTokenBalance(assetId, tokenMetadata?.asset, horizonAccount);
 
@@ -63,7 +60,11 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const [simResponse, setSimResponse] = useState<rpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Positions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+
   const loading = isLoading || loadingEstimate;
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toLend) != 0) {
     setToLend('');
@@ -81,7 +82,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   );
 
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toLend && connected && reserve) {
+    if (toLend && connected && poolMeta && reserve) {
       let submitArgs: SubmitArgs = {
         from: walletAddress,
         spender: walletAddress,
@@ -94,7 +95,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           },
         ],
       };
-      return await poolSubmit(poolId, submitArgs, sim);
+      return await poolSubmit(poolMeta, submitArgs, sim);
     }
   };
 

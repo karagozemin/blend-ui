@@ -95,6 +95,8 @@ export function toPercentage(rate: number | undefined, decimals = 2): string {
 export function toCompactAddress(address: string | undefined): string {
   if (!address) {
     return '';
+  } else if (address.length < 10) {
+    return address;
   }
 
   return `${address.substring(0, 4)}...${address.substring(address.length - 4, address.length)}`;

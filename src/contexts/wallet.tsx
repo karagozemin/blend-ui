@@ -10,6 +10,7 @@ import {
   PoolContractV2,
   Positions,
   SubmitArgs,
+  Version,
 } from '@blend-capital/blend-sdk';
 import {
   AlbedoModule,
@@ -40,6 +41,7 @@ import {
 import React, { useContext, useEffect, useState } from 'react';
 import { useLocalStorageState } from '../hooks';
 import { useQueryClientCacheCleaner } from '../hooks/api';
+import { PoolMeta } from '../hooks/types';
 import { CometClient, CometLiquidityArgs, CometSingleSidedDepositArgs } from '../utils/comet';
 import { useSettings } from './settings';
 
@@ -58,32 +60,37 @@ export interface IWalletContext {
   clearLastTx: () => void;
   restore: (sim: rpc.Api.SimulateTransactionRestoreResponse) => Promise<void>;
   poolSubmit: (
-    poolId: string,
+    poolMeta: PoolMeta,
     submitArgs: SubmitArgs,
     sim: boolean
   ) => Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   poolClaim: (
-    poolId: string,
+    poolMeta: PoolMeta,
     claimArgs: PoolClaimArgs,
     sim: boolean
   ) => Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   backstopDeposit(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   backstopWithdraw(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   backstopQueueWithdrawal(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   backstopDequeueWithdrawal(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   backstopClaim(
+    poolMeta: PoolMeta,
     args: BackstopClaimArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
@@ -149,7 +156,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
-  const { network, version, backstopId } = useSettings();
+  const { network } = useSettings();
 
   const { cleanWalletCache, cleanBackstopCache, cleanPoolCache, cleanBackstopPoolCache } =
     useQueryClientCacheCleaner();
@@ -381,48 +388,54 @@ export const WalletProvider = ({ children = null as any }) => {
 
   /**
    * Submit a request to the pool
-   * @param poolId - The contract address of the pool
+   * @param poolMeta - The metadata for the pool
    * @param submitArgs - The "submit" function args
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The Positions, or undefined
    */
   async function poolSubmit(
-    poolId: string,
+    poolMeta: PoolMeta,
     submitArgs: SubmitArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const pool = version === 'v2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
+      const pool =
+        poolMeta.version === Version.V2
+          ? new PoolContractV2(poolMeta.id)
+          : new PoolContractV2(poolMeta.id);
       const operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
-      await invokeSorobanOperation<Positions>(operation, poolId);
-      cleanPoolCache(poolId);
+      await invokeSorobanOperation<Positions>(operation, poolMeta.id);
+      cleanPoolCache(poolMeta.id);
       cleanWalletCache();
     }
   }
 
   /**
    * Claim emissions from the pool
-   * @param poolId - The contract address of the pool
+   * @param poolMeta - The metadata for the pool
    * @param claimArgs - The "claim" function args
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The Positions, or undefined
    */
   async function poolClaim(
-    poolId: string,
+    poolMeta: PoolMeta,
     claimArgs: PoolClaimArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const pool = version === 'v2' ? new PoolContractV2(poolId) : new PoolContractV2(poolId);
+      const pool =
+        poolMeta.version === Version.V2
+          ? new PoolContractV2(poolMeta.id)
+          : new PoolContractV2(poolMeta.id);
       const operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
-      await invokeSorobanOperation(operation, poolId);
-      cleanPoolCache(poolId);
+      await invokeSorobanOperation(operation, poolMeta.id);
+      cleanPoolCache(poolMeta.id);
       cleanWalletCache();
     }
   }
@@ -431,17 +444,21 @@ export const WalletProvider = ({ children = null as any }) => {
 
   /**
    * Execute an deposit against the backstop
+   * @param poolMeta - The metadata for the pool
    * @param args - The args of the deposit
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The Positions, or undefined
    */
   async function backstopDeposit(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && backstopId) {
+    if (connected) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        poolMeta.version === Version.V2
+          ? new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
+          : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
       const operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -458,17 +475,21 @@ export const WalletProvider = ({ children = null as any }) => {
 
   /**
    * Execute an withdraw against the backstop
+   * @param poolMeta - The metadata for the pool
    * @param args - The args of the withdraw
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The Positions, or undefined
    */
   async function backstopWithdraw(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && backstopId) {
+    if (connected) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        poolMeta.version === Version.V2
+          ? new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
+          : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
       const operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -485,17 +506,21 @@ export const WalletProvider = ({ children = null as any }) => {
 
   /**
    * Execute an queue withdrawal against the backstop
+   * @param poolMeta - The metadata for the pool
    * @param args - The args of the queue withdrawal
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The Positions, or undefined
    */
   async function backstopQueueWithdrawal(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && backstopId) {
+    if (connected) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        poolMeta.version === Version.V2
+          ? new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
+          : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
       const operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -511,17 +536,21 @@ export const WalletProvider = ({ children = null as any }) => {
 
   /**
    * Execute an dequeue withdrawal against the backstop
+   * @param poolMeta - The metadata for the pool
    * @param args - The args of the queue withdrawal
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The Positions, or undefined
    */
   async function backstopDequeueWithdrawal(
+    poolMeta: PoolMeta,
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && backstopId) {
+    if (connected) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        poolMeta.version === Version.V2
+          ? new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
+          : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
       const operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -537,17 +566,21 @@ export const WalletProvider = ({ children = null as any }) => {
 
   /**
    * Claim emissions from the backstop
+   * @param poolMeta - The metadata for the pool
    * @param claimArgs - The "claim" function args
    * @param sim - "true" if simulating the transaction, "false" if submitting
    * @returns The claimed amount
    */
   async function backstopClaim(
+    poolMeta: PoolMeta,
     claimArgs: BackstopClaimArgs,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected && backstopId) {
+    if (connected) {
       const backstop =
-        version === 'v2' ? new BackstopContractV2(backstopId) : new BackstopContractV1(backstopId);
+        poolMeta.version === Version.V2
+          ? new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
+          : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
       const operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);

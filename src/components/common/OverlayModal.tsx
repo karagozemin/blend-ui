@@ -13,7 +13,7 @@ export interface CloseableOverlayProps {
 
 export const OverlayModal: React.FC = () => {
   const router = useRouter();
-  const { lastPool, version } = useSettings();
+  const { lastPool } = useSettings();
   const { txStatus, txType, clearLastTx } = useWallet();
 
   const [showReturnButton, setShowReturnButton] = useState(false);
@@ -23,7 +23,6 @@ export const OverlayModal: React.FC = () => {
   const { poolId } = router.query;
 
   const lastPoolId = lastPool ? lastPool.id : poolId;
-  const lastPoolVersion = lastPool ? lastPool.version : version;
 
   const handleReturn = () => {
     const returnToHomePage = txStatus != TxStatus.FAIL;
@@ -31,21 +30,21 @@ export const OverlayModal: React.FC = () => {
 
     if (returnToHomePage && txType != TxType.PREREQ) {
       if (router.route == '/') {
-        router.push({ pathname: '/', query: { version: lastPoolVersion } });
+        router.push({ pathname: '/' });
       } else if (router.route.includes('backstop')) {
         router.push({
           pathname: `/backstop`,
-          query: { poolId: lastPoolId, version: lastPoolVersion },
+          query: { poolId: lastPoolId },
         });
       } else if (router.route.includes('auction')) {
         router.push({
           pathname: `/auction`,
-          query: { poolId: lastPoolId, version: lastPoolVersion },
+          query: { poolId: lastPoolId },
         });
       } else {
         router.push({
           pathname: `/dashboard`,
-          query: { poolId: lastPoolId, version: lastPoolVersion },
+          query: { poolId: lastPoolId },
         });
       }
     }

@@ -1,3 +1,4 @@
+import { Version } from '@blend-capital/blend-sdk';
 import MenuIcon from '@mui/icons-material/Menu';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, Typography, useTheme } from '@mui/material';
@@ -9,12 +10,11 @@ import { NavItem } from './NavItem';
 
 export const NavMenu = () => {
   const theme = useTheme();
-  const { viewType, lastPool, version } = useSettings();
+  const { viewType, lastPool } = useSettings();
 
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(Version.V1);
   const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-  const lastVersion = lastPool ? lastPool.version : version;
 
   const [openCon, setOpenCon] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -56,7 +56,7 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Link href={`/auction/?poolId=${safePoolId}`}>
+          <Link href={{ pathname: '/auction', query: { poolId: safePoolId } }}>
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Auctions
             </MenuItem>
@@ -116,25 +116,25 @@ export const NavMenu = () => {
         >
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/', query: { poolId: poolId, version: lastVersion } }}
+            to={{ pathname: '/' }}
             title="Markets"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/dashboard', query: { poolId: poolId, version: lastVersion } }}
+            to={{ pathname: '/dashboard', query: { poolId: poolId } }}
             title="Dashboard"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/backstop', query: { poolId: poolId, version: lastVersion } }}
+            to={{ pathname: '/backstop', query: { poolId: poolId } }}
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/auction', query: { poolId: poolId, version: lastVersion } }}
+            to={{ pathname: '/auction', query: { poolId: poolId } }}
             title="Auctions"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />

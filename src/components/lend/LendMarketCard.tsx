@@ -6,6 +6,8 @@ import {
   useBackstop,
   useHorizonAccount,
   usePool,
+  usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   useTokenBalance,
   useTokenMetadata,
@@ -30,24 +32,33 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
 
+  const { data: poolMeta } = usePoolMeta(poolId);
   const { data: userAccount } = useHorizonAccount();
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
-  const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const { data: userTokenBalance } = useTokenBalance(
     reserve.assetId,
     tokenMetadata?.asset,
     userAccount
   );
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolEmissions } = usePoolEmissions(pool);
 
+  const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.supplyEmissions !== undefined && reserve
+      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+          reserve.totalSupply(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
-    backstop && emissionsPerAsset > 0 && oraclePrice
+    backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
 
@@ -67,7 +78,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId, version } }}
+        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{

@@ -3,7 +3,14 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
-import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolMeta,
+  usePoolOracle,
+  useTokenMetadata,
+} from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
@@ -27,18 +34,27 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
   const router = useRouter();
-  const { version } = useSettings();
 
-  const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
-  const { data: backstop } = useBackstop();
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
+  const { data: poolEmissions } = usePoolEmissions(pool);
+
+  const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const emissionsPerAsset = reserve.emissionsPerYearPerSuppliedAsset();
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.supplyEmissions !== undefined && reserve
+      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+          reserve.totalSupply(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
-    backstop && emissionsPerAsset > 0 && oraclePrice
+    backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
@@ -66,7 +82,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         if (viewTypeIsMobile) {
           router.push({
             pathname: '/withdraw',
-            query: { poolId: poolId, assetId: reserve.assetId, version },
+            query: { poolId: poolId, assetId: reserve.assetId },
           });
         }
       }}
@@ -104,7 +120,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
         <LinkBox
           to={{
             pathname: '/withdraw',
-            query: { poolId: poolId, assetId: reserve.assetId, version },
+            query: { poolId: poolId, assetId: reserve.assetId },
           }}
           sx={{
             display: 'flex',

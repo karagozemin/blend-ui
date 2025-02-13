@@ -2,8 +2,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Box, Menu, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { useSettings } from '../../contexts';
-import { usePool, useTokenMetadata } from '../../hooks/api';
+import { usePool, usePoolMeta, useTokenMetadata } from '../../hooks/api';
 import { toCompactAddress } from '../../utils/formatter';
 import { CustomButton } from './CustomButton';
 import { LetterIcon } from './LetterIcon';
@@ -20,9 +19,9 @@ export interface ReserveDropdown extends PoolComponentProps {
 export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, activeReserveId }) => {
   const theme = useTheme();
   const router = useRouter();
-  const { version } = useSettings();
 
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const activeReserve = pool?.reserves?.get(activeReserveId);
   const { data: tokenMetadata } = useTokenMetadata(activeReserveId);
   const symbol = tokenMetadata?.symbol ?? toCompactAddress(activeReserveId);
@@ -42,7 +41,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
 
   const handleClickReserve = (reserveId: string) => {
     handleClose();
-    router.push({ pathname: `/${action}`, query: { poolId: poolId, assetId: reserveId, version } });
+    router.push({ pathname: `/${action}`, query: { poolId: poolId, assetId: reserveId } });
   };
 
   return (

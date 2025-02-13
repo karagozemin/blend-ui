@@ -26,7 +26,7 @@ export const LotBalanceChange: React.FC<LotBalanceChangeProps> = ({
   newPosition,
 }) => {
   const { data: horizonAccount } = useHorizonAccount();
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(pool.version);
   const { data: lpTokenBalance } = useTokenBalance(
     backstop?.backstopToken?.id ?? '',
     undefined,
