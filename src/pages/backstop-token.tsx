@@ -1,3 +1,4 @@
+import { Version } from '@blend-capital/blend-sdk';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IconButton, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
@@ -22,7 +23,7 @@ const BackstopToken: NextPage = () => {
   const BLND_CONTRACT_ID = BLND_ASSET.contractId(network.passphrase);
   const USDC_CONTRACT_ID = USDC_ASSET.contractId(network.passphrase);
 
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(Version.V1);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: blndBalanceRes } = useTokenBalance(BLND_CONTRACT_ID, BLND_ASSET, horizonAccount);
   const { data: usdcBalanceRes } = useTokenBalance(USDC_CONTRACT_ID, USDC_ASSET, horizonAccount);

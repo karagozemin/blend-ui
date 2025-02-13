@@ -14,6 +14,7 @@ import {
   useBackstop,
   useBackstopPool,
   useBackstopPoolUser,
+  usePoolMeta,
   useTokenBalance,
 } from '../../hooks/api';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
@@ -37,9 +38,10 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const { viewType } = useSettings();
   const { connected, walletAddress, backstopDeposit, txStatus, txType, isLoading } = useWallet();
 
-  const { data: backstop } = useBackstop();
-  const { data: backstopPoolData } = useBackstopPool(poolId);
-  const { data: backstopUserPoolData } = useBackstopPoolUser(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: backstopPoolData } = useBackstopPool(poolMeta);
+  const { data: backstopUserPoolData } = useBackstopPoolUser(poolMeta);
   const { data: lpTokenRes } = useTokenBalance(
     backstop?.config?.backstopTkn,
     undefined,
@@ -95,13 +97,13 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   };
 
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toDeposit && connected) {
+    if (toDeposit && connected && poolMeta) {
       const depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
         amount: scaleInputToBigInt(toDeposit, 7),
       };
-      const response = await backstopDeposit(depositArgs, sim);
+      const response = await backstopDeposit(poolMeta, depositArgs, sim);
       if (response) {
         setSimResponse(response);
         if (rpc.Api.isSimulationSuccess(response)) {

@@ -4,6 +4,7 @@ import {
   PoolClaimArgs,
   PoolContractV1,
   PositionsEstimate,
+  Version,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
@@ -13,6 +14,8 @@ import { useWallet } from '../../contexts/wallet';
 import {
   useHorizonAccount,
   usePool,
+  usePoolEmissions,
+  usePoolMeta,
   usePoolOracle,
   usePoolUser,
   useSimulateOperation,
@@ -30,18 +33,20 @@ import { StackedText } from '../common/StackedText';
 import { BorrowCapRing } from './BorrowCapRing';
 
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
   const theme = useTheme();
   const { connected, walletAddress, poolClaim, createTrustlines, restore } = useWallet();
 
+  const { data: poolMeta } = usePoolMeta(poolId);
   const { data: account, refetch: refechAccount } = useHorizonAccount();
-  const { data: pool } = usePool(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: userPoolData, refetch: refetchPoolUser } = usePoolUser(pool);
 
   const { emissions, claimedTokens } =
-    userPoolData && pool
-      ? userPoolData.estimateEmissions(pool)
+    userPoolData && pool && poolEmissions
+      ? userPoolData.estimateEmissions(pool, poolEmissions)
       : { emissions: 0, claimedTokens: [] };
 
   const poolContract = poolId ? new PoolContractV1(poolId) : undefined;
@@ -72,14 +77,14 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
     : undefined;
 
   const handleSubmitTransaction = async () => {
-    if (connected && userPoolData) {
+    if (connected && poolMeta && userPoolData) {
       if (claimedTokens.length > 0) {
         let claimArgs: PoolClaimArgs = {
           from: walletAddress,
           reserve_token_ids: claimedTokens,
           to: walletAddress,
         };
-        await poolClaim(poolId, claimArgs, false);
+        await poolClaim(poolMeta, claimArgs, false);
         refetchPoolUser();
       }
     }
@@ -100,7 +105,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (hasBLNDTrustline && !isRestore && !isError && version !== 'V2') {
+    if (hasBLNDTrustline && !isRestore && !isError && poolMeta?.version !== Version.V2) {
       return (
         <CustomButton
           sx={{
@@ -138,7 +143,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
-      } else if (version === 'V2') {
+      } else if (poolMeta?.version === Version.V2) {
         buttonText = 'V2 Claim Disabled';
         buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;

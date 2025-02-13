@@ -1,15 +1,16 @@
 import { BackstopPoolEst, FixedMath, PoolEstimate } from '@blend-capital/blend-sdk';
-import { useBackstop, useBackstopPool, usePool, usePoolOracle } from '../../hooks/api';
+import { useBackstop, useBackstopPool, usePool, usePoolMeta, usePoolOracle } from '../../hooks/api';
 import { estSingleSidedDeposit } from '../../utils/comet';
 import { AprDisplay } from '../common/AprDisplay';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { StackedText } from '../common/StackedText';
 
 export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
-  const { data: backstopPoolData } = useBackstopPool(poolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: backstopPoolData } = useBackstopPool(poolMeta);
 
   let estBackstopApr: number | undefined = undefined;
   let backstopEmissionsApr: number | undefined = undefined;

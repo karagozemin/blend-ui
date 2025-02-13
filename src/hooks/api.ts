@@ -4,17 +4,21 @@ import {
   BackstopPoolUser,
   BackstopPoolV1,
   BackstopPoolV2,
+  ErrorTypes,
   Network,
   Pool,
   PoolEvent,
   poolEventFromEventResponse,
+  PoolMetadata,
   PoolOracle,
   PoolUser,
   PoolV1,
   PoolV2,
   Positions,
+  ReserveEmissions,
   TokenMetadata,
   UserBalance,
+  Version,
 } from '@blend-capital/blend-sdk';
 import {
   Account,
@@ -39,6 +43,7 @@ import { useWallet } from '../contexts/wallet';
 import { getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';
 import { ReserveTokenMetadata } from '../utils/token';
+import { NOT_BLEND_POOL_ERROR_MESSAGE, PoolMeta } from './types';
 
 const DEFAULT_STALE_TIME = 30 * 1000;
 const USER_STALE_TIME = 60 * 1000;
@@ -119,28 +124,81 @@ export function useCurrentBlockNumber(): UseQueryResult<number, Error> {
 
 //********** Pool Data **********//
 
+export function usePoolMeta(
+  poolId: string,
+  enabled: boolean = true
+): UseQueryResult<PoolMeta, Error> {
+  const { network } = useSettings();
+
+  return useQuery({
+    staleTime: Infinity,
+    queryKey: ['poolMetadata', poolId],
+    enabled: enabled && poolId !== '',
+    queryFn: async () => {
+      try {
+        let metadata = await PoolMetadata.load(network, poolId);
+        if (
+          metadata.wasmHash === 'baf978f10efdbcd85747868bef8832845ea6809f7643b67a4ac0cd669327fc2c'
+        ) {
+          // v1 pool - validate backstop is correct
+          if (metadata.backstop === BACKSTOP_ID) {
+            return { id: poolId, version: Version.V1, ...metadata } as PoolMeta;
+          }
+        } else if (
+          metadata.wasmHash === 'd89babfef41542f013451644f3de18c05a1cc0a81bef447f3c15d26f75ee0f38'
+        ) {
+          // v2 pool - validate backstop is correct
+          if (metadata.backstop === BACKSTOP_ID_V2) {
+            return { id: poolId, version: Version.V2, ...metadata } as PoolMeta;
+          }
+        }
+        throw new Error(NOT_BLEND_POOL_ERROR_MESSAGE);
+      } catch (e: any) {
+        if (e?.message?.includes(ErrorTypes.LedgerEntryParseError)) {
+          throw new Error(NOT_BLEND_POOL_ERROR_MESSAGE);
+        } else {
+          console.error('Error fetching pool metadata', e);
+        }
+        throw e;
+      }
+    },
+    retry: (failureCount, error) => {
+      if (error?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+        // Do not retry if this is not a blend pool
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+}
+
 /**
  * Fetches pool data for the given pool ID.
  * @param poolId - The pool ID
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the pool data.
  */
-export function usePool(poolId: string, enabled: boolean = true): UseQueryResult<Pool, Error> {
-  const { network, version } = useSettings();
+export function usePool(
+  poolMeta: PoolMeta | undefined,
+  enabled: boolean = true
+): UseQueryResult<Pool, Error> {
+  const { network } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
-    queryKey: ['pool', poolId],
-    enabled: enabled && poolId !== '',
+    queryKey: ['pool', poolMeta?.id],
+    enabled: enabled && poolMeta !== undefined,
     queryFn: async () => {
-      try {
-        if (version === 'V2') {
-          return await PoolV2.load(network, poolId);
-        } else {
-          return await PoolV1.load(network, poolId);
+      if (poolMeta !== undefined) {
+        try {
+          if (poolMeta.version === Version.V2) {
+            return await PoolV2.loadWithMetadata(network, poolMeta.id, poolMeta);
+          } else {
+            return await PoolV1.loadWithMetadata(network, poolMeta.id, poolMeta);
+          }
+        } catch (e: any) {
+          console.error('Error fetching pool data', e);
+          throw e;
         }
-      } catch (e: any) {
-        console.error('Error fetching pool data', e);
-        throw e;
       }
     },
   });
@@ -198,6 +256,33 @@ export function usePoolUser(
   });
 }
 
+/**
+ * Fetch the user for the given pool and connected wallet.
+ * @param poolId - The pool ID
+ * @param enabled - Whether the query is enabled (optional - defaults to true)
+ * @returns Query result with the user positions.
+ */
+export function usePoolEmissions(
+  pool: Pool | undefined,
+  enabled: boolean = true
+): UseQueryResult<ReserveEmissions[], Error> {
+  const { network } = useSettings();
+  return useQuery({
+    staleTime: USER_STALE_TIME,
+    queryKey: ['poolEmissions', pool?.id],
+    enabled: enabled && pool !== undefined,
+    queryFn: async () => {
+      if (pool !== undefined) {
+        return await Promise.all(
+          Array.from(pool.reserves.values()).map((reserve) =>
+            ReserveEmissions.load(network, reserve)
+          )
+        );
+      }
+    },
+  });
+}
+
 //********** Backstop Data **********//
 
 /**
@@ -205,37 +290,42 @@ export function usePoolUser(
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the backstop data.
  */
-export function useBackstop(enabled: boolean = true): UseQueryResult<Backstop, Error> {
-  const { network, version } = useSettings();
+export function useBackstop(
+  version: Version | undefined,
+  enabled: boolean = true
+): UseQueryResult<Backstop, Error> {
+  const { network } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['backstop', version],
-    enabled,
+    enabled: enabled && version !== undefined,
     queryFn: async () => {
-      let res = await Backstop.load(network, version === 'V2' ? BACKSTOP_ID_V2 : BACKSTOP_ID);
-      return res;
+      return await Backstop.load(network, version === Version.V2 ? BACKSTOP_ID_V2 : BACKSTOP_ID);
     },
   });
 }
 
 /**
  * Fetch the backstop pool data for the given pool ID.
- * @param poolId - The pool ID
+ * @param poolMeta - The pool metadata
  * @param enabled - Whether the query is enabled (optional - defaults to true)
  * @returns Query result with the backstop pool data.
  */
 export function useBackstopPool(
-  poolId: string,
+  poolMeta: PoolMeta | undefined,
   enabled: boolean = true
 ): UseQueryResult<BackstopPool, Error> {
-  const { network, version } = useSettings();
+  const { network } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
-    queryKey: ['backstopPool', poolId],
-    enabled,
+    queryKey: ['backstopPool', poolMeta?.id],
+    enabled: enabled && poolMeta !== undefined,
     queryFn: async () => {
-      if (version === 'V2') return await BackstopPoolV2.load(network, BACKSTOP_ID_V2, poolId);
-      else return await BackstopPoolV1.load(network, BACKSTOP_ID, poolId);
+      if (poolMeta !== undefined) {
+        return poolMeta.version === Version.V2
+          ? await BackstopPoolV2.load(network, BACKSTOP_ID_V2, poolMeta.id)
+          : await BackstopPoolV1.load(network, BACKSTOP_ID, poolMeta.id);
+      }
     },
   });
 }
@@ -247,27 +337,27 @@ export function useBackstopPool(
  * @returns Query result with the backstop pool user data.
  */
 export function useBackstopPoolUser(
-  poolId: string,
+  poolMeta: PoolMeta | undefined,
   enabled: boolean = true
 ): UseQueryResult<BackstopPoolUser, Error> {
-  const { network, version } = useSettings();
+  const { network } = useSettings();
   const { walletAddress, connected } = useWallet();
   return useQuery({
     staleTime: USER_STALE_TIME,
-    queryKey: ['backstopPoolUser', poolId, walletAddress],
-    enabled: enabled && connected,
+    queryKey: ['backstopPoolUser', poolMeta?.id, walletAddress],
+    enabled: enabled && poolMeta !== undefined && connected,
     placeholderData: new BackstopPoolUser(
       walletAddress,
-      poolId,
+      poolMeta?.id ?? '',
       new UserBalance(BigInt(0), [], BigInt(0), BigInt(0)),
       undefined
     ),
     queryFn: async () => {
-      if (walletAddress !== '') {
+      if (walletAddress !== '' && poolMeta !== undefined) {
         return await BackstopPoolUser.load(
           network,
-          version == 'V2' ? BACKSTOP_ID_V2 : BACKSTOP_ID,
-          poolId,
+          poolMeta.version === Version.V2 ? BACKSTOP_ID_V2 : BACKSTOP_ID,
+          poolMeta.id,
           walletAddress
         );
       }
@@ -368,6 +458,7 @@ const AUCTION_EVENT_FILTERS = [
   [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
 ];
 const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*']];
+
 /**
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
@@ -375,16 +466,19 @@ const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('bas
  * @returns An object containing an events and latestLedger field.
  */
 export function useAuctionEventsLongQuery(
-  poolId: string,
+  poolMeta: PoolMeta | undefined,
   enabled: boolean = true
 ): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
     staleTime: 10 * 60 * 1000,
-    queryKey: ['auctionEventsLong', poolId],
-    enabled,
+    queryKey: ['auctionEventsLong', poolMeta?.id],
+    enabled: enabled && poolMeta !== undefined,
     placeholderData: keepPreviousData,
     queryFn: async () => {
+      if (poolMeta === undefined) {
+        throw new Error();
+      }
       try {
         let events: PoolEvent[] = [];
         const stellarRpc = new rpc.Server(network.rpc, network.opts);
@@ -399,12 +493,12 @@ export function useAuctionEventsLongQuery(
           filters: [
             {
               type: 'contract',
-              contractIds: [poolId],
+              contractIds: [poolMeta.id],
               topics: AUCTION_EVENT_FILTERS,
             },
             {
               type: 'contract',
-              contractIds: [poolId],
+              contractIds: [poolMeta.id],
               topics: AUCTION_EVENT_FILTERS_V2,
             },
           ],
@@ -434,18 +528,21 @@ export function useAuctionEventsLongQuery(
  * @returns An object containing an events and latestLedger field.
  */
 export function useAuctionEventsShortQuery(
-  poolId: string,
+  poolMeta: PoolMeta | undefined,
   lastLedgerFetched: number,
   enabled: boolean = true
 ): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   // TODO: Use cursor instead of lastLedger when possible once RPC cursor usage is fixed.
   return useQuery({
-    queryKey: ['auctionEventsShort', poolId, lastLedgerFetched],
-    enabled,
+    queryKey: ['auctionEventsShort', poolMeta?.id, lastLedgerFetched],
+    enabled: enabled && poolMeta !== undefined,
     refetchInterval: 5 * 1000,
     placeholderData: keepPreviousData,
     queryFn: async () => {
+      if (poolMeta === undefined) {
+        throw new Error();
+      }
       try {
         let events: PoolEvent[] = [];
         const stellarRpc = new rpc.Server(network.rpc, network.opts);
@@ -454,12 +551,12 @@ export function useAuctionEventsShortQuery(
           filters: [
             {
               type: 'contract',
-              contractIds: [poolId],
+              contractIds: [poolMeta.id],
               topics: AUCTION_EVENT_FILTERS,
             },
             {
               type: 'contract',
-              contractIds: [poolId],
+              contractIds: [poolMeta.id],
               topics: AUCTION_EVENT_FILTERS_V2,
             },
           ],

@@ -23,7 +23,7 @@ export interface FilledAuctionCardProps extends PoolComponentProps {
 export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auction, sx }) => {
   const theme = useTheme();
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(pool.version);
   const { auctionValue } = useMemo(() => {
     const auctionValue =
       poolOracle &&

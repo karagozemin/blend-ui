@@ -13,10 +13,12 @@ import { ToggleButton } from '../components/common/ToggleButton';
 import { PositionOverview } from '../components/dashboard/PositionOverview';
 import { LendMarketList } from '../components/lend/LendMarketList';
 import { LendPositionList } from '../components/lend/LendPositionList';
+import { NotPoolBar } from '../components/pool/NotPoolBar';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
 import { useSettings } from '../contexts';
-import { usePool, usePoolOracle } from '../hooks/api';
+import { usePool, usePoolMeta, usePoolOracle } from '../hooks/api';
+import { NOT_BLEND_POOL_ERROR_MESSAGE } from '../hooks/types';
 import { toBalance } from '../utils/formatter';
 import { MAINNET_USDC_CONTRACT_ADDRESS } from '../utils/token_display';
 
@@ -28,7 +30,8 @@ const Dashboard: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const { data: pool } = usePool(safePoolId);
+  const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle, isError: isOracleError } = usePoolOracle(pool);
 
   const marketSize =
@@ -47,6 +50,10 @@ const Dashboard: NextPage = () => {
       setShowLend(false);
     }
   };
+
+  if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+    return <NotPoolBar poolId={safePoolId} />;
+  }
 
   return (
     <>

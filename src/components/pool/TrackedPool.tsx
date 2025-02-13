@@ -1,3 +1,4 @@
+import { Version } from '@blend-capital/blend-sdk';
 import { Box, BoxProps, Typography } from '@mui/material';
 import { useSettings } from '../../contexts';
 import { Row } from '../common/Row';
@@ -7,7 +8,7 @@ import { PoolIcon } from './PoolIcon';
 export interface TrackedPoolProps extends BoxProps {
   name: string;
   id: string;
-  version: 'V1' | 'V2';
+  version: Version;
 }
 
 export const TrackedPool: React.FC<TrackedPoolProps> = ({ name, id, version, sx, ...props }) => {

@@ -1,4 +1,4 @@
-import { parseResult } from '@blend-capital/blend-sdk';
+import { Version, parseResult } from '@blend-capital/blend-sdk';
 import { LoopOutlined } from '@mui/icons-material';
 import { Box, Typography, useTheme } from '@mui/material';
 import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
@@ -33,7 +33,7 @@ export const BackstopJoinAnvil = () => {
   const BLND_ID = BLND_ASSET.contractId(network.passphrase);
   const USDC_ID = USDC_ASSET.contractId(network.passphrase);
 
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(Version.V1);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: blndBalanceRes } = useTokenBalance(BLND_ID, BLND_ASSET, horizonAccount);
   const { data: usdcBalanceRes } = useTokenBalance(USDC_ID, USDC_ASSET, horizonAccount);

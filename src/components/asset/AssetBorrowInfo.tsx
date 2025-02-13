@@ -1,6 +1,13 @@
 import { Circle } from '@mui/icons-material';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useBackstop, usePool, usePoolOracle, useTokenMetadata } from '../../hooks/api';
+import {
+  useBackstop,
+  usePool,
+  usePoolEmissions,
+  usePoolMeta,
+  usePoolOracle,
+  useTokenMetadata,
+} from '../../hooks/api';
 import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
@@ -11,14 +18,23 @@ import { Skeleton } from '../common/Skeleton';
 
 export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { data: pool } = usePool(poolId);
+
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: backstop } = useBackstop();
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: poolEmissions } = usePoolEmissions(pool);
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
-
-  const emissionsPerAsset = reserve?.emissionsPerYearPerBorrowedAsset();
+  const reserveEmissions = poolEmissions?.find((e) => e.assetId === assetId);
+  const emissionsPerAsset =
+    reserveEmissions?.borrowEmissions !== undefined && reserve
+      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+          reserve.totalLiabilities(),
+          reserve.config.decimals
+        )
+      : 0;
   const emissionApr =
     backstop && emissionsPerAsset && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)

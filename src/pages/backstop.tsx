@@ -23,33 +23,35 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
+import { NotPoolBar } from '../components/pool/NotPoolBar';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
-import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import {
   useBackstop,
   useBackstopPool,
   useBackstopPoolUser,
   useHorizonAccount,
+  usePoolMeta,
   useSimulateOperation,
   useTokenBalance,
 } from '../hooks/api';
+import { NOT_BLEND_POOL_ERROR_MESSAGE } from '../hooks/types';
 import theme from '../theme';
 import { CometClient } from '../utils/comet';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { version } = useSettings();
   const { connected, walletAddress, backstopClaim, restore } = useWallet();
 
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const { data: backstop } = useBackstop();
-  const { data: backstopPoolData } = useBackstopPool(safePoolId);
-  const { data: userBackstopPoolData } = useBackstopPoolUser(safePoolId);
+  const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: backstopPoolData } = useBackstopPool(poolMeta);
+  const { data: userBackstopPoolData } = useBackstopPoolUser(poolMeta);
   const { data: horizonAccount } = useHorizonAccount();
   const { data: lpBalance } = useTokenBalance(
     backstop?.backstopToken?.id ?? '',
@@ -126,13 +128,13 @@ const Backstop: NextPage = () => {
       : undefined;
 
   const handleClaimEmissionsClick = async () => {
-    if (connected && userBackstopPoolData) {
+    if (connected && poolMeta && userBackstopPoolData) {
       let claimArgs: BackstopClaimArgs = {
         from: walletAddress,
         pool_addresses: [safePoolId],
         to: walletAddress,
       };
-      await backstopClaim(claimArgs, false);
+      await backstopClaim(poolMeta, claimArgs, false);
       refetchClaimSim();
       refetchMintSim();
     }
@@ -144,6 +146,10 @@ const Backstop: NextPage = () => {
       refetchClaimSim();
     }
   };
+
+  if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
+    return <NotPoolBar poolId={safePoolId} />;
+  }
 
   return (
     <>
@@ -344,7 +350,7 @@ const Backstop: NextPage = () => {
             </LinkBox>
             <LinkBox
               sx={{ width: SectionSize.TILE }}
-              to={{ pathname: '/backstop-deposit', query: { poolId: poolId, version } }}
+              to={{ pathname: '/backstop-deposit', query: { poolId: poolId } }}
             >
               <OpaqueButton palette={theme.palette.backstop} sx={{ width: '100%', padding: '6px' }}>
                 Backstop Deposit
@@ -401,7 +407,7 @@ const Backstop: NextPage = () => {
           </Row>
           <LinkBox
             sx={{ width: '100%', paddingRight: '12px' }}
-            to={{ pathname: 'backstop-q4w', query: { poolId: poolId, version } }}
+            to={{ pathname: 'backstop-q4w', query: { poolId: poolId } }}
           >
             <OpaqueButton
               palette={theme.palette.positive}

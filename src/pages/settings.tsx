@@ -8,19 +8,20 @@ import { Row } from '../components/common/Row';
 import { TrackedPool } from '../components/pool/TrackedPool';
 import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
-import { usePool } from '../hooks/api';
+import { usePoolMeta } from '../hooks/api';
 import theme from '../theme';
 
 export default function SettingsPage() {
   const { getNetworkDetails, walletId } = useWallet();
-  const { network, setNetwork, trackPool, untrackPool, trackedPools, version } = useSettings();
+  const { network, setNetwork, trackPool, untrackPool, trackedPools } = useSettings();
 
   const [newNetworkRPCUrl, setNewNetworkRPCUrl] = useState<string>('');
   const [newHorizonUrl, setNewHorizonUrl] = useState<string>('');
   const [newOpts, setNewOpts] = useState<rpc.Server.Options | undefined>(undefined);
   const [poolToAdd, setPoolToAdd] = useState<string>('');
   const [poolIdError, setPoolIdError] = useState('');
-  const { data: pool } = usePool(poolToAdd, poolToAdd.length > 0);
+
+  const { data: poolMeta } = usePoolMeta(poolToAdd, poolToAdd.length > 0);
 
   function fetchFromWallet() {
     getNetworkDetails().then((networkDetails) => {
@@ -50,8 +51,8 @@ export default function SettingsPage() {
   }
 
   function handleAddTrackedPool(poolId: string) {
-    if (pool && pool.id === poolId) {
-      trackPool(pool.id, pool.metadata.name, version);
+    if (poolMeta && poolMeta.id === poolId) {
+      trackPool(poolMeta);
       setPoolToAdd('');
     } else {
       setPoolIdError('Pool not found.');

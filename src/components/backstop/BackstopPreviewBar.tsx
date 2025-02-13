@@ -2,7 +2,13 @@ import { BackstopPoolEst, BackstopPoolUserEst } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
-import { useBackstop, useBackstopPool, useBackstopPoolUser, usePool } from '../../hooks/api';
+import {
+  useBackstop,
+  useBackstopPool,
+  useBackstopPoolUser,
+  usePool,
+  usePoolMeta,
+} from '../../hooks/api';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { Icon } from '../common/Icon';
@@ -14,13 +20,14 @@ import { StackedText } from '../common/StackedText';
 import { PoolStatusBox } from '../pool/PoolStatusBox';
 
 export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType, version } = useSettings();
+  const { viewType } = useSettings();
   const theme = useTheme();
 
-  const { data: pool } = usePool(poolId);
-  const { data: backstop } = useBackstop();
-  const { data: backstopPoolData } = useBackstopPool(poolId);
-  const { data: backstopUserData } = useBackstopPoolUser(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
+  const { data: backstop } = useBackstop(poolMeta?.version);
+  const { data: backstopPoolData } = useBackstopPool(poolMeta);
+  const { data: backstopUserData } = useBackstopPoolUser(poolMeta);
 
   if (backstop === undefined || backstopPoolData == undefined) {
     return <Skeleton />;
@@ -90,7 +97,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
       </Box>
       <LinkBox
         sx={{ width: viewTypeRegular ? '45%' : '100%', display: 'flex' }}
-        to={{ pathname: '/backstop', query: { poolId: poolId, version } }}
+        to={{ pathname: '/backstop', query: { poolId: poolId } }}
       >
         <CustomButton
           sx={{
