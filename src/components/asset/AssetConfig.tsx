@@ -1,6 +1,6 @@
 import { I128MAX, ReserveConfigV2 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { usePool, usePoolOracle } from '../../hooks/api';
+import { usePool, usePoolMeta, usePoolOracle } from '../../hooks/api';
 import { toBalance } from '../../utils/formatter';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
@@ -11,7 +11,8 @@ import { ReactivityRing } from './AssetReactivityRing';
 
 export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { data: pool } = usePool(poolId);
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);
