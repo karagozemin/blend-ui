@@ -63,30 +63,31 @@ const Asset: NextPage = () => {
       {hasData ? (
         <>
           <Divider />
-          <Row>
+          <Row sx={{ flexWrap: 'wrap' }}>
             <Section
-              width={SectionSize.FULL}
+              width={SectionSize.TILE}
               sx={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 background: theme.palette.background.paper,
+                flex: '1 0 275px',
               }}
             >
               <Typography sx={{ padding: '6px' }}>Status</Typography>
               <AssetStatusBox titleColor="inherit" status={assetStatus} />
             </Section>
-          </Row>
-          <Row>
+
             <Section
-              width={SectionSize.FULL}
+              width={SectionSize.TILE}
               sx={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 background: theme.palette.background.paper,
+                flex: '1 0 275px',
               }}
             >
               <Box
