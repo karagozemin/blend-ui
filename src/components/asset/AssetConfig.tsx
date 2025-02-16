@@ -7,7 +7,7 @@ import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { Skeleton } from '../common/Skeleton';
 import { StackedText } from '../common/StackedText';
-import { ReactivityRing } from './AssetReactivityRing';
+import { ReactivityDisplay } from './AssetReactivityDisplay';
 
 export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
@@ -53,7 +53,7 @@ export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           padding: '12px',
         }}
       >
-        <ReactivityRing
+        <ReactivityDisplay
           reactivity={reserve.config.reactivity}
           sx={{ marginRight: '6px', flex: 1 }}
         />

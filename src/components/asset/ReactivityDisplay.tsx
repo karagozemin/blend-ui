@@ -2,11 +2,11 @@ import { Box, BoxProps, useTheme } from '@mui/material';
 import React from 'react';
 import { StackedText } from '../common/StackedText';
 
-export interface ReactivityRingProps extends BoxProps {
+export interface ReactivityDisplayProps extends BoxProps {
   reactivity: number;
 }
 
-export const ReactivityRing: React.FC<ReactivityRingProps> = ({ reactivity, sx }) => {
+export const ReactivityDisplay: React.FC<ReactivityDisplayProps> = ({ reactivity, sx }) => {
   const theme = useTheme();
 
   let reactivityLevel = 'None';
@@ -42,7 +42,7 @@ export const ReactivityRing: React.FC<ReactivityRingProps> = ({ reactivity, sx }
         text={reactivityLevel}
         textColor={getColorByCapacity(reactivity)}
         type="large"
-        tooltip="The reactivity constant dictates how quickly interest rates react to utilization."
+        tooltip="The reactivity value dictates how quickly the rate modifier changes. The rate modifier increases when utilization is above target, and decreases when utilization is below target."
       />
     </Box>
   );
