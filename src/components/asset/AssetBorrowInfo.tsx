@@ -1,4 +1,5 @@
 import { Circle } from '@mui/icons-material';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import {
   useBackstop,
@@ -135,15 +136,17 @@ export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
           <OpaqueButton
             palette={theme.palette.borrow}
             sx={{
+              display: 'flex',
               width: '100%',
+              height: '100%',
               alignItems: 'center',
-              justifyContent: 'center',
-
+              justifyContent: 'space-between',
               margin: '6px',
-              fontSize: '24px',
+              padding: '12px 16px 12px 16px',
             }}
           >
             Borrow
+            <ArrowForwardIcon fontSize="inherit" />
           </OpaqueButton>
         </Row>
       </LinkBox>

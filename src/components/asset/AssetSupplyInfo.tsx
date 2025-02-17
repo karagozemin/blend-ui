@@ -1,4 +1,5 @@
 import { Circle } from '@mui/icons-material';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import {
   useBackstop,
@@ -124,21 +125,24 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
             </Box>
           </Row>
           <LinkBox
-            sx={{ width: '100%' }}
+            sx={{ width: '100%', height: '100%' }}
             to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId } }}
           >
             <Row>
               <OpaqueButton
                 palette={theme.palette.lend}
                 sx={{
+                  display: 'flex',
                   width: '100%',
+                  height: '100%',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justifyContent: 'space-between',
                   margin: '6px',
-                  fontSize: '24px',
+                  padding: '12px 16px 12px 16px',
                 }}
               >
                 Supply
+                <ArrowForwardIcon fontSize="inherit" />
               </OpaqueButton>
             </Row>
           </LinkBox>
