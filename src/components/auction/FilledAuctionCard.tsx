@@ -48,9 +48,6 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
         }}
       >
         <Row>
-          <Typography variant="h3" sx={{ margin: '12px' }}>
-            Auction {toCompactAddress(auction.user)}
-          </Typography>
           <Box
             sx={{
               margin: '6px',
@@ -60,6 +57,9 @@ export const FilledAuctionCard: React.FC<FilledAuctionCardProps> = ({ pool, auct
               alignItems: 'center',
             }}
           >
+            <Typography variant="h3" sx={{ marginRight: '12px' }}>
+              Auction {toCompactAddress(auction.user)}
+            </Typography>
             <Box
               sx={{
                 padding: '4px',
