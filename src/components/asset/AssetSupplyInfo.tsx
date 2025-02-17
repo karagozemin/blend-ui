@@ -1,4 +1,5 @@
 import { Circle } from '@mui/icons-material';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import {
   useBackstop,
@@ -11,6 +12,8 @@ import {
 import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
 import { AprDisplay } from '../common/AprDisplay';
+import { LinkBox } from '../common/LinkBox';
+import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -121,6 +124,28 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
               </Typography>
             </Box>
           </Row>
+          <LinkBox
+            sx={{ width: '100%', height: '100%' }}
+            to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId } }}
+          >
+            <Row>
+              <OpaqueButton
+                palette={theme.palette.lend}
+                sx={{
+                  display: 'flex',
+                  width: '100%',
+                  height: '100%',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  margin: '6px',
+                  padding: '12px',
+                }}
+              >
+                Supply
+                <ArrowForwardIcon fontSize="inherit" />
+              </OpaqueButton>
+            </Row>
+          </LinkBox>
         </Section>
       )}
     </>
