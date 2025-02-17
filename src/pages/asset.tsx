@@ -72,7 +72,7 @@ const Asset: NextPage = () => {
         }}
       >
         <Section
-          width={SectionSize.TILE}
+          width={viewType !== ViewType.REGULAR ? SectionSize.FULL : SectionSize.TILE}
           sx={{
             display: 'flex',
             flexDirection: 'row',
@@ -85,9 +85,8 @@ const Asset: NextPage = () => {
           <Typography>Status</Typography>
           <AssetStatusBox titleColor="inherit" status={assetStatus} />
         </Section>
-
         <Section
-          width={SectionSize.TILE}
+          width={viewType !== ViewType.REGULAR ? SectionSize.FULL : SectionSize.TILE}
           sx={{
             display: 'flex',
             flexDirection: 'row',
