@@ -34,12 +34,10 @@ export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const flexView = viewType !== ViewType.REGULAR ? '0 1 43%' : undefined;
 
   return (
-    <Section
-      width={SectionSize.FULL}
-      sx={{ margin: '6px', padding: '6px', display: 'flex', flexDirection: 'column' }}
-    >
-      <Row sx={{ margin: '6px', paddingLeft: '6px' }}>
+    <Section width={SectionSize.FULL} sx={{ display: 'flex', flexDirection: 'column' }}>
+      <Row sx={{ margin: '6px' }}>
         <Typography
+          variant="h3"
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -53,7 +51,7 @@ export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         sx={{
           display: 'flex',
           flexDirection: 'row',
-          padding: '12px',
+          padding: '6px',
           flexWrap: 'wrap',
           rowGap: '12px',
         }}

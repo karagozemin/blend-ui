@@ -1,6 +1,6 @@
 import { ReserveConfigV2 } from '@blend-capital/blend-sdk';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Box, Button, Typography, useTheme } from '@mui/material';
+import { Box, ButtonBase, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { AssetBorrowInfo } from '../components/asset/AssetBorrowInfo';
@@ -51,6 +51,10 @@ const Asset: NextPage = () => {
     return <NotPoolBar poolId={safePoolId} />;
   }
 
+  if (pool === undefined || poolOracle === undefined || reserve === undefined) {
+    return <Skeleton />;
+  }
+
   return (
     <>
       <Row>
@@ -60,141 +64,131 @@ const Asset: NextPage = () => {
       </Row>
       <ReserveExploreBar poolId={safePoolId} assetId={safeAssetId} />
       {symbol === 'USDC' && <AllbridgeButton />}
-      {hasData ? (
-        <>
-          <Divider />
-          <Row sx={{ flexWrap: 'wrap' }}>
-            <Section
-              width={SectionSize.TILE}
+      <Divider />
+      <Row
+        sx={{
+          display: 'flex',
+          flexDirection: viewType !== ViewType.REGULAR ? 'column' : 'row',
+        }}
+      >
+        <Section
+          width={SectionSize.TILE}
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '12px',
+            background: theme.palette.background.paper,
+          }}
+        >
+          <Typography>Status</Typography>
+          <AssetStatusBox titleColor="inherit" status={assetStatus} />
+        </Section>
+
+        <Section
+          width={SectionSize.TILE}
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: theme.palette.background.paper,
+            padding: '12px',
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+            <Typography>Oracle Price</Typography>
+            <ButtonBase
               sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
+                borderRadius: '50%',
+                padding: '6px',
                 alignItems: 'center',
-                background: theme.palette.background.paper,
-                flex: '1 0 275px',
+                color: theme.palette.text.primary,
+                '&:hover': {
+                  background: theme.palette.primary.opaque,
+                  color: theme.palette.primary.main,
+                },
               }}
+              onClick={() =>
+                window.open(
+                  `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${pool.metadata.oracle}`,
+                  '_blank'
+                )
+              }
             >
-              <Typography sx={{ padding: '6px' }}>Status</Typography>
-              <AssetStatusBox titleColor="inherit" status={assetStatus} />
-            </Section>
+              <OpenInNewIcon fontSize="inherit" />
+            </ButtonBase>
+          </Box>
 
-            <Section
-              width={SectionSize.TILE}
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: theme.palette.background.paper,
-                flex: '1 0 275px',
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                }}
-              >
-                <Typography sx={{ padding: '6px' }}>Oracle Price</Typography>
-                <Button
-                  sx={{
-                    alignItems: 'center',
-                    padding: 0,
-                    cursor: 'pointer',
-                    minWidth: '0px',
-                    color: theme.palette.text.primary,
-                  }}
-                  onClick={() =>
-                    window.open(
-                      `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${pool.metadata.oracle}`,
-                      '_blank'
-                    )
-                  }
-                >
-                  <OpenInNewIcon fontSize="inherit" />
-                </Button>
-              </Box>
+          <Typography sx={{ padding: '6px' }}>
+            {`$${poolOracle.getPriceFloat(reserve.assetId)?.toFixed(2) ?? ''}`}
+          </Typography>
+        </Section>
+      </Row>
 
-              <Typography sx={{ padding: '6px' }}>
-                {`$${poolOracle.getPriceFloat(reserve.assetId)?.toFixed(2) ?? ''}`}
-              </Typography>
-            </Section>
-          </Row>
+      <Row
+        sx={{
+          display: 'flex',
+          flexDirection: viewType !== ViewType.REGULAR ? 'column' : 'row',
+        }}
+      >
+        <AssetSupplyInfo poolId={safePoolId} assetId={safeAssetId} />
+        <AssetBorrowInfo poolId={safePoolId} assetId={safeAssetId} />
+      </Row>
 
-          <Row
+      <Section
+        width={SectionSize.FULL}
+        sx={{
+          dislay: 'flex',
+          flexDirection: 'column',
+          display: 'flex',
+          background: theme.palette.background.paper,
+        }}
+      >
+        <Row>
+          <Typography variant="h3" sx={{ color: theme.palette.text.primary, padding: '6px' }}>
+            Interest Rate Model
+          </Typography>
+        </Row>
+        <Row>
+          <InterestGraph poolId={safePoolId} assetId={safeAssetId} reserve={reserve} />
+        </Row>
+        <Row
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            flexFlow: 'row wrap',
+          }}
+        >
+          <StackedTextBox
+            name={'Utilization'}
+            text={toPercentage(reserve.getUtilizationFloat())}
             sx={{
-              display: 'flex',
-              flexDirection: viewType !== ViewType.REGULAR ? 'column' : 'row',
+              flex: 1,
+              border: '1px solid #2775C9',
             }}
-          >
-            <AssetSupplyInfo poolId={safePoolId} assetId={safeAssetId} />
-            <AssetBorrowInfo poolId={safePoolId} assetId={safeAssetId} />
-          </Row>
-
-          <Section
-            width={SectionSize.FULL}
+          />
+          <StackedTextBox
+            name={'Target Utilization'}
+            text={toPercentage(reserve.config.util / 1e7)}
             sx={{
-              dislay: 'flex',
-              flexDirection: 'column',
-              marginBottom: '12px',
-              display: 'flex',
-              background: theme.palette.background.paper,
+              flex: 1,
             }}
-          >
-            <Row sx={{ margin: '4px 4px 4px 6px', paddingLeft: '6px' }}>
-              <Typography variant="h3" sx={{ color: theme.palette.text.primary }}>
-                Interest Rate Model
-              </Typography>
-            </Row>
-            <Row>
-              <InterestGraph poolId={safePoolId} assetId={safeAssetId} reserve={reserve} />
-            </Row>
-            <Row
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'stretch',
-                flexFlow: 'row wrap',
-              }}
-            >
-              <StackedTextBox
-                name={'Utilization'}
-                text={toPercentage(reserve.getUtilizationFloat())}
-                sx={{
-                  flex: 1,
-                  border: '1px solid #2775C9',
-                }}
-              />
-              <StackedTextBox
-                name={'Target Utilization'}
-                text={toPercentage(reserve.config.util / 1e7)}
-                sx={{
-                  flex: 1,
-                }}
-              />
-              <StackedTextBox
-                name={'Max Utilization'}
-                text={toPercentage(reserve.config.max_util / 1e7)}
-                sx={{
-                  flex: 1,
-                }}
-              />
-            </Row>
-          </Section>
-          <Row
+          />
+          <StackedTextBox
+            name={'Max Utilization'}
+            text={toPercentage(reserve.config.max_util / 1e7)}
             sx={{
-              dislay: 'flex',
-              marginBottom: '12px',
-              display: 'flex',
+              flex: 1,
             }}
-          >
-            <AssetConfig poolId={safePoolId} assetId={safeAssetId} />
-          </Row>
-        </>
-      ) : (
-        <Skeleton />
-      )}
+          />
+        </Row>
+      </Section>
+      <Row>
+        <AssetConfig poolId={safePoolId} assetId={safeAssetId} />
+      </Row>
     </>
   );
 };

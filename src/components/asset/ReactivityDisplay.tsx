@@ -10,23 +10,18 @@ export const ReactivityDisplay: React.FC<ReactivityDisplayProps> = ({ reactivity
   const theme = useTheme();
 
   let reactivityLevel = 'None';
-  if (reactivity > 3000) {
+  let reactivityColor = theme.palette.text.disabled;
+  if (reactivity > 200) {
     reactivityLevel = 'High';
-  } else if (reactivity > 2000) {
+    reactivityColor = theme.palette.error.main;
+  } else if (reactivity > 100) {
     reactivityLevel = 'Medium';
-  } else {
+    reactivityColor = theme.palette.warning.main;
+  } else if (reactivity > 0) {
     reactivityLevel = 'Low';
+    reactivityColor = theme.palette.primary.main;
   }
 
-  function getColorByCapacity(capacity: number) {
-    if (capacity > 3000) {
-      return theme.palette.error.main;
-    } else if (capacity > 2000) {
-      return theme.palette.warning.main;
-    } else {
-      return theme.palette.primary.main;
-    }
-  }
   return (
     <Box
       sx={{
@@ -40,9 +35,9 @@ export const ReactivityDisplay: React.FC<ReactivityDisplayProps> = ({ reactivity
       <StackedText
         title="Reactivity"
         text={reactivityLevel}
-        textColor={getColorByCapacity(reactivity)}
+        textColor={reactivityColor}
         type="large"
-        tooltip="The reactivity value dictates how quickly the rate modifier changes. The rate modifier increases when utilization is above target, and decreases when utilization is below target."
+        tooltip={`The reactivity value (${reactivity}) dictates how quickly the rate modifier changes. The rate modifier increases when utilization is above target, and decreases when utilization is below target.`}
       />
     </Box>
   );

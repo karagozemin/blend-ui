@@ -138,7 +138,7 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   margin: '6px',
-                  padding: '12px 16px 12px 16px',
+                  padding: '12px',
                 }}
               >
                 Supply
