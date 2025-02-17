@@ -139,7 +139,6 @@ export const OngoingAuctionCardCollapse: React.FC<OngoingAuctionCardExpandedProp
       ],
     };
 
-    // if (fillPercent) {
     let response = await poolSubmit(
       { id: pool.id, version: pool.version, ...pool.metadata },
       submitArgs,
@@ -155,7 +154,6 @@ export const OngoingAuctionCardCollapse: React.FC<OngoingAuctionCardExpandedProp
     }
     setLoadingEstimate(false);
     return response;
-    // }
   };
 
   useDebouncedState(fillPercent, RPC_DEBOUNCE_DELAY, txType, async () => {
