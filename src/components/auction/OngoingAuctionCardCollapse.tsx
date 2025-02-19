@@ -113,7 +113,9 @@ export const OngoingAuctionCardCollapse: React.FC<OngoingAuctionCardExpandedProp
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (!connected || !expanded) return;
-    let requestType: RequestType;
+
+    // Default to interest auction for compiler
+    let requestType: RequestType = RequestType.FillInterestAuction;
     switch (auction.type) {
       case AuctionType.Interest:
         requestType = RequestType.FillInterestAuction;
