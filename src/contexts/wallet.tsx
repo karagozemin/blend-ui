@@ -15,6 +15,7 @@ import {
 import {
   AlbedoModule,
   FreighterModule,
+  HanaModule,
   ISupportedWallet,
   LobstrModule,
   StellarWalletsKit,
@@ -138,6 +139,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
     new FreighterModule(),
     new LobstrModule(),
     new AlbedoModule(),
+    new HanaModule(),
     new LedgerModule(),
     new WalletConnectModule({
       url: process.env.NEXT_PUBLIC_WALLET_CONNECT_URL ?? '',
@@ -229,8 +231,8 @@ export const WalletProvider = ({ children = null as any }) => {
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
           walletKit.setWallet(option.id);
-          setAutoConnect(option.id);
           let result = await handleSetWalletAddress();
+          setAutoConnect(option.id);
           handleSuccess(result);
         },
       });
