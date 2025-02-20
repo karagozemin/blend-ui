@@ -1,6 +1,6 @@
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { Box, Input, Typography } from '@mui/material';
-import { rpc } from '@stellar/stellar-sdk';
+import { Horizon, rpc } from '@stellar/stellar-sdk';
 import { useEffect, useState } from 'react';
 import { Divider } from '../components/common/Divider';
 import { OpaqueButton } from '../components/common/OpaqueButton';
@@ -13,10 +13,16 @@ import theme from '../theme';
 
 export default function SettingsPage() {
   const { getNetworkDetails, walletId } = useWallet();
-  const { network, setNetwork, trackPool, untrackPool, trackedPools } = useSettings();
+  const { network, setNetwork, setDefaultNetwork, trackPool, untrackPool, trackedPools } =
+    useSettings();
 
   const [newNetworkRPCUrl, setNewNetworkRPCUrl] = useState<string>('');
   const [newHorizonUrl, setNewHorizonUrl] = useState<string>('');
+  const [safeRpcUrl, setSafeRpcUrl] = useState<string>('');
+  const [safeHorizonUrl, setSafeHorizonUrl] = useState<string>('');
+  const [canUpdateNetwork, setCanUpdateNetwork] = useState(false);
+  const [updateNetworkMessage, setUpdateNetworkMessage] = useState<string>('');
+  const [loadingNewNetwork, setLoadingNewNetwork] = useState(false);
   const [newOpts, setNewOpts] = useState<rpc.Server.Options | undefined>(undefined);
   const [poolToAdd, setPoolToAdd] = useState<string>('');
   const [poolIdError, setPoolIdError] = useState('');
@@ -33,20 +39,17 @@ export default function SettingsPage() {
   }
 
   function handleUpdateNetworkClick() {
-    if (newNetworkRPCUrl && newHorizonUrl) {
-      setNetwork(newNetworkRPCUrl, newHorizonUrl, newOpts);
+    if (safeRpcUrl && safeHorizonUrl) {
+      setNetwork(safeRpcUrl, safeHorizonUrl, newOpts);
       setNewHorizonUrl('');
       setNewNetworkRPCUrl('');
+      setLoadingNewNetwork(false);
+      setCanUpdateNetwork(false);
       setNewOpts(undefined);
     }
   }
 
   function handleChangeRpcUrl(rpcUrl: string) {
-    if (rpcUrl.startsWith('http://')) {
-      setNewOpts({ allowHttp: true });
-    } else {
-      setNewOpts(undefined);
-    }
     setNewNetworkRPCUrl(rpcUrl);
   }
 
@@ -62,6 +65,7 @@ export default function SettingsPage() {
   function handleChangePoolToAdd(poolId: string) {
     setPoolToAdd(poolId);
   }
+
   const validatePoolId = (poolId: string) => {
     const safePoolId =
       typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : undefined;
@@ -82,6 +86,68 @@ export default function SettingsPage() {
     }
   };
 
+  const validateURLInputs = async (rpcUrl: string, horizonUrl: string) => {
+    setLoadingNewNetwork(true);
+    if (rpcUrl === '' || horizonUrl === '') {
+      setCanUpdateNetwork(false);
+      setUpdateNetworkMessage('');
+      setLoadingNewNetwork(false);
+      return;
+    }
+    let opts = undefined;
+    if (rpcUrl.startsWith('http://')) {
+      opts = { allowHttp: true };
+    }
+
+    // validate RPC URL
+    let sanitizedRpcUrl = rpcUrl;
+    try {
+      const url = new URL(rpcUrl);
+      sanitizedRpcUrl = url.toString();
+      const rpcServer = new rpc.Server(sanitizedRpcUrl, opts);
+      const defaultInfo = await rpcServer.getNetwork();
+      if (defaultInfo.passphrase !== network.passphrase) {
+        setCanUpdateNetwork(false);
+        setUpdateNetworkMessage('The RPC server does not use the same network.');
+        setLoadingNewNetwork(false);
+        return;
+      }
+    } catch (e) {
+      setCanUpdateNetwork(false);
+      setUpdateNetworkMessage('Failed to validate RPC URL.');
+      setLoadingNewNetwork(false);
+      return;
+    }
+
+    // validate Horizon URL
+    let sanitizedHorizonUrl = horizonUrl;
+    try {
+      const url = new URL(horizonUrl);
+      sanitizedHorizonUrl = url.toString();
+      const horizonServer = new Horizon.Server(sanitizedHorizonUrl, opts);
+      const defaultInfo = await horizonServer.root();
+      if (defaultInfo.network_passphrase !== network.passphrase) {
+        setCanUpdateNetwork(false);
+        setUpdateNetworkMessage('The Horizon server does not use the same network.');
+        setLoadingNewNetwork(false);
+        return;
+      }
+    } catch (e) {
+      setCanUpdateNetwork(false);
+      setUpdateNetworkMessage('Failed to validate Horizon URL.');
+      setLoadingNewNetwork(false);
+      return;
+    }
+
+    // both URLs valid
+    setNewOpts(opts);
+    setSafeRpcUrl(sanitizedRpcUrl);
+    setSafeHorizonUrl(sanitizedHorizonUrl);
+    setCanUpdateNetwork(true);
+    setUpdateNetworkMessage('');
+    setLoadingNewNetwork(false);
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       validatePoolId(poolToAdd);
@@ -91,6 +157,16 @@ export default function SettingsPage() {
       clearTimeout(handler);
     };
   }, [poolToAdd, trackedPools]);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      await validateURLInputs(newNetworkRPCUrl, newHorizonUrl);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [newNetworkRPCUrl, newHorizonUrl]);
 
   return (
     <>
@@ -110,6 +186,16 @@ export default function SettingsPage() {
             <Typography variant="h4" sx={{ color: theme.palette.text.secondary }}>
               {network.horizonUrl}
             </Typography>
+            {(network.rpc !== process.env.NEXT_PUBLIC_RPC_URL ||
+              network.horizonUrl !== process.env.NEXT_PUBLIC_HORIZON_URL) && (
+              <OpaqueButton
+                sx={{ width: '20rem', margin: 'auto' }}
+                palette={theme.palette.warning}
+                onClick={setDefaultNetwork}
+              >
+                Use Default Network
+              </OpaqueButton>
+            )}
           </Row>
         )}
         <Divider />
@@ -152,12 +238,18 @@ export default function SettingsPage() {
                 Fetch from Wallet
               </OpaqueButton>
             )}
+            {!canUpdateNetwork && updateNetworkMessage !== '' && (
+              <Typography variant="body2" color="error">
+                {updateNetworkMessage}
+              </Typography>
+            )}
             <OpaqueButton
               sx={{ width: '20rem', margin: 'auto' }}
               palette={theme.palette.primary}
               onClick={handleUpdateNetworkClick}
+              disabled={!canUpdateNetwork || loadingNewNetwork}
             >
-              Update
+              {loadingNewNetwork ? 'Loading...' : 'Update Network'}
             </OpaqueButton>
           </Row>
         </Row>

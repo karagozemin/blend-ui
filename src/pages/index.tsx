@@ -15,16 +15,17 @@ const Markets: NextPage = () => {
   const { blockedPools, isV2Enabled, lastPool } = useSettings();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [version, setVersion] = useState(
-    isV2Enabled && lastPool?.version ? lastPool?.version : Version.V1
-  );
+  const [version, setVersion] = useState<Version | undefined>(undefined);
+
   const { data: backstop } = useBackstop(version);
 
   useEffect(() => {
     if (isV2Enabled && lastPool?.version) {
       setVersion(lastPool.version);
+    } else {
+      setVersion(Version.V1);
     }
-  }, [lastPool]);
+  }, [isV2Enabled, lastPool]);
 
   const rewardZone = [...(backstop?.config?.rewardZone ?? [])].reverse();
   const safeRewardZone = rewardZone.filter((poolId) => !blockedPools.includes(poolId));
@@ -41,12 +42,11 @@ const Markets: NextPage = () => {
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
           Markets
         </SectionBase>
-
-        {isV2Enabled && (
+        {isV2Enabled && version !== undefined && (
           <ToggleSlider
             options={[
-              { optionName: 'V1', palette: theme.palette.primary },
-              { optionName: 'V2', palette: theme.palette.backstop },
+              { optionName: Version.V1, palette: theme.palette.primary },
+              { optionName: Version.V2, palette: theme.palette.backstop },
             ]}
             selected={version}
             changeState={setVersion}
