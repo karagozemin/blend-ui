@@ -27,19 +27,28 @@ export function calculateAuctionOracleProfit(
   let totalBidValue = 0;
 
   for (const [asset, amount] of Array.from(auction.lot.entries())) {
+    let reserve = pool.reserves.get(asset);
+    let price = oracle.getPriceFloat(asset);
     switch (type) {
       case AuctionType.BadDebt:
         const lotValue = FixedMath.toFloat(amount, 7) * backstopToken.lpTokenPrice;
         lot.set(asset, lotValue);
         totalLotValue += lotValue;
         break;
-      default:
-        const reserve = pool.reserves.get(asset);
-        const price = oracle.getPriceFloat(asset);
+      case AuctionType.Interest:
         if (reserve === undefined || price === undefined) {
           return undefined;
         } else {
-          const lotValue = reserve.toAssetFromDTokenFloat(amount) * price;
+          const lotValue = FixedMath.toFloat(amount, reserve.config.decimals) * price;
+          lot.set(asset, lotValue);
+          totalLotValue += lotValue;
+        }
+        break;
+      case AuctionType.Liquidation:
+        if (reserve === undefined || price === undefined) {
+          return undefined;
+        } else {
+          const lotValue = reserve.toAssetFromBTokenFloat(amount) * price;
           lot.set(asset, lotValue);
           totalLotValue += lotValue;
         }
