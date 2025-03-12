@@ -13,7 +13,7 @@ import { WalletMenu } from './WalletMenu';
 export const NavBar = () => {
   const { viewType, lastPool } = useSettings();
 
-  const { data: backstop } = useBackstop(Version.V1);
+  const { data: backstop } = useBackstop(Version.V1, lastPool == undefined);
   const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
 
   return (
