@@ -3,11 +3,14 @@ import {
   BackstopContractV1,
   BackstopPoolEst,
   BackstopPoolUserEst,
+  ContractErrorType,
   FixedMath,
+  parseError,
   parseResult,
+  Version,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Typography } from '@mui/material';
+import { Box, Tooltip, Typography } from '@mui/material';
 import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
@@ -23,9 +26,11 @@ import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
+import { TooltipText } from '../components/common/TooltipText';
 import { NotPoolBar } from '../components/pool/NotPoolBar';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { PoolHealthBanner } from '../components/pool/PoolHealthBanner';
+import { useSettings } from '../contexts/settings';
 import { useWallet } from '../contexts/wallet';
 import {
   useBackstop,
@@ -43,6 +48,7 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
+  const { network } = useSettings();
   const { connected, walletAddress, backstopClaim, restore } = useWallet();
 
   const { poolId } = router.query;
@@ -95,6 +101,10 @@ const Backstop: NextPage = () => {
     isClaimLoading === false &&
     claimSimResult !== undefined &&
     rpc.Api.isSimulationRestore(claimSimResult);
+  const isError =
+    isClaimLoading === false &&
+    claimSimResult !== undefined &&
+    rpc.Api.isSimulationError(claimSimResult);
 
   const cometContract =
     backstop !== undefined ? new CometClient(backstop.backstopToken.id) : undefined;
@@ -137,6 +147,138 @@ const Backstop: NextPage = () => {
       await backstopClaim(poolMeta, claimArgs, false);
       refetchClaimSim();
       refetchMintSim();
+    }
+  };
+
+  const renderClaimButton = () => {
+    if (
+      !isRestore &&
+      !isError &&
+      (poolMeta?.version !== Version.V2 ||
+        network.passphrase !== 'Public Global Stellar Network ; September 2015')
+    )
+      return (
+        <CustomButton
+          sx={{
+            width: '100%',
+            margin: '6px',
+            padding: '12px',
+            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.background.default,
+            '&:hover': {
+              color: theme.palette.primary.main,
+            },
+          }}
+          onClick={handleClaimEmissionsClick}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+            <FlameIcon />
+            <Icon
+              src={`/icons/tokens/blndusdclp.svg`}
+              alt={`blndusdclp`}
+              sx={{ height: '30px', width: '30px', marginRight: '12px' }}
+            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                  {toBalance(lpTokenEmissions, 7)}
+                </Typography>
+                <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                  BLND-USDC LP
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                {`$${toBalance(backstopClaimUSD)}`}
+              </Typography>
+            </Box>
+          </Box>
+          <ArrowForwardIcon fontSize="inherit" />
+        </CustomButton>
+      );
+    else {
+      let disabled = false;
+      let buttonText = '';
+      let buttonTooltip = undefined;
+      let onClick = undefined;
+      if (isRestore) {
+        buttonText = 'Restore Data';
+        onClick = handleRestore;
+      } else if (
+        poolMeta?.version === Version.V2 &&
+        network.passphrase === 'Public Global Stellar Network ; September 2015'
+      ) {
+        buttonText = 'V2 Claim Disabled';
+        buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
+        disabled = true;
+      } else if (isError) {
+        const claimError = parseError(claimSimResult);
+        buttonText = 'Error checking claim';
+        buttonTooltip = 'Erorr while checking claim amount: ' + ContractErrorType[claimError.type];
+        disabled = true;
+      }
+      return (
+        <Tooltip
+          title={buttonTooltip}
+          placement="top-start"
+          enterTouchDelay={0}
+          enterDelay={500}
+          leaveTouchDelay={3000}
+        >
+          <Box sx={{ width: '100%' }}>
+            <CustomButton
+              sx={{
+                width: '100%',
+                padding: '12px',
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.default,
+                '&:hover': {
+                  color: theme.palette.primary.main,
+                },
+              }}
+              disabled={disabled}
+              onClick={handleClaimEmissionsClick}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <Box
+                  sx={{
+                    borderRadius: '50%',
+                    backgroundColor: theme.palette.warning.opaque,
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Icon
+                    alt="BLND Token Icon"
+                    src="/icons/tokens/blnd-yellow.svg"
+                    height="24px"
+                    width="18px"
+                    isCircle={false}
+                  />
+                </Box>
+                <TooltipText
+                  tooltip={buttonTooltip ?? ''}
+                  width="auto"
+                  textVariant="body1"
+                  textColor={'inherit'}
+                >
+                  {buttonText}
+                </TooltipText>
+              </Box>
+              <ArrowForwardIcon fontSize="inherit" />
+            </CustomButton>
+          </Box>
+        </Tooltip>
+      );
     }
   };
 
@@ -249,44 +391,7 @@ const Backstop: NextPage = () => {
             <Typography variant="body2" sx={{ margin: '6px' }}>
               Emissions to claim
             </Typography>
-            <Row>
-              <CustomButton
-                sx={{
-                  width: '100%',
-                  margin: '6px',
-                  padding: '12px',
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.background.default,
-                  '&:hover': {
-                    color: theme.palette.primary.main,
-                  },
-                }}
-                onClick={handleClaimEmissionsClick}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                  <FlameIcon />
-                  <Icon
-                    src={`/icons/tokens/blndusdclp.svg`}
-                    alt={`blndusdclp`}
-                    sx={{ height: '30px', width: '30px', marginRight: '12px' }}
-                  />
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                      <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                        {toBalance(lpTokenEmissions, 7)}
-                      </Typography>
-                      <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                        BLND-USDC LP
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                      {`$${toBalance(backstopClaimUSD)}`}
-                    </Typography>
-                  </Box>
-                </Box>
-                <ArrowForwardIcon fontSize="inherit" />
-              </CustomButton>
-            </Row>
+            <Row>{renderClaimButton()}</Row>
           </Section>
         </Row>
       )}
