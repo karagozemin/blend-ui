@@ -4,7 +4,6 @@ import {
   PoolClaimArgs,
   PoolContractV1,
   PositionsEstimate,
-  Version,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
@@ -75,7 +74,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const userEst = poolOracle
     ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions)
     : undefined;
-
+  console.log(emissions);
   const handleSubmitTransaction = async () => {
     if (connected && poolMeta && userPoolData) {
       if (claimedTokens.length > 0) {
@@ -105,7 +104,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (hasBLNDTrustline && !isRestore && !isError && poolMeta?.version !== Version.V2) {
+    if (hasBLNDTrustline && !isRestore && !isError) {
       return (
         <CustomButton
           sx={{
@@ -143,10 +142,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
-      } else if (poolMeta?.version === Version.V2) {
-        buttonText = 'V2 Claim Disabled';
-        buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
-        disabled = true;
       } else if (isError) {
         const claimError = parseError(simResult);
         buttonText = 'Error checking claim';
