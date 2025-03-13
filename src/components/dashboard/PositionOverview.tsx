@@ -4,6 +4,7 @@ import {
   PoolClaimArgs,
   PoolContractV1,
   PositionsEstimate,
+  Version,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, useTheme } from '@mui/material';
@@ -32,7 +33,7 @@ import { StackedText } from '../common/StackedText';
 import { BorrowCapRing } from './BorrowCapRing';
 
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType } = useSettings();
+  const { viewType, network } = useSettings();
   const theme = useTheme();
   const { connected, walletAddress, poolClaim, createTrustlines, restore } = useWallet();
 
@@ -74,7 +75,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const userEst = poolOracle
     ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions)
     : undefined;
-  console.log(emissions);
   const handleSubmitTransaction = async () => {
     if (connected && poolMeta && userPoolData) {
       if (claimedTokens.length > 0) {
@@ -104,7 +104,13 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (hasBLNDTrustline && !isRestore && !isError) {
+    if (
+      hasBLNDTrustline &&
+      !isRestore &&
+      !isError &&
+      (poolMeta?.version !== Version.V2 ||
+        network.passphrase !== 'Public Global Stellar Network ; September 2015')
+    ) {
       return (
         <CustomButton
           sx={{
@@ -142,6 +148,13 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
+      } else if (
+        poolMeta?.version === Version.V2 &&
+        network.passphrase === 'Public Global Stellar Network ; September 2015'
+      ) {
+        buttonText = 'V2 Claim Disabled';
+        buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
+        disabled = true;
       } else if (isError) {
         const claimError = parseError(simResult);
         buttonText = 'Error checking claim';
