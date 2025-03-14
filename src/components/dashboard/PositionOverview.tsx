@@ -8,7 +8,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, Tooltip, useTheme } from '@mui/material';
-import { rpc } from '@stellar/stellar-sdk';
+import { Networks, rpc } from '@stellar/stellar-sdk';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import {
@@ -108,8 +108,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       hasBLNDTrustline &&
       !isRestore &&
       !isError &&
-      (poolMeta?.version !== Version.V2 ||
-        network.passphrase !== 'Public Global Stellar Network ; September 2015')
+      (poolMeta?.version !== Version.V2 || network.passphrase !== Networks.PUBLIC)
     ) {
       return (
         <CustomButton
@@ -148,10 +147,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
-      } else if (
-        poolMeta?.version === Version.V2 &&
-        network.passphrase === 'Public Global Stellar Network ; September 2015'
-      ) {
+      } else if (poolMeta?.version === Version.V2 && network.passphrase === Networks.PUBLIC) {
         buttonText = 'V2 Claim Disabled';
         buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;

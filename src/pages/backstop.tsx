@@ -11,7 +11,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { Networks, rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { BackstopAPR } from '../components/backstop/BackstopAPR';
@@ -154,8 +154,7 @@ const Backstop: NextPage = () => {
     if (
       !isRestore &&
       !isError &&
-      (poolMeta?.version !== Version.V2 ||
-        network.passphrase !== 'Public Global Stellar Network ; September 2015')
+      (poolMeta?.version !== Version.V2 || network.passphrase !== Networks.PUBLIC)
     )
       return (
         <CustomButton
@@ -203,10 +202,7 @@ const Backstop: NextPage = () => {
       if (isRestore) {
         buttonText = 'Restore Data';
         onClick = handleRestore;
-      } else if (
-        poolMeta?.version === Version.V2 &&
-        network.passphrase === 'Public Global Stellar Network ; September 2015'
-      ) {
+      } else if (poolMeta?.version === Version.V2 && network.passphrase === Networks.PUBLIC) {
         buttonText = 'V2 Claim Disabled';
         buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;
