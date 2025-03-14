@@ -7,8 +7,8 @@ import {
   Version,
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, SxProps, Theme, useTheme } from '@mui/material';
-import { rpc } from '@stellar/stellar-sdk';
+import { Box, SxProps, Theme, Tooltip, useTheme } from '@mui/material';
+import { Networks, rpc } from '@stellar/stellar-sdk';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import {
@@ -33,7 +33,7 @@ import { StackedText } from '../common/StackedText';
 import { BorrowCapRing } from './BorrowCapRing';
 
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType } = useSettings();
+  const { viewType, network } = useSettings();
   const theme = useTheme();
   const { connected, walletAddress, poolClaim, createTrustlines, restore } = useWallet();
 
@@ -75,7 +75,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const userEst = poolOracle
     ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions)
     : undefined;
-
   const handleSubmitTransaction = async () => {
     if (connected && poolMeta && userPoolData) {
       if (claimedTokens.length > 0) {
@@ -105,7 +104,12 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (hasBLNDTrustline && !isRestore && !isError && poolMeta?.version !== Version.V2) {
+    if (
+      hasBLNDTrustline &&
+      !isRestore &&
+      !isError &&
+      (poolMeta?.version !== Version.V2 || network.passphrase !== Networks.PUBLIC)
+    ) {
       return (
         <CustomButton
           sx={{
@@ -143,7 +147,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
-      } else if (poolMeta?.version === Version.V2) {
+      } else if (poolMeta?.version === Version.V2 && network.passphrase === Networks.PUBLIC) {
         buttonText = 'V2 Claim Disabled';
         buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;
@@ -154,57 +158,67 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
         disabled = true;
       }
       return (
-        <CustomButton
-          sx={{
-            width: '100%',
-            padding: '12px',
-            color: theme.palette.text.primary,
-            backgroundColor: theme.palette.background.paper,
-            '&:hover': {
-              color: theme.palette.warning.main,
-            },
-          }}
-          disabled={disabled}
-          onClick={onClick}
+        <Tooltip
+          title={buttonTooltip}
+          placement="top-start"
+          enterTouchDelay={0}
+          enterDelay={500}
+          leaveTouchDelay={3000}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              gap: '12px',
-            }}
-          >
-            <Box
+          <Box sx={{ width: '100%' }}>
+            <CustomButton
               sx={{
-                borderRadius: '50%',
-                backgroundColor: theme.palette.warning.opaque,
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
+                width: '100%',
+                padding: '12px',
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.paper,
+                '&:hover': {
+                  color: theme.palette.warning.main,
+                },
               }}
+              disabled={disabled}
+              onClick={onClick}
             >
-              <Icon
-                alt="BLND Token Icon"
-                src="/icons/tokens/blnd-yellow.svg"
-                height="24px"
-                width="18px"
-                isCircle={false}
-              />
-            </Box>
-            <StackedText
-              title="Claim Pool Emissions"
-              titleColor="inherit"
-              text={buttonText}
-              textColor="inherit"
-              type="large"
-              tooltip={buttonTooltip}
-            />
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <Box
+                  sx={{
+                    borderRadius: '50%',
+                    backgroundColor: theme.palette.warning.opaque,
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Icon
+                    alt="BLND Token Icon"
+                    src="/icons/tokens/blnd-yellow.svg"
+                    height="24px"
+                    width="18px"
+                    isCircle={false}
+                  />
+                </Box>
+                <StackedText
+                  title="Claim Pool Emissions"
+                  titleColor="inherit"
+                  text={buttonText}
+                  textColor="inherit"
+                  type="large"
+                  tooltip={buttonTooltip}
+                />
+              </Box>
+              <ArrowForwardIcon fontSize="inherit" />
+            </CustomButton>
           </Box>
-          <ArrowForwardIcon fontSize="inherit" />
-        </CustomButton>
+        </Tooltip>
       );
     }
   }

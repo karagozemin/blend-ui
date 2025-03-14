@@ -5,6 +5,7 @@ import {
   BackstopPoolV1,
   BackstopPoolV2,
   ErrorTypes,
+  getOracleDecimals,
   Network,
   Pool,
   PoolEvent,
@@ -42,6 +43,7 @@ import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';
+import { getOraclePrices } from '../utils/stellar_rpc';
 import { ReserveTokenMetadata } from '../utils/token';
 import { NOT_BLEND_POOL_ERROR_MESSAGE, PoolMeta } from './types';
 
@@ -49,6 +51,7 @@ const DEFAULT_STALE_TIME = 30 * 1000;
 const USER_STALE_TIME = 60 * 1000;
 const BACKSTOP_ID = process.env.NEXT_PUBLIC_BACKSTOP || '';
 const BACKSTOP_ID_V2 = process.env.NEXT_PUBLIC_BACKSTOP_V2 || '';
+const ORACLE_PRICE_FETCHER = process.env.NEXT_PUBLIC_ORACLE_PRICE_FETCHER;
 
 //********** Query Client Data **********//
 
@@ -214,17 +217,29 @@ export function usePoolOracle(
   pool: Pool | undefined,
   enabled: boolean = true
 ): UseQueryResult<PoolOracle, Error> {
+  const { network } = useSettings();
   return useQuery({
     staleTime: DEFAULT_STALE_TIME,
     queryKey: ['poolOracle', pool?.id],
     enabled: pool !== undefined && enabled,
-    retry: 2,
-    retryDelay: 1000,
     queryFn: async () => {
       if (pool !== undefined) {
-        return await pool.loadOracle();
+        if (ORACLE_PRICE_FETCHER !== undefined) {
+          const { decimals, latestLedger } = await getOracleDecimals(network, pool.metadata.oracle);
+          const prices = await getOraclePrices(
+            network,
+            ORACLE_PRICE_FETCHER,
+            pool.metadata.oracle,
+            pool.metadata.reserveList
+          );
+          return new PoolOracle(pool.metadata.oracle, prices, decimals, latestLedger);
+        } else {
+          return await pool.loadOracle();
+        }
       }
     },
+    retry: 1,
+    retryDelay: 1000,
   });
 }
 

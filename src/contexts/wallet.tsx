@@ -16,6 +16,7 @@ import {
   AlbedoModule,
   FreighterModule,
   HanaModule,
+  HotWalletModule,
   ISupportedWallet,
   LobstrModule,
   StellarWalletsKit,
@@ -152,6 +153,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
       ],
       network: (process.env.NEXT_PUBLIC_PASSPHRASE ?? WalletNetwork.TESTNET) as WalletNetwork,
     }),
+    new HotWalletModule(),
   ],
 });
 

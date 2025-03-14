@@ -12,7 +12,7 @@ export const NavMenu = () => {
   const theme = useTheme();
   const { viewType, lastPool } = useSettings();
 
-  const { data: backstop } = useBackstop(Version.V1);
+  const { data: backstop } = useBackstop(Version.V1, lastPool == undefined);
   const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
