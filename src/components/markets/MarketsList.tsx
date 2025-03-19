@@ -76,7 +76,7 @@ export const MarketsList: React.FC<MarketListProps> = ({ pool }) => {
               align="center"
               sx={{ width: headerWidth }}
             >
-              APR
+              APY
             </Typography>
           </>
         )}

@@ -10,9 +10,10 @@ import { ReserveComponentProps } from '../common/ReserveComponentProps';
 
 interface InterestGraphProps extends ReserveComponentProps {
   reserve: Reserve;
+  backstopTakeRate: bigint;
 }
 
-export const InterestGraph: React.FC<InterestGraphProps> = ({ reserve }) => {
+export const InterestGraph: React.FC<InterestGraphProps> = ({ reserve, backstopTakeRate }) => {
   const theme = useTheme();
 
   const [showMore, setShowMore] = useState(false);
@@ -36,13 +37,13 @@ export const InterestGraph: React.FC<InterestGraphProps> = ({ reserve }) => {
   dataPoints = [
     ...utilizationRates.map((utilRate) => ({
       util: utilRate,
-      apr: estimateInterestRate(utilRate, currentIRModFloat, reserve),
+      apr: estimateInterestRate(utilRate, currentIRModFloat, reserve, backstopTakeRate),
     })),
   ];
   defaultDataPoints = [
     ...utilizationRates.map((utilRate) => ({
       util: utilRate,
-      apr: estimateInterestRate(utilRate, 1, reserve),
+      apr: estimateInterestRate(utilRate, 1, reserve, backstopTakeRate),
     })),
   ];
   const maxAPR =

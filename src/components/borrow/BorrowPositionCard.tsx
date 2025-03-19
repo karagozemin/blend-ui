@@ -13,10 +13,10 @@ import {
 } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
-import { AprDisplay } from '../common/AprDisplay';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { RateDisplay } from '../common/RateDisplay';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface BorrowPositionCardProps extends PoolComponentProps {
@@ -105,12 +105,12 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
           alignItems: 'center',
         }}
       >
-        <AprDisplay
+        <RateDisplay
           assetSymbol={symbol}
-          assetApr={reserve.borrowApr}
+          assetRate={reserve.estBorrowApy}
           emissionSymbol="BLND"
           emissionApr={emissionApr}
-          isSupply={false}
+          rateType={'charged'}
           direction="vertical"
         />
       </Box>

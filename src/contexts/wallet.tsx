@@ -316,10 +316,20 @@ export const WalletProvider = ({ children = null as any }) => {
       return false;
     }
 
+    curr_time = Date.now();
     let get_tx_response = await stellarRpc.getTransaction(send_tx_response.hash);
-    while (get_tx_response.status === 'NOT_FOUND') {
+    while (get_tx_response.status === 'NOT_FOUND' && Date.now() - curr_time < 30000) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       get_tx_response = await stellarRpc.getTransaction(send_tx_response.hash);
+    }
+
+    if (get_tx_response.status === 'NOT_FOUND') {
+      console.error('Unable to validate transaction success: ', get_tx_response.txHash);
+      setFailureMessage(
+        'The transaction could have been accepted by the network, but we were unable to verify.'
+      );
+      setTxStatus(TxStatus.FAIL);
+      return false;
     }
 
     let hash = transaction.hash().toString('hex');

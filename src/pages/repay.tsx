@@ -1,8 +1,8 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { AprDisplay } from '../components/common/AprDisplay';
 import { GoBackHeader } from '../components/common/GoBackHeader';
+import { RateDisplay } from '../components/common/RateDisplay';
 import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
@@ -104,15 +104,15 @@ const Repay: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Borrow APR"
+            title="Borrow APY"
             text={
               reserve ? (
-                <AprDisplay
+                <RateDisplay
                   assetSymbol={symbol}
-                  assetApr={reserve.borrowApr}
+                  assetRate={reserve.estBorrowApy}
                   emissionSymbol={'BLND'}
                   emissionApr={emissionApr}
-                  isSupply={false}
+                  rateType={'charged'}
                   direction={'horizontal'}
                 />
               ) : (
@@ -120,7 +120,7 @@ const Repay: NextPage = () => {
               )
             }
             sx={{ width: '100%', padding: '6px' }}
-            tooltip="The interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions and is accrued to the borrowed position."
+            tooltip="The estimated compounding interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions, and accrues to the borrowed position automatically."
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
