@@ -13,10 +13,10 @@ import {
   useTokenMetadata,
 } from '../../hooks/api';
 import { estimateEmissionsApr } from '../../utils/math';
-import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { RateDisplay } from '../common/RateDisplay';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
@@ -105,12 +105,12 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <AprDisplay
+            <RateDisplay
               assetSymbol={symbol}
-              assetApr={reserve.borrowApr}
+              assetRate={reserve.estBorrowApy}
               emissionSymbol="BLND"
               emissionApr={emissionApr}
-              isSupply={false}
+              rateType={'charged'}
               direction="vertical"
             />
           </Box>

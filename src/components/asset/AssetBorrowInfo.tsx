@@ -11,9 +11,9 @@ import {
 } from '../../hooks/api';
 import { toBalance, toCompactAddress, toPercentage } from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
-import { AprDisplay } from '../common/AprDisplay';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
+import { RateDisplay } from '../common/RateDisplay';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -81,13 +81,13 @@ export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
             background: theme.palette.background.default,
           }}
         >
-          <Typography sx={{ padding: '6px' }}>APR</Typography>
-          <AprDisplay
+          <Typography sx={{ padding: '6px' }}>APY</Typography>
+          <RateDisplay
             assetSymbol={tokenSymbol}
-            assetApr={reserve.borrowApr}
+            assetRate={reserve.estBorrowApy}
             emissionSymbol={'BLND'}
             emissionApr={emissionApr}
-            isSupply={false}
+            rateType={'charged'}
             direction={'horizontal'}
           />
         </Box>

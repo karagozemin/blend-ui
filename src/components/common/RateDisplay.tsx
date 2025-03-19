@@ -2,57 +2,43 @@ import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import * as formatter from '../../utils/formatter';
 import { Icon } from './Icon';
 
-interface AprDisplayParams {
+interface RateDisplayParams {
   assetSymbol: string;
-  assetApr: number;
+  assetRate: number;
   emissionSymbol: string;
   emissionApr: number | undefined;
-  isSupply: boolean;
+  rateType: 'earned' | 'charged';
   direction: 'vertical' | 'horizontal';
 }
 
-export const AprDisplay = ({
+export const RateDisplay = ({
   assetSymbol,
-  assetApr,
+  assetRate,
   emissionSymbol,
   emissionApr,
-  isSupply,
+  rateType,
   direction,
-}: AprDisplayParams) => {
+}: RateDisplayParams) => {
   const theme = useTheme();
 
+  const net =
+    rateType === 'earned' ? (emissionApr ?? 0) + assetRate : assetRate - (emissionApr ?? 0);
   return (
     <Tooltip
       title={
-        isSupply ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="body2">
-              {`${assetSymbol} interest earned ${`${formatter.toPercentage(assetApr)}`}`}
-            </Typography>
-            {emissionApr && (
-              <Typography variant="body2">{`${emissionSymbol} emissions earned ${formatter.toPercentage(
-                emissionApr
-              )}`}</Typography>
-            )}
-            <Typography variant="body2">
-              {`Net APR earned ${formatter.toPercentage((emissionApr ?? 0) + assetApr)}`}
-            </Typography>
-          </Box>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="body2">
-              {`${assetSymbol} interest charged ${`${formatter.toPercentage(assetApr)}`}`}
-            </Typography>
-            {emissionApr && (
-              <Typography variant="body2">{`${emissionSymbol} emissions earned ${formatter.toPercentage(
-                emissionApr
-              )}`}</Typography>
-            )}
-            <Typography variant="body2">
-              {`Net APR charged ${formatter.toPercentage(assetApr - (emissionApr ?? 0))}`}
-            </Typography>
-          </Box>
-        )
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="body2">
+            {`${assetSymbol} interest ${rateType} ${`${formatter.toPercentage(assetRate)}`}`}
+          </Typography>
+          {emissionApr && (
+            <Typography variant="body2">{`${emissionSymbol} emissions earned ${formatter.toPercentage(
+              emissionApr
+            )}`}</Typography>
+          )}
+          <Typography variant="body2">
+            {`Net interest ${rateType} ${formatter.toPercentage(net)}`}
+          </Typography>
+        </Box>
       }
       placement="top"
       enterTouchDelay={0}
@@ -69,7 +55,7 @@ export const AprDisplay = ({
           gap: direction === 'vertical' ? '0px' : '4px',
         }}
       >
-        <Typography variant="body1">{formatter.toPercentage(assetApr)}</Typography>
+        <Typography variant="body1">{formatter.toPercentage(assetRate)}</Typography>
 
         {emissionApr !== undefined && emissionApr > 0 && (
           <Box

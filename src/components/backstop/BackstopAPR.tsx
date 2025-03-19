@@ -1,8 +1,8 @@
 import { BackstopPoolEst, FixedMath, PoolEstimate } from '@blend-capital/blend-sdk';
 import { useBackstop, useBackstopPool, usePool, usePoolMeta, usePoolOracle } from '../../hooks/api';
 import { estSingleSidedDeposit } from '../../utils/comet';
-import { AprDisplay } from '../common/AprDisplay';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { RateDisplay } from '../common/RateDisplay';
 import { StackedText } from '../common/StackedText';
 
 export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId }) => {
@@ -28,7 +28,7 @@ export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId }) => {
     );
     estBackstopApr =
       (FixedMath.toFloat(BigInt(pool.metadata.backstopRate), 7) *
-        poolEst.avgBorrowApr *
+        poolEst.avgBorrowApy *
         poolEst.totalBorrowed) /
       backstopPoolEst.totalSpotValue;
     backstopEmissionsApr = estSingleSidedDeposit(
@@ -43,12 +43,12 @@ export const BackstopAPR: React.FC<PoolComponentProps> = ({ poolId }) => {
       title="Backstop APR"
       text={
         estBackstopApr !== undefined ? (
-          <AprDisplay
+          <RateDisplay
             assetSymbol={'BLND-USDC LP'}
-            assetApr={estBackstopApr}
+            assetRate={estBackstopApr}
             emissionSymbol={'BLND-USDC LP'}
             emissionApr={backstopEmissionsApr}
-            isSupply={true}
+            rateType={'earned'}
             direction={'horizontal'}
           />
         ) : (

@@ -30,8 +30,14 @@ export function estimateEmissionsApr(
  * @param util utilization ratio as a float
  * @param ir_mod interest rate modifier as a float
  * @param reserve The reserve to estimate the interest rate for
+ * @param backstopTakeRate The backstop take rate as a fixed point number
  */
-export function estimateInterestRate(util: number, ir_mod: number, reserve: Reserve): number {
+export function estimateInterestRate(
+  util: number,
+  ir_mod: number,
+  reserve: Reserve,
+  backstopTakeRate: bigint
+): number {
   const RATE_SCALAR = FixedMath.toFixed(1, reserve.rateDecimals);
   // setup reserve with util and ir_mod
   let ir_resData = new ReserveData(
@@ -45,8 +51,8 @@ export function estimateInterestRate(util: number, ir_mod: number, reserve: Rese
   );
   let ir_reserve =
     reserve.rateDecimals === 9
-      ? new ReserveV1('', '', reserve.config, ir_resData, undefined, undefined, 0, 0, 0)
-      : new ReserveV2('', '', reserve.config, ir_resData, 0, 0, 0);
-  ir_reserve.setAPR();
+      ? new ReserveV1('', '', reserve.config, ir_resData, undefined, undefined, 0, 0, 0, 0, 0)
+      : new ReserveV2('', '', reserve.config, ir_resData, 0, 0, 0, 0, 0);
+  ir_reserve.setRates(backstopTakeRate);
   return ir_reserve.borrowApr;
 }

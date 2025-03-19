@@ -73,10 +73,10 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Typography>
 
             <TooltipText
-              tooltip="The interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions and is accrued to the borrowed position."
+              tooltip="The estimated compounding interest rate charged for a borrowed position. This rate will fluctuate based on the market conditions, and accrues to the borrowed position automatically."
               width={headerWidth}
             >
-              APR
+              APY
             </TooltipText>
 
             <Box

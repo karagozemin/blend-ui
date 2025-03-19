@@ -51,10 +51,10 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
         </Typography>
 
         <TooltipText
-          tooltip="The interest rate earned on a supplied position. This rate will fluctuate based on the market conditions and is accrued to the supplied position."
+          tooltip="The estimated compounding interest rate earned on a supplied position. This rate will fluctuate based on the market conditions, and accrues to the supplied position automatically."
           width={headerWidth}
         >
-          APR
+          APY
         </TooltipText>
 
         {viewType !== ViewType.MOBILE && (

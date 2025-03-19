@@ -14,10 +14,10 @@ import {
 } from '../../hooks/api';
 import * as formatter from '../../utils/formatter';
 import { estimateEmissionsApr } from '../../utils/math';
-import { AprDisplay } from '../common/AprDisplay';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
+import { RateDisplay } from '../common/RateDisplay';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
@@ -111,12 +111,12 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <AprDisplay
+            <RateDisplay
               assetSymbol={symbol}
-              assetApr={reserve.supplyApr}
+              assetRate={reserve.estSupplyApy}
               emissionSymbol="BLND"
               emissionApr={emissionApr}
-              isSupply={true}
+              rateType={'earned'}
               direction="vertical"
             />
           </Box>

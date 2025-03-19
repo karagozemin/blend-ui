@@ -151,7 +151,12 @@ const Asset: NextPage = () => {
           </Typography>
         </Row>
         <Row>
-          <InterestGraph poolId={safePoolId} assetId={safeAssetId} reserve={reserve} />
+          <InterestGraph
+            poolId={safePoolId}
+            assetId={safeAssetId}
+            reserve={reserve}
+            backstopTakeRate={BigInt(pool.metadata.backstopRate)}
+          />
         </Row>
         <Row
           sx={{

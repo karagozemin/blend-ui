@@ -252,9 +252,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
           }}
         >
           <StackedText
-            title="Net APR"
+            title="Net APY"
             titleColor="inherit"
-            text={toPercentage(userEst?.netApr)}
+            text={toPercentage(userEst?.netApy)}
             textColor="inherit"
             type="large"
           />

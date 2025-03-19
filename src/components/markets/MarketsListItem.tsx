@@ -4,7 +4,7 @@ import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { LinkBox } from '../common/LinkBox';
 import { TokenHeader } from '../common/TokenHeader';
-import { StackedApr } from './StackedApr';
+import { StackedApy } from './StackedApy';
 
 export interface MarketsListItemProps extends BoxProps {
   poolId: string;
@@ -106,10 +106,10 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({
                 alignItems: 'center',
               }}
             >
-              <StackedApr
-                aprLend={formatter.toPercentage(reserve.supplyApr)}
-                aprBorrow={formatter.toPercentage(reserve.borrowApr)}
-              ></StackedApr>
+              <StackedApy
+                apyLend={formatter.toPercentage(reserve.estSupplyApy)}
+                apyBorrow={formatter.toPercentage(reserve.estBorrowApy)}
+              />
             </Box>
           </>
         )}
