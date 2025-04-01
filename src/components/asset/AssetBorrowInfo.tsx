@@ -4,7 +4,6 @@ import { Box, Typography, useTheme } from '@mui/material';
 import {
   useBackstop,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
@@ -26,14 +25,12 @@ export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
   const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop(poolMeta?.version);
-  const { data: poolEmissions } = usePoolEmissions(pool);
   const oraclePrice = poolOracle?.getPriceFloat(assetId);
   const reserve = pool?.reserves.get(assetId);
   const { data: tokenMetadata } = useTokenMetadata(assetId);
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === assetId);
   const emissionsPerAsset =
-    reserveEmissions?.borrowEmissions !== undefined && reserve
-      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+    reserve && reserve.borrowEmissions !== undefined
+      ? reserve.borrowEmissions.emissionsPerYearPerToken(
           reserve.totalLiabilities(),
           reserve.config.decimals
         )

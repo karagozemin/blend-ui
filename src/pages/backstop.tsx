@@ -1,6 +1,8 @@
 import {
-  BackstopClaimArgs,
+  BackstopClaimV1Args,
+  BackstopClaimV2Args,
   BackstopContractV1,
+  BackstopContractV2,
   BackstopPoolEst,
   BackstopPoolUserEst,
   ContractErrorType,
@@ -11,7 +13,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { Networks, rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { rpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { BackstopAPR } from '../components/backstop/BackstopAPR';
@@ -48,7 +50,7 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { network } = useSettings();
+  const { network, isV2Enabled } = useSettings();
   const { connected, walletAddress, backstopClaim, restore } = useWallet();
 
   const { poolId } = router.query;
@@ -85,13 +87,32 @@ const Backstop: NextPage = () => {
       ? (Number(lpBalance) / 1e7) * backstop.backstopToken.lpTokenPrice
       : undefined;
 
-  const backstopContract = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
-  const claimArgs: BackstopClaimArgs = {
-    from: walletAddress,
-    pool_addresses: [safePoolId],
-    to: walletAddress,
-  };
-  const claimOp = safePoolId && walletAddress !== '' ? backstopContract.claim(claimArgs) : '';
+  let claimOp = '';
+
+  if (isV2Enabled && poolMeta?.version == Version.V2) {
+    const claimArgs: BackstopClaimV2Args = {
+      from: walletAddress,
+      pool_addresses: [safePoolId],
+      min_lp_tokens_out: BigInt(0),
+    };
+    let backstopContract = new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '');
+    claimOp =
+      safePoolId && walletAddress !== '' && backstopContract
+        ? backstopContract.claim(claimArgs)
+        : '';
+  } else {
+    const claimArgs: BackstopClaimV1Args = {
+      from: walletAddress,
+      pool_addresses: [safePoolId],
+      to: walletAddress,
+    };
+    let backstopContract = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
+    claimOp =
+      safePoolId && walletAddress !== '' && backstopContract
+        ? backstopContract.claim(claimArgs)
+        : '';
+  }
+
   const {
     data: claimSimResult,
     isLoading: isClaimLoading,
@@ -139,11 +160,16 @@ const Backstop: NextPage = () => {
 
   const handleClaimEmissionsClick = async () => {
     if (connected && poolMeta && userBackstopPoolData) {
-      let claimArgs: BackstopClaimArgs = {
-        from: walletAddress,
-        pool_addresses: [safePoolId],
-        to: walletAddress,
-      };
+      let claimArgs: BackstopClaimV1Args | BackstopClaimV2Args;
+      if (isV2Enabled && poolMeta.version == Version.V2) {
+        claimArgs = {
+          from: walletAddress,
+          pool_addresses: [safePoolId],
+          min_lp_tokens_out: BigInt(0),
+        };
+      } else {
+        claimArgs = { from: walletAddress, pool_addresses: [safePoolId], to: walletAddress };
+      }
       await backstopClaim(poolMeta, claimArgs, false);
       refetchClaimSim();
       refetchMintSim();
@@ -151,11 +177,7 @@ const Backstop: NextPage = () => {
   };
 
   const renderClaimButton = () => {
-    if (
-      !isRestore &&
-      !isError &&
-      (poolMeta?.version !== Version.V2 || network.passphrase !== Networks.PUBLIC)
-    )
+    if (!isRestore && !isError && poolMeta?.version !== Version.V2)
       return (
         <CustomButton
           sx={{
@@ -202,7 +224,7 @@ const Backstop: NextPage = () => {
       if (isRestore) {
         buttonText = 'Restore Data';
         onClick = handleRestore;
-      } else if (poolMeta?.version === Version.V2 && network.passphrase === Networks.PUBLIC) {
+      } else if (poolMeta?.version === Version.V2) {
         buttonText = 'V2 Claim Disabled';
         buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;

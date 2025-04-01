@@ -8,13 +8,12 @@ import {
 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, SxProps, Theme, Tooltip, useTheme } from '@mui/material';
-import { Networks, rpc } from '@stellar/stellar-sdk';
+import { rpc } from '@stellar/stellar-sdk';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import {
   useHorizonAccount,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   usePoolUser,
@@ -41,12 +40,11 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { data: account, refetch: refechAccount } = useHorizonAccount();
   const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: userPoolData, refetch: refetchPoolUser } = usePoolUser(pool);
 
   const { emissions, claimedTokens } =
-    userPoolData && pool && poolEmissions
-      ? userPoolData.estimateEmissions(pool, poolEmissions)
+    userPoolData && pool
+      ? userPoolData.estimateEmissions(Array.from(pool.reserves.values()))
       : { emissions: 0, claimedTokens: [] };
 
   const poolContract = poolId ? new PoolContractV1(poolId) : undefined;
@@ -104,12 +102,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   };
 
   function renderClaimButton() {
-    if (
-      hasBLNDTrustline &&
-      !isRestore &&
-      !isError &&
-      (poolMeta?.version !== Version.V2 || network.passphrase !== Networks.PUBLIC)
-    ) {
+    if (hasBLNDTrustline && !isRestore && !isError && poolMeta?.version !== Version.V2) {
       return (
         <CustomButton
           sx={{
@@ -147,7 +140,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
       } else if (!hasBLNDTrustline) {
         buttonText = 'Add BLND Trustline';
         onClick = handleCreateTrustlineClick;
-      } else if (poolMeta?.version === Version.V2 && network.passphrase === Networks.PUBLIC) {
+      } else if (poolMeta?.version === Version.V2) {
         buttonText = 'V2 Claim Disabled';
         buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
         disabled = true;

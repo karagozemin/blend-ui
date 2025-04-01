@@ -13,7 +13,6 @@ import {
   useBackstop,
   useHorizonAccount,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   usePoolUser,
@@ -33,7 +32,6 @@ const Repay: NextPage = () => {
 
   const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
   const { data: pool } = usePool(poolMeta);
-  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: tokenMetadata } = useTokenMetadata(safeAssetId);
   const { data: horizonAccount } = useHorizonAccount();
@@ -48,10 +46,9 @@ const Repay: NextPage = () => {
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop(poolMeta?.version);
 
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
   const emissionsPerAsset =
-    reserveEmissions?.borrowEmissions !== undefined && reserve
-      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+    reserve && reserve.borrowEmissions !== undefined
+      ? reserve.borrowEmissions.emissionsPerYearPerToken(
           reserve.totalLiabilities(),
           reserve.config.decimals
         )

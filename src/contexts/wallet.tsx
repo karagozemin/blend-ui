@@ -1,5 +1,6 @@
 import {
-  BackstopClaimArgs,
+  BackstopClaimV1Args,
+  BackstopClaimV2Args,
   BackstopContractV1,
   BackstopContractV2,
   ContractErrorType,
@@ -93,7 +94,7 @@ export interface IWalletContext {
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   backstopClaim(
     poolMeta: PoolMeta,
-    args: BackstopClaimArgs,
+    args: BackstopClaimV1Args | BackstopClaimV2Args,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined>;
   cometSingleSidedDeposit(
@@ -587,19 +588,24 @@ export const WalletProvider = ({ children = null as any }) => {
    */
   async function backstopClaim(
     poolMeta: PoolMeta,
-    claimArgs: BackstopClaimArgs,
+    claimArgs: BackstopClaimV1Args | BackstopClaimV2Args,
     sim: boolean
   ): Promise<rpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      const backstop =
-        poolMeta.version === Version.V2
-          ? new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '')
-          : new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '');
-      const operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
-      if (sim) {
-        return await simulateOperation(operation);
+      let operation = '';
+      if (poolMeta.version === Version.V2) {
+        operation = new BackstopContractV2(process.env.NEXT_PUBLIC_BACKSTOP_V2 ?? '').claim(
+          claimArgs as BackstopClaimV2Args
+        );
+      } else {
+        operation = new BackstopContractV1(process.env.NEXT_PUBLIC_BACKSTOP ?? '').claim(
+          claimArgs as BackstopClaimV1Args
+        );
       }
-      await invokeSorobanOperation(operation);
+      if (sim) {
+        return await simulateOperation(xdr.Operation.fromXDR(operation, 'base64'));
+      }
+      await invokeSorobanOperation(xdr.Operation.fromXDR(operation, 'base64'));
       if (typeof claimArgs.pool_addresses[0] === 'string') {
         cleanBackstopPoolCache(claimArgs.pool_addresses[0]);
       } else {

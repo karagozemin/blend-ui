@@ -6,7 +6,6 @@ import {
   useBackstop,
   useHorizonAccount,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   useTokenBalance,
@@ -45,14 +44,12 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
   const { data: backstop } = useBackstop(poolMeta?.version);
   const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
-  const { data: poolEmissions } = usePoolEmissions(pool);
 
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
   const emissionsPerAsset =
-    reserveEmissions?.supplyEmissions !== undefined && reserve
-      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+    reserve && reserve.supplyEmissions !== undefined
+      ? reserve.supplyEmissions.emissionsPerYearPerToken(
           reserve.totalSupply(),
           reserve.config.decimals
         )

@@ -12,7 +12,6 @@ import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
 import {
   useBackstop,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   usePoolUser,
@@ -32,7 +31,6 @@ const Withdraw: NextPage = () => {
 
   const { data: poolMeta, error: poolError } = usePoolMeta(safePoolId);
   const { data: pool } = usePool(poolMeta);
-  const { data: poolEmissions } = usePoolEmissions(pool);
   const { data: poolUser } = usePoolUser(pool);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop(poolMeta?.version);
@@ -41,10 +39,9 @@ const Withdraw: NextPage = () => {
   const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
 
   const currentDeposit = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
   const emissionsPerAsset =
-    reserveEmissions?.supplyEmissions !== undefined && reserve
-      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+    reserve && reserve.supplyEmissions !== undefined
+      ? reserve.supplyEmissions.emissionsPerYearPerToken(
           reserve.totalSupply(),
           reserve.config.decimals
         )
