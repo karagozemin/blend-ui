@@ -16,7 +16,6 @@ import {
   PoolV1,
   PoolV2,
   Positions,
-  ReserveEmissions,
   TokenMetadata,
   UserBalance,
   Version,
@@ -148,7 +147,7 @@ export function usePoolMeta(
             return { id: poolId, version: Version.V1, ...metadata } as PoolMeta;
           }
         } else if (
-          metadata.wasmHash === 'd89babfef41542f013451644f3de18c05a1cc0a81bef447f3c15d26f75ee0f38'
+          metadata.wasmHash === 'b27c8d8c21777fd62236da448e4b777b1e2bba31c5347e77e36c80b60bcf7147'
         ) {
           // v2 pool - validate backstop is correct
           if (metadata.backstop === BACKSTOP_ID_V2) {
@@ -266,33 +265,6 @@ export function usePoolUser(
     queryFn: async () => {
       if (pool !== undefined && walletAddress !== '') {
         return await pool.loadUser(walletAddress);
-      }
-    },
-  });
-}
-
-/**
- * Fetch the user for the given pool and connected wallet.
- * @param poolId - The pool ID
- * @param enabled - Whether the query is enabled (optional - defaults to true)
- * @returns Query result with the user positions.
- */
-export function usePoolEmissions(
-  pool: Pool | undefined,
-  enabled: boolean = true
-): UseQueryResult<ReserveEmissions[], Error> {
-  const { network } = useSettings();
-  return useQuery({
-    staleTime: USER_STALE_TIME,
-    queryKey: ['poolEmissions', pool?.id],
-    enabled: enabled && pool !== undefined,
-    queryFn: async () => {
-      if (pool !== undefined) {
-        return await Promise.all(
-          Array.from(pool.reserves.values()).map((reserve) =>
-            ReserveEmissions.load(network, reserve)
-          )
-        );
       }
     },
   });

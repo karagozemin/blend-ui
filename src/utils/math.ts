@@ -52,7 +52,7 @@ export function estimateInterestRate(
   let ir_reserve =
     reserve.rateDecimals === 9
       ? new ReserveV1('', '', reserve.config, ir_resData, undefined, undefined, 0, 0, 0, 0, 0)
-      : new ReserveV2('', '', reserve.config, ir_resData, 0, 0, 0, 0, 0);
+      : new ReserveV2('', '', reserve.config, ir_resData, undefined, undefined, 0, 0, 0, 0, 0);
   ir_reserve.setRates(backstopTakeRate);
   return ir_reserve.borrowApr;
 }

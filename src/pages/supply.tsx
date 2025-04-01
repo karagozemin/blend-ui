@@ -15,7 +15,6 @@ import {
   useBackstop,
   useHorizonAccount,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   useTokenBalance,
@@ -49,12 +48,10 @@ const Supply: NextPage = () => {
   );
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: backstop } = useBackstop(poolMeta?.version);
-  const { data: poolEmissions } = usePoolEmissions(pool);
 
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve?.assetId);
   const emissionsPerAsset =
-    reserveEmissions?.supplyEmissions !== undefined && reserve
-      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+    reserve && reserve.supplyEmissions !== undefined
+      ? reserve.supplyEmissions.emissionsPerYearPerToken(
           reserve.totalSupply(),
           reserve.config.decimals
         )

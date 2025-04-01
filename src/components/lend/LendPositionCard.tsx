@@ -6,7 +6,6 @@ import { ViewType, useSettings } from '../../contexts';
 import {
   useBackstop,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
@@ -40,15 +39,14 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
-  const { data: poolEmissions } = usePoolEmissions(pool);
 
   const assetFloat = reserve.toAssetFromBTokenFloat(bTokens);
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
+
   const emissionsPerAsset =
-    reserveEmissions?.supplyEmissions !== undefined && reserve
-      ? reserveEmissions.supplyEmissions.emissionsPerYearPerToken(
+    reserve && reserve.supplyEmissions !== undefined
+      ? reserve.supplyEmissions.emissionsPerYearPerToken(
           reserve.totalSupply(),
           reserve.config.decimals
         )

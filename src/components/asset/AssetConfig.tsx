@@ -26,9 +26,9 @@ export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   let collateralCap = 'None';
   if (reserve.config instanceof ReserveConfigV2) {
     collateralCap =
-      reserve.config.collateral_cap === I128MAX
+      reserve.config.supply_cap === I128MAX
         ? 'None'
-        : toBalance(reserve.config.collateral_cap, reserve.config.decimals);
+        : toBalance(reserve.config.supply_cap, reserve.config.decimals);
   }
 
   const flexView = viewType !== ViewType.REGULAR ? '0 1 43%' : undefined;

@@ -88,7 +88,7 @@ export const SettingsProvider = ({ children = null as any }) => {
       return {
         rpc: urls.rpc ?? DEFAULT_RPC,
         passphrase: DEFAULT_PASSPHRASE,
-        opts: urls.opts,
+        opts: { allowHttp: true },
         horizonUrl: urls.horizonUrl ?? DEFAULT_HORIZON,
       };
     } catch (e) {

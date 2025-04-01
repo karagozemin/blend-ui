@@ -7,7 +7,6 @@ import * as formatter from '../../utils/formatter';
 import {
   useBackstop,
   usePool,
-  usePoolEmissions,
   usePoolMeta,
   usePoolOracle,
   useTokenMetadata,
@@ -38,7 +37,6 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
-  const { data: poolEmissions } = usePoolEmissions(pool);
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
 
   const available = reserve.totalSupplyFloat() - reserve.totalLiabilitiesFloat();
@@ -48,10 +46,9 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const liabilityFactor = reserve.getLiabilityFactor();
 
   const oraclePrice = poolOracle?.getPriceFloat(reserve.assetId);
-  const reserveEmissions = poolEmissions?.find((e) => e.assetId === reserve.assetId);
   const emissionsPerAsset =
-    reserveEmissions?.borrowEmissions !== undefined && reserve
-      ? reserveEmissions.borrowEmissions.emissionsPerYearPerToken(
+    reserve && reserve.borrowEmissions !== undefined
+      ? reserve.borrowEmissions.emissionsPerYearPerToken(
           reserve.totalLiabilities(),
           reserve.config.decimals
         )
