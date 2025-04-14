@@ -1,4 +1,11 @@
-import { getAuctionsfromEvents } from '@blend-capital/blend-sdk';
+import {
+  Auctions,
+  getAuctionsfromV1Events,
+  getAuctionsfromV2Events,
+  PoolV1Event,
+  PoolV2Event,
+  Version,
+} from '@blend-capital/blend-sdk';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Box, Typography, useTheme } from '@mui/material';
@@ -50,9 +57,14 @@ const Auction: NextPage = () => {
       : [];
   // ensure events are sorted in ascending order by ledger
   allEvents.sort((a, b) => a.ledger - b.ledger);
-  const auctions =
-    pool && backstop ? getAuctionsfromEvents(allEvents, backstop.id) : { filled: [], ongoing: [] };
-
+  let auctions: Auctions = { filled: [], ongoing: [] };
+  if (pool && backstop) {
+    if (poolMeta?.version === Version.V1)
+      auctions = getAuctionsfromV1Events(allEvents as PoolV1Event[], backstop.id);
+    else {
+      auctions = getAuctionsfromV2Events(allEvents as PoolV2Event[]);
+    }
+  }
   const curLedger = recentEvents?.latestLedger ?? pastEvents?.latestLedger ?? 0;
 
   useEffect(() => {

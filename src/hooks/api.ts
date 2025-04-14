@@ -8,13 +8,15 @@ import {
   getOracleDecimals,
   Network,
   Pool,
-  PoolEvent,
-  poolEventFromEventResponse,
+  poolEventV1FromEventResponse,
+  poolEventV2FromEventResponse,
   PoolMetadata,
   PoolOracle,
   PoolUser,
   PoolV1,
+  PoolV1Event,
   PoolV2,
+  PoolV2Event,
   Positions,
   TokenMetadata,
   UserBalance,
@@ -147,7 +149,7 @@ export function usePoolMeta(
             return { id: poolId, version: Version.V1, ...metadata } as PoolMeta;
           }
         } else if (
-          metadata.wasmHash === '6a7c67449f6bad0d5f641cfbdf03f430ec718faa85107ecb0b97df93410d1c43'
+          metadata.wasmHash === 'a41fc53d6753b6c04eb15b021c55052366a4c8e0e21bc72700f461264ec1350e'
         ) {
           // v2 pool - validate backstop is correct
           if (metadata.backstop === BACKSTOP_ID_V2) {
@@ -455,7 +457,7 @@ const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('bas
 export function useAuctionEventsLongQuery(
   poolMeta: PoolMeta | undefined,
   enabled: boolean = true
-): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
+): UseQueryResult<{ events: PoolV1Event[] | PoolV2Event[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
     staleTime: 10 * 60 * 1000,
@@ -467,7 +469,8 @@ export function useAuctionEventsLongQuery(
         throw new Error();
       }
       try {
-        let events: PoolEvent[] = [];
+        let eventsV1: PoolV1Event[] = [];
+        let eventsV2: PoolV2Event[] = [];
         const stellarRpc = new rpc.Server(network.rpc, network.opts);
         const latestLedger = (await stellarRpc.getLatestLedger()).sequence;
         // default event retention period for RPCs is 17280 ledgers
@@ -493,12 +496,20 @@ export function useAuctionEventsLongQuery(
         });
         // TODO: Implement pagination once cursor usage is fixed.
         for (const raw_event of resp.events) {
-          let blendPoolEvent = poolEventFromEventResponse(raw_event);
-          if (blendPoolEvent) {
-            events.push(blendPoolEvent);
+          if (poolMeta.version === Version.V1) {
+            let blendPoolEvent = poolEventV1FromEventResponse(raw_event);
+            if (blendPoolEvent) {
+              eventsV1.push(blendPoolEvent);
+            }
+          } else {
+            let blendPoolEvent = poolEventV2FromEventResponse(raw_event);
+            if (blendPoolEvent) {
+              eventsV2.push(blendPoolEvent);
+            }
           }
         }
-        return { events, latestLedger: resp.latestLedger };
+        if (poolMeta.version === Version.V1) return eventsV1;
+        else return eventsV2;
       } catch (e) {
         console.error('Error fetching auction events', e);
         return undefined;
@@ -518,7 +529,7 @@ export function useAuctionEventsShortQuery(
   poolMeta: PoolMeta | undefined,
   lastLedgerFetched: number,
   enabled: boolean = true
-): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
+): UseQueryResult<{ events: PoolV1Event[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   // TODO: Use cursor instead of lastLedger when possible once RPC cursor usage is fixed.
   return useQuery({
@@ -531,7 +542,7 @@ export function useAuctionEventsShortQuery(
         throw new Error();
       }
       try {
-        let events: PoolEvent[] = [];
+        let events: PoolV1Event[] = [];
         const stellarRpc = new rpc.Server(network.rpc, network.opts);
         let resp = await stellarRpc._getEvents({
           startLedger: lastLedgerFetched,
@@ -551,7 +562,7 @@ export function useAuctionEventsShortQuery(
         });
         // TODO: Implement pagination once RPC cursor usage is fixed.
         for (const raw_event of resp.events) {
-          let blendPoolEvent = poolEventFromEventResponse(raw_event);
+          let blendPoolEvent = poolEventV1FromEventResponse(raw_event);
           if (blendPoolEvent) {
             events.push(blendPoolEvent);
           }
