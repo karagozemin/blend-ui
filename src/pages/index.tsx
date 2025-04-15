@@ -1,9 +1,11 @@
 import { Version } from '@blend-capital/blend-sdk';
-import { useTheme } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useEffect, useState } from 'react';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
+import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { ToggleSlider } from '../components/common/ToggleSlider';
 import { MarketCard } from '../components/markets/MarketCard';
@@ -55,6 +57,31 @@ const Markets: NextPage = () => {
         )}
       </Row>
       <Divider />
+      {safeRewardZone.length === 0 && (
+        <Section
+          width={SectionSize.FULL}
+          sx={{
+            background: theme.palette.info.opaque,
+            color: theme.palette.text.primary,
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            padding: '12px',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <InfoOutlinedIcon />
+            <Typography variant="body2">No pools in the reward zone</Typography>
+          </Box>
+        </Section>
+      )}
       {safeRewardZone.slice(0, currentIndex + 1).map((poolId, index) => {
         return (
           <MarketCard

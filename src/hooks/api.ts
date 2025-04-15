@@ -8,13 +8,15 @@ import {
   getOracleDecimals,
   Network,
   Pool,
-  PoolEvent,
-  poolEventFromEventResponse,
+  poolEventV1FromEventResponse,
+  poolEventV2FromEventResponse,
   PoolMetadata,
   PoolOracle,
   PoolUser,
   PoolV1,
+  PoolV1Event,
   PoolV2,
+  PoolV2Event,
   Positions,
   TokenMetadata,
   UserBalance,
@@ -147,7 +149,7 @@ export function usePoolMeta(
             return { id: poolId, version: Version.V1, ...metadata } as PoolMeta;
           }
         } else if (
-          metadata.wasmHash === '6a7c67449f6bad0d5f641cfbdf03f430ec718faa85107ecb0b97df93410d1c43'
+          metadata.wasmHash === 'a41fc53d6753b6c04eb15b021c55052366a4c8e0e21bc72700f461264ec1350e'
         ) {
           // v2 pool - validate backstop is correct
           if (metadata.backstop === BACKSTOP_ID_V2) {
@@ -437,15 +439,6 @@ export function useTokenBalance(
 
 //********** Auction Data **********//
 
-const AUCTION_EVENT_FILTERS = [
-  [xdr.ScVal.scvSymbol('fill_auction').toXDR('base64'), '*', '*'],
-  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
-  [xdr.ScVal.scvSymbol('new_liquidation_auction').toXDR('base64'), '*'],
-  [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*'],
-  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
-];
-const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*']];
-
 /**
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
@@ -455,7 +448,7 @@ const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('bas
 export function useAuctionEventsLongQuery(
   poolMeta: PoolMeta | undefined,
   enabled: boolean = true
-): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
+): UseQueryResult<{ events: PoolV1Event[] | PoolV2Event[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   return useQuery({
     staleTime: 10 * 60 * 1000,
@@ -467,7 +460,6 @@ export function useAuctionEventsLongQuery(
         throw new Error();
       }
       try {
-        let events: PoolEvent[] = [];
         const stellarRpc = new rpc.Server(network.rpc, network.opts);
         const latestLedger = (await stellarRpc.getLatestLedger()).sequence;
         // default event retention period for RPCs is 17280 ledgers
@@ -475,30 +467,8 @@ export function useAuctionEventsLongQuery(
         // some buffer to ensure the latest ledger is read
         let queryLedger = Math.round(latestLedger - 9990);
         queryLedger = Math.max(queryLedger, 100);
-        let resp = await stellarRpc._getEvents({
-          startLedger: queryLedger,
-          filters: [
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS,
-            },
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS_V2,
-            },
-          ],
-          limit: 1000,
-        });
-        // TODO: Implement pagination once cursor usage is fixed.
-        for (const raw_event of resp.events) {
-          let blendPoolEvent = poolEventFromEventResponse(raw_event);
-          if (blendPoolEvent) {
-            events.push(blendPoolEvent);
-          }
-        }
-        return { events, latestLedger: resp.latestLedger };
+
+        return getAuctionEventsQuery(poolMeta, network, queryLedger);
       } catch (e) {
         console.error('Error fetching auction events', e);
         return undefined;
@@ -518,12 +488,12 @@ export function useAuctionEventsShortQuery(
   poolMeta: PoolMeta | undefined,
   lastLedgerFetched: number,
   enabled: boolean = true
-): UseQueryResult<{ events: PoolEvent[]; latestLedger: number }, Error> {
+): UseQueryResult<{ events: PoolV1Event[] | PoolV2Event[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   // TODO: Use cursor instead of lastLedger when possible once RPC cursor usage is fixed.
   return useQuery({
     queryKey: ['auctionEventsShort', poolMeta?.id, lastLedgerFetched],
-    enabled: enabled && poolMeta !== undefined,
+    enabled: enabled && poolMeta !== undefined && lastLedgerFetched > 0,
     refetchInterval: 5 * 1000,
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -531,32 +501,7 @@ export function useAuctionEventsShortQuery(
         throw new Error();
       }
       try {
-        let events: PoolEvent[] = [];
-        const stellarRpc = new rpc.Server(network.rpc, network.opts);
-        let resp = await stellarRpc._getEvents({
-          startLedger: lastLedgerFetched,
-          filters: [
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS,
-            },
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS_V2,
-            },
-          ],
-          limit: 1000,
-        });
-        // TODO: Implement pagination once RPC cursor usage is fixed.
-        for (const raw_event of resp.events) {
-          let blendPoolEvent = poolEventFromEventResponse(raw_event);
-          if (blendPoolEvent) {
-            events.push(blendPoolEvent);
-          }
-        }
-        return { events, latestLedger: resp.latestLedger };
+        return getAuctionEventsQuery(poolMeta, network, lastLedgerFetched);
       } catch (e) {
         console.error('Error fetching auction events', e);
         return undefined;
@@ -660,4 +605,57 @@ function createTokenMetadataQuery(
       return reserveTokenMeta;
     },
   };
+}
+
+const AUCTION_EVENT_FILTERS = [
+  [xdr.ScVal.scvSymbol('fill_auction').toXDR('base64'), '*', '*'],
+  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
+  [xdr.ScVal.scvSymbol('new_liquidation_auction').toXDR('base64'), '*'],
+  [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*'],
+  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
+];
+const AUCTION_EVENT_FILTERS_V2 = [
+  [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*'],
+  [xdr.ScVal.scvSymbol('fill_auction').toXDR('base64'), '*', '*'],
+  [xdr.ScVal.scvSymbol('delete_auction').toXDR('base64'), '*', '*'],
+];
+
+/**
+ * Helper function to fetch auction events based on the pool version.
+ */
+async function getAuctionEventsQuery(
+  poolMeta: PoolMeta,
+  network: Network,
+  startLedger: number
+): Promise<{ events: PoolV1Event[] | PoolV2Event[]; latestLedger: number }> {
+  // TODO: add pagination once cursor usage is fixed
+  const stellarRpc = new rpc.Server(network.rpc, network.opts);
+  const topics = poolMeta.version === Version.V1 ? AUCTION_EVENT_FILTERS : AUCTION_EVENT_FILTERS_V2;
+  const resp = await stellarRpc._getEvents({
+    startLedger,
+    filters: [
+      {
+        type: 'contract',
+        contractIds: [poolMeta.id],
+        topics,
+      },
+    ],
+    limit: 1000,
+  });
+
+  if (poolMeta.version === Version.V1) {
+    let events: PoolV1Event[] = [];
+    for (const respEvent of resp.events) {
+      let poolEvent = poolEventV1FromEventResponse(respEvent);
+      if (poolEvent) events.push(poolEvent);
+    }
+    return { events, latestLedger: resp.latestLedger };
+  } else {
+    let events: PoolV2Event[] = [];
+    for (const respEvent of resp.events) {
+      let poolEvent = poolEventV2FromEventResponse(respEvent);
+      if (poolEvent) events.push(poolEvent);
+    }
+    return { events, latestLedger: resp.latestLedger };
+  }
 }
