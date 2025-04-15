@@ -99,7 +99,7 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
             >
               <Typography sx={{ padding: '6px' }}>Total Supplied</Typography>
               <Typography sx={{ padding: '6px', color: theme.palette.lend.main }}>
-                {toBalance(reserve.totalSupplyFloat() * oraclePrice)}
+                {toBalance(reserve.totalSupplyFloat())}
               </Typography>
             </Box>
           </Row>
