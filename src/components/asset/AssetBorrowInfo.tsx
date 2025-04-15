@@ -103,7 +103,7 @@ export const AssetBorrowInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
         >
           <Typography sx={{ padding: '6px' }}>Total Borrowed</Typography>
           <Typography sx={{ padding: '6px', color: theme.palette.borrow.main }}>
-            {toBalance(reserve.totalLiabilitiesFloat() * oraclePrice)}
+            {toBalance(reserve.totalLiabilitiesFloat())}
           </Typography>
         </Box>
       </Row>
