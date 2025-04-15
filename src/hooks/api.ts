@@ -439,15 +439,6 @@ export function useTokenBalance(
 
 //********** Auction Data **********//
 
-const AUCTION_EVENT_FILTERS = [
-  [xdr.ScVal.scvSymbol('fill_auction').toXDR('base64'), '*', '*'],
-  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
-  [xdr.ScVal.scvSymbol('new_liquidation_auction').toXDR('base64'), '*'],
-  [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*'],
-  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
-];
-const AUCTION_EVENT_FILTERS_V2 = [[xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*']];
-
 /**
  * Fetch auction related events for the given pool ID.
  * @param poolId - The pool ID
@@ -469,8 +460,6 @@ export function useAuctionEventsLongQuery(
         throw new Error();
       }
       try {
-        let eventsV1: PoolV1Event[] = [];
-        let eventsV2: PoolV2Event[] = [];
         const stellarRpc = new rpc.Server(network.rpc, network.opts);
         const latestLedger = (await stellarRpc.getLatestLedger()).sequence;
         // default event retention period for RPCs is 17280 ledgers
@@ -478,38 +467,8 @@ export function useAuctionEventsLongQuery(
         // some buffer to ensure the latest ledger is read
         let queryLedger = Math.round(latestLedger - 9990);
         queryLedger = Math.max(queryLedger, 100);
-        let resp = await stellarRpc._getEvents({
-          startLedger: queryLedger,
-          filters: [
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS,
-            },
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS_V2,
-            },
-          ],
-          limit: 1000,
-        });
-        // TODO: Implement pagination once cursor usage is fixed.
-        for (const raw_event of resp.events) {
-          if (poolMeta.version === Version.V1) {
-            let blendPoolEvent = poolEventV1FromEventResponse(raw_event);
-            if (blendPoolEvent) {
-              eventsV1.push(blendPoolEvent);
-            }
-          } else {
-            let blendPoolEvent = poolEventV2FromEventResponse(raw_event);
-            if (blendPoolEvent) {
-              eventsV2.push(blendPoolEvent);
-            }
-          }
-        }
-        if (poolMeta.version === Version.V1) return eventsV1;
-        else return eventsV2;
+
+        return getAuctionEventsQuery(poolMeta, network, queryLedger);
       } catch (e) {
         console.error('Error fetching auction events', e);
         return undefined;
@@ -529,12 +488,12 @@ export function useAuctionEventsShortQuery(
   poolMeta: PoolMeta | undefined,
   lastLedgerFetched: number,
   enabled: boolean = true
-): UseQueryResult<{ events: PoolV1Event[]; latestLedger: number }, Error> {
+): UseQueryResult<{ events: PoolV1Event[] | PoolV2Event[]; latestLedger: number }, Error> {
   const { network } = useSettings();
   // TODO: Use cursor instead of lastLedger when possible once RPC cursor usage is fixed.
   return useQuery({
     queryKey: ['auctionEventsShort', poolMeta?.id, lastLedgerFetched],
-    enabled: enabled && poolMeta !== undefined,
+    enabled: enabled && poolMeta !== undefined && lastLedgerFetched > 0,
     refetchInterval: 5 * 1000,
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -542,32 +501,7 @@ export function useAuctionEventsShortQuery(
         throw new Error();
       }
       try {
-        let events: PoolV1Event[] = [];
-        const stellarRpc = new rpc.Server(network.rpc, network.opts);
-        let resp = await stellarRpc._getEvents({
-          startLedger: lastLedgerFetched,
-          filters: [
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS,
-            },
-            {
-              type: 'contract',
-              contractIds: [poolMeta.id],
-              topics: AUCTION_EVENT_FILTERS_V2,
-            },
-          ],
-          limit: 1000,
-        });
-        // TODO: Implement pagination once RPC cursor usage is fixed.
-        for (const raw_event of resp.events) {
-          let blendPoolEvent = poolEventV1FromEventResponse(raw_event);
-          if (blendPoolEvent) {
-            events.push(blendPoolEvent);
-          }
-        }
-        return { events, latestLedger: resp.latestLedger };
+        return getAuctionEventsQuery(poolMeta, network, lastLedgerFetched);
       } catch (e) {
         console.error('Error fetching auction events', e);
         return undefined;
@@ -671,4 +605,57 @@ function createTokenMetadataQuery(
       return reserveTokenMeta;
     },
   };
+}
+
+const AUCTION_EVENT_FILTERS = [
+  [xdr.ScVal.scvSymbol('fill_auction').toXDR('base64'), '*', '*'],
+  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
+  [xdr.ScVal.scvSymbol('new_liquidation_auction').toXDR('base64'), '*'],
+  [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*'],
+  [xdr.ScVal.scvSymbol('delete_liquidation_auction').toXDR('base64'), '*'],
+];
+const AUCTION_EVENT_FILTERS_V2 = [
+  [xdr.ScVal.scvSymbol('new_auction').toXDR('base64'), '*', '*'],
+  [xdr.ScVal.scvSymbol('fill_auction').toXDR('base64'), '*', '*'],
+  [xdr.ScVal.scvSymbol('delete_auction').toXDR('base64'), '*', '*'],
+];
+
+/**
+ * Helper function to fetch auction events based on the pool version.
+ */
+async function getAuctionEventsQuery(
+  poolMeta: PoolMeta,
+  network: Network,
+  startLedger: number
+): Promise<{ events: PoolV1Event[] | PoolV2Event[]; latestLedger: number }> {
+  // TODO: add pagination once cursor usage is fixed
+  const stellarRpc = new rpc.Server(network.rpc, network.opts);
+  const topics = poolMeta.version === Version.V1 ? AUCTION_EVENT_FILTERS : AUCTION_EVENT_FILTERS_V2;
+  const resp = await stellarRpc._getEvents({
+    startLedger,
+    filters: [
+      {
+        type: 'contract',
+        contractIds: [poolMeta.id],
+        topics,
+      },
+    ],
+    limit: 1000,
+  });
+
+  if (poolMeta.version === Version.V1) {
+    let events: PoolV1Event[] = [];
+    for (const respEvent of resp.events) {
+      let poolEvent = poolEventV1FromEventResponse(respEvent);
+      if (poolEvent) events.push(poolEvent);
+    }
+    return { events, latestLedger: resp.latestLedger };
+  } else {
+    let events: PoolV2Event[] = [];
+    for (const respEvent of resp.events) {
+      let poolEvent = poolEventV2FromEventResponse(respEvent);
+      if (poolEvent) events.push(poolEvent);
+    }
+    return { events, latestLedger: resp.latestLedger };
+  }
 }

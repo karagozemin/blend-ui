@@ -51,17 +51,14 @@ const Auction: NextPage = () => {
     pastEvents !== undefined && pastEvents.latestLedger > 0
   );
 
-  const allEvents =
-    pastEvents !== undefined && recentEvents !== undefined
-      ? pastEvents.events.concat(recentEvents?.events)
-      : [];
+  const allEvents = [...(pastEvents?.events ?? []), ...(recentEvents?.events ?? [])];
   // ensure events are sorted in ascending order by ledger
   allEvents.sort((a, b) => a.ledger - b.ledger);
   let auctions: Auctions = { filled: [], ongoing: [] };
   if (pool && backstop) {
-    if (poolMeta?.version === Version.V1)
+    if (poolMeta?.version === Version.V1) {
       auctions = getAuctionsfromV1Events(allEvents as PoolV1Event[], backstop.id);
-    else {
+    } else {
       auctions = getAuctionsfromV2Events(allEvents as PoolV2Event[]);
     }
   }

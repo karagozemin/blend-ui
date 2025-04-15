@@ -158,6 +158,8 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
   ],
 });
 
+const TX_FEE = '100000';
+
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
@@ -358,7 +360,7 @@ export const WalletProvider = ({ children = null as any }) => {
       const account = await stellarRpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
-        fee: BASE_FEE,
+        fee: TX_FEE,
         timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
       }).addOperation(operation);
       const transaction = tx_builder.build();
@@ -376,7 +378,7 @@ export const WalletProvider = ({ children = null as any }) => {
       const account = await stellarRpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
-        fee: '1000000',
+        fee: TX_FEE,
         timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 2 * 60 * 1000 },
       }).addOperation(operation);
       const transaction = tx_builder.build();
@@ -718,7 +720,7 @@ export const WalletProvider = ({ children = null as any }) => {
         const account = await stellarRpc.getAccount(walletAddress);
         const tx_builder = new TransactionBuilder(account, {
           networkPassphrase: network.passphrase,
-          fee: BASE_FEE,
+          fee: TX_FEE,
           timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
         });
         for (let asset of assets) {
