@@ -38,6 +38,7 @@ import {
   useBackstop,
   useBackstopPool,
   useBackstopPoolUser,
+  useFeeStats,
   useHorizonAccount,
   usePoolMeta,
   useSimulateOperation,
@@ -50,8 +51,9 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { network, isV2Enabled } = useSettings();
-  const { connected, walletAddress, backstopClaim, restore } = useWallet();
+  const { isV2Enabled } = useSettings();
+  const { connected, walletAddress, backstopClaim, restore, txFee, txFeeLevel, setTxFee } =
+    useWallet();
 
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
@@ -66,6 +68,7 @@ const Backstop: NextPage = () => {
     undefined,
     horizonAccount
   );
+  const { data: feeStats } = useFeeStats();
 
   const backstopPoolEst =
     backstop !== undefined && backstopPoolData !== undefined
@@ -88,6 +91,26 @@ const Backstop: NextPage = () => {
       : undefined;
 
   let claimOp = '';
+
+  if (feeStats !== undefined) {
+    switch (txFeeLevel) {
+      case 'Low':
+        if (txFee !== feeStats.sorobanInclusionFee.p30) {
+          setTxFee(feeStats.sorobanInclusionFee.p30);
+        }
+        break;
+      case 'Medium':
+        if (txFee !== feeStats.sorobanInclusionFee.p70) {
+          setTxFee(feeStats.sorobanInclusionFee.p70);
+        }
+        break;
+      case 'High':
+        if (txFee !== feeStats.sorobanInclusionFee.p95) {
+          setTxFee(feeStats.sorobanInclusionFee.p95);
+        }
+        break;
+    }
+  }
 
   if (isV2Enabled && poolMeta?.version == Version.V2) {
     const claimArgs: BackstopClaimV2Args = {
