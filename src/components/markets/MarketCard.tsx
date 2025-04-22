@@ -52,6 +52,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
   if (
     poolMeta === undefined ||
     pool === undefined ||
+    poolOracle === undefined ||
     backstopPool === undefined ||
     backstop === undefined
   ) {
@@ -163,6 +164,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, index, onLoaded,
       <Collapse in={expand} sx={{ width: '100%' }}>
         <MarketCardCollapse
           pool={pool}
+          oracle={poolOracle}
           poolEst={poolEst}
           backstopPool={backstopPool}
           backstopPoolEst={backstopPoolEst}
