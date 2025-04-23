@@ -583,6 +583,37 @@ export function useTokenMetadataList(
 }
 
 /**
+ * Fetch the fee stats from the RPC server.
+ * @returns Query result with the fee stats.
+ */
+export function useFeeStats(
+  enabled: boolean = true
+): UseQueryResult<{ low: string; medium: string; high: string }> {
+  const { network } = useSettings();
+  return useQuery({
+    staleTime: DEFAULT_STALE_TIME,
+    queryKey: ['feeStats'],
+    enabled: enabled,
+    queryFn: async () => {
+      let stellarRpc = new rpc.Server(network.rpc, network.opts);
+      const feeStats = await stellarRpc.getFeeStats();
+
+      const lowFee = Math.max(parseInt(feeStats.sorobanInclusionFee.p30), 500).toString();
+      const mediumFee = Math.max(parseInt(feeStats.sorobanInclusionFee.p60), 2000).toString();
+      const highFee = Math.max(parseInt(feeStats.sorobanInclusionFee.p90), 10000).toString();
+
+      return {
+        low: lowFee,
+        medium: mediumFee,
+        high: highFee,
+      };
+    },
+  });
+}
+
+// ***** HELPERS / UTILS ***** //
+
+/**
  * Helper function to create a token metadata query.
  */
 function createTokenMetadataQuery(
@@ -664,29 +695,4 @@ async function getAuctionEventsQuery(
     }
     return { events, latestLedger: resp.latestLedger };
   }
-}
-
-/**
- * Fetch the fee stats from the RPC server.
- * @returns Query result with the fee stats.
- */
-export function useFeeStats(
-  enabled: boolean = true
-): UseQueryResult<rpc.Api.GetFeeStatsResponse, Error> {
-  const { network } = useSettings();
-  return useQuery({
-    staleTime: DEFAULT_STALE_TIME,
-    queryKey: ['feeStats'],
-    enabled: enabled,
-    queryFn: async () => {
-      try {
-        let stellarRpc = new rpc.Server(network.rpc, network.opts);
-        const feeStats = await stellarRpc.getFeeStats();
-        return feeStats;
-      } catch (e) {
-        console.error('Error fetching fee stats', e);
-        return undefined;
-      }
-    },
-  });
 }

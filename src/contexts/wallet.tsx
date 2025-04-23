@@ -365,7 +365,6 @@ export const WalletProvider = ({ children = null as any }) => {
     operation: xdr.Operation
   ): Promise<rpc.Api.SimulateTransactionResponse> {
     try {
-      console.log('Simulating operation fee: ', txInclusionFee);
       setLoading(true);
       const account = await stellarRpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {

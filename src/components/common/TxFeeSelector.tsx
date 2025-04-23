@@ -1,11 +1,12 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
-import { Box, BoxProps, Menu, MenuItem, Skeleton, Typography } from '@mui/material';
+import { Box, BoxProps, Menu, MenuItem, Skeleton, Tooltip, Typography } from '@mui/material';
 import React from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useFeeStats } from '../../hooks/api';
 import theme from '../../theme';
 import { CustomButton } from './CustomButton';
+
 export interface TxFeeSelectorProps extends BoxProps {}
 
 export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
@@ -26,49 +27,51 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
     return <Skeleton />;
   }
 
-  const lowFee = Math.max(parseInt(feeStats.sorobanInclusionFee.p30), 500).toString();
-  const mediumFee = Math.max(parseInt(feeStats.sorobanInclusionFee.p60), 2000).toString();
-  const highFee = Math.max(parseInt(feeStats.sorobanInclusionFee.p90), 10000).toString();
-
-  switch (txInclusionFee.type) {
-    case 'Low':
-      if (lowFee !== txInclusionFee.fee) {
-        setTxInclusionFee({ type: 'Low', fee: lowFee });
-      }
-      break;
-    case 'Medium':
-      if (mediumFee !== txInclusionFee.fee) {
-        setTxInclusionFee({ type: 'Medium', fee: mediumFee });
-      }
-      break;
-    case 'High':
-      if (highFee !== txInclusionFee.fee) {
-        setTxInclusionFee({ type: 'High', fee: highFee });
-      }
-      break;
-  }
-
   return (
     <>
-      <CustomButton
-        id="fee-dropdown-button"
-        onClick={handleClick}
-        sx={{ padding: '4px', '&:hover': { color: 'white' } }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            color: theme.palette.text.secondary,
-            '&:hover': { color: 'white' },
-          }}
+      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        <Tooltip
+          title={
+            'The priority fee is the maximum amount you are willing to pay to be included in the next ledger, in stroops.'
+          }
+          placement="top"
+          enterTouchDelay={0}
+          enterDelay={500}
+          leaveTouchDelay={3000}
         >
-          <Typography variant="h5">Priority Fee: {txInclusionFee.type}</Typography>
-          {open ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
-        </Box>
-      </CustomButton>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              flexDirection: 'row',
+            }}
+          >
+            <Typography variant={'body1'} color={'text.secondary'} align="center">
+              Priority Fee:
+            </Typography>
+          </Box>
+        </Tooltip>
+        <CustomButton
+          id="fee-dropdown-button"
+          onClick={handleClick}
+          sx={{ padding: '4px', '&:hover': { color: 'white' } }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              color: theme.palette.text.secondary,
+              '&:hover': { color: 'white' },
+            }}
+          >
+            <Typography variant="h5">{`${txInclusionFee.type}`}</Typography>
+            {open ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+          </Box>
+        </CustomButton>
+      </Box>
       <Menu
         id="fee-menu"
         anchorEl={anchorEl}
@@ -80,7 +83,7 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
       >
         <MenuItem
           onClick={() => {
-            setTxInclusionFee({ type: 'Low', fee: lowFee });
+            setTxInclusionFee({ type: 'Low', fee: feeStats.low });
             handleClose();
           }}
           sx={{
@@ -91,11 +94,11 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             borderRadius: '5px',
           }}
         >
-          <Typography variant="body1">{`Low (${lowFee} stroops)`}</Typography>
+          <Typography variant="body1">{`Low (${feeStats.low} stroops)`}</Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {
-            setTxInclusionFee({ type: 'Medium', fee: mediumFee });
+            setTxInclusionFee({ type: 'Medium', fee: feeStats.medium });
             handleClose();
           }}
           sx={{
@@ -106,11 +109,11 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             borderRadius: '5px',
           }}
         >
-          <Typography variant="body1">{`Medium (${mediumFee} stroops)`}</Typography>
+          <Typography variant="body1">{`Medium (${feeStats.medium} stroops)`}</Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {
-            setTxInclusionFee({ type: 'High', fee: highFee });
+            setTxInclusionFee({ type: 'High', fee: feeStats.high });
             handleClose();
           }}
           sx={{
@@ -121,7 +124,7 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             borderRadius: '5px',
           }}
         >
-          <Typography variant="body1">{`High (${highFee} stroops)`}</Typography>
+          <Typography variant="body1">{`High (${feeStats.high} stroops)`}</Typography>
         </MenuItem>
       </Menu>
     </>
