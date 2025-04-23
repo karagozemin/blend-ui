@@ -79,10 +79,11 @@ const Dashboard: NextPage = () => {
         {userPoolData && (
           <TooltipText
             tooltip={
-              "The total number of supply and borrow positions you've created in this pool out of the maximum allowed."
+              'The total number of supply and borrow positions you have created in this pool out of the maximum allowed.'
             }
             width={'auto'}
             textColor="inherit"
+            helpIconColor="primary.main"
             sx={{
               color: theme.palette.primary.main,
               backgroundColor: theme.palette.primary.opaque,
