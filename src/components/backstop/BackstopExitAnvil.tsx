@@ -28,8 +28,15 @@ import { ValueChange } from '../common/ValueChange';
 export const BackstopExitAnvil = () => {
   const theme = useTheme();
   const { viewType, network } = useSettings();
-  const { walletAddress, txStatus, cometExit, txType, isLoading, createTrustlines, txFee } =
-    useWallet();
+  const {
+    walletAddress,
+    txStatus,
+    cometExit,
+    txType,
+    isLoading,
+    createTrustlines,
+    txInclusionFee,
+  } = useWallet();
 
   const BLND_ID = BLND_ASSET.contractId(network.passphrase);
   const USDC_ID = USDC_ASSET.contractId(network.passphrase);
@@ -376,7 +383,7 @@ export const BackstopExitAnvil = () => {
                   </>
                 }
                 value={`${toBalance(
-                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txFee),
+                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txInclusionFee.fee),
                   decimals
                 )} XLM`}
               />

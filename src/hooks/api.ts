@@ -28,6 +28,7 @@ import {
   Asset,
   BASE_FEE,
   Horizon,
+  Networks,
   rpc,
   TransactionBuilder,
   xdr,
@@ -149,7 +150,12 @@ export function usePoolMeta(
             return { id: poolId, version: Version.V1, ...metadata } as PoolMeta;
           }
         } else if (
-          metadata.wasmHash === 'a41fc53d6753b6c04eb15b021c55052366a4c8e0e21bc72700f461264ec1350e'
+          metadata.wasmHash ===
+            'a41fc53d6753b6c04eb15b021c55052366a4c8e0e21bc72700f461264ec1350e' ||
+          // testnet v2 pool hash
+          (network.passphrase === Networks.TESTNET &&
+            metadata.wasmHash ===
+              '6a7c67449f6bad0d5f641cfbdf03f430ec718faa85107ecb0b97df93410d1c43')
         ) {
           // v2 pool - validate backstop is correct
           if (metadata.backstop === BACKSTOP_ID_V2) {
@@ -669,7 +675,7 @@ export function useFeeStats(
 ): UseQueryResult<rpc.Api.GetFeeStatsResponse, Error> {
   const { network } = useSettings();
   return useQuery({
-    staleTime: USER_STALE_TIME,
+    staleTime: DEFAULT_STALE_TIME,
     queryKey: ['feeStats'],
     enabled: enabled,
     queryFn: async () => {

@@ -15,7 +15,7 @@ import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
-import { SectionSize } from '../common/Section';
+import { Section, SectionSize } from '../common/Section';
 import { StackedTextBox } from '../common/StackedTextBox';
 import { TooltipText } from '../common/TooltipText';
 import { PoolIcon } from '../pool/PoolIcon';
@@ -166,17 +166,13 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
           flexDirection: viewType === ViewType.REGULAR ? 'row' : 'column',
         }}
       >
-        <Box
+        <Section
+          width={viewType === ViewType.REGULAR ? SectionSize.TILE : SectionSize.FULL}
+          height={'54px'}
+          type="alt"
           sx={{
-            display: 'flex',
-            width: SectionSize.FULL,
-            margin: '6px',
-            padding: '6px',
             justifyContent: 'space-between',
             alignItems: 'center',
-            color: theme.palette.text.secondary,
-            backgroundColor: theme.palette.accent.opaque,
-            borderRadius: '4px',
             boxShadow:
               '0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
           }}
@@ -186,8 +182,9 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
               'The total number of supply and borrow positions that can be opened in this pool.'
             }
             width={'auto'}
-            sx={{ margin: '6px', height: '25px' }}
+            height={'30px'}
             textVariant="body1"
+            sx={{ margin: '6px', justifyContent: 'center' }}
           >
             {'Max Positions'}
           </TooltipText>
@@ -197,49 +194,43 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
               padding: '6px',
               display: 'flex',
               flexDirection: 'row',
-              height: '30px',
             }}
           >
             {pool.metadata.maxPositions}
           </Typography>
-        </Box>
-        {pool.metadata.minCollateral > BigInt(0) && (
-          <Box
+        </Section>
+        <Section
+          width={viewType === ViewType.REGULAR ? SectionSize.TILE : SectionSize.FULL}
+          type="alt"
+          height={'54px'}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow:
+              '0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
+          }}
+        >
+          <TooltipText
+            tooltip={'The minimum value of collateral required to borrow.'}
+            width={'auto'}
+            height={'30px'}
+            textVariant="body1"
+            sx={{ margin: '6px', justifyContent: 'center' }}
+          >
+            {'Min Collateral'}
+          </TooltipText>
+          <Typography
+            variant="body1"
+            height={'30px'}
             sx={{
-              display: 'flex',
-              width: SectionSize.FULL,
-              margin: '6px',
               padding: '6px',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              color: theme.palette.text.secondary,
-              backgroundColor: theme.palette.accent.opaque,
-              borderRadius: '4px',
-              boxShadow:
-                '0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
+              display: 'flex',
+              flexDirection: 'row',
             }}
           >
-            <TooltipText
-              tooltip={'The minimum value of collateral required to borrow.'}
-              width={'auto'}
-              textVariant="body1"
-              sx={{ margin: '6px', height: '25px' }}
-            >
-              {'Min Collateral'}
-            </TooltipText>
-            <Typography
-              variant="body1"
-              sx={{
-                padding: '6px',
-                display: 'flex',
-                flexDirection: 'row',
-                height: '30px',
-              }}
-            >
-              {`$${toBalance(pool.metadata.minCollateral, oracle.decimals)}`}
-            </Typography>
-          </Box>
-        )}
+            {`$${toBalance(pool.metadata.minCollateral, oracle.decimals)}`}
+          </Typography>
+        </Section>
       </Row>
       <Row>
         <LinkBox

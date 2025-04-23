@@ -55,8 +55,7 @@ export interface IWalletContext {
   lastTxFailure: string | undefined;
   txType: TxType;
   walletId: string | undefined;
-  txFee: string;
-  txFeeLevel: 'Low' | 'Medium' | 'High';
+  txInclusionFee: InclusionFee;
 
   isLoading: boolean;
   connect: (handleSuccess: (success: boolean) => void) => Promise<void>;
@@ -116,8 +115,7 @@ export interface IWalletContext {
   faucet(): Promise<undefined>;
   createTrustlines(asset: Asset[]): Promise<void>;
   getNetworkDetails(): Promise<Network & { horizonUrl: string }>;
-  setTxFee: (fee: string) => void;
-  setTxFeeLevel: (feeLevel: 'Low' | 'Medium' | 'High') => void;
+  setTxInclusionFee: (inclusionFee: InclusionFee) => void;
 }
 
 export enum TxStatus {
@@ -134,6 +132,11 @@ export enum TxType {
   CONTRACT,
   // A transaction that is a pre-requisite for another transaction
   PREREQ,
+}
+
+export interface InclusionFee {
+  type: 'Low' | 'Medium' | 'High';
+  fee: string;
 }
 
 const walletKit: StellarWalletsKit = new StellarWalletsKit({
@@ -160,7 +163,7 @@ const walletKit: StellarWalletsKit = new StellarWalletsKit({
     new HotWalletModule(),
   ],
 });
-const TX_FEE = '100000';
+
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
@@ -178,10 +181,14 @@ export const WalletProvider = ({ children = null as any }) => {
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [txFailure, setTxFailure] = useState<string | undefined>(undefined);
   const [txType, setTxType] = useState<TxType>(TxType.CONTRACT);
-  const [txFee, setTxFee] = useState<string>(TX_FEE);
-  const [txFeeLevel, setTxFeeLevel] = useState<'Low' | 'Medium' | 'High'>('Medium');
+  const [txInclusionFee, setTxInclusionFee] = useState<InclusionFee>({
+    type: 'Medium',
+    fee: '2000',
+  });
+
   // wallet state
   const [walletAddress, setWalletAddress] = useState<string>('');
+
   useEffect(() => {
     if (
       !connected &&
@@ -292,7 +299,7 @@ export const WalletProvider = ({ children = null as any }) => {
   async function restore(sim: rpc.Api.SimulateTransactionRestoreResponse): Promise<void> {
     let account = await stellarRpc.getAccount(walletAddress);
     setTxStatus(TxStatus.BUILDING);
-    let fee = parseInt(sim.restorePreamble.minResourceFee) + parseInt(txFee);
+    let fee = parseInt(sim.restorePreamble.minResourceFee) + parseInt(txInclusionFee.fee);
     let restore_tx = new TransactionBuilder(account, { fee: fee.toString() })
       .setNetworkPassphrase(network.passphrase)
       .setTimeout(0)
@@ -358,11 +365,12 @@ export const WalletProvider = ({ children = null as any }) => {
     operation: xdr.Operation
   ): Promise<rpc.Api.SimulateTransactionResponse> {
     try {
+      console.log('Simulating operation fee: ', txInclusionFee);
       setLoading(true);
       const account = await stellarRpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
-        fee: txFee,
+        fee: txInclusionFee.fee,
         timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 2 * 60 * 1000 },
       }).addOperation(operation);
       const transaction = tx_builder.build();
@@ -380,7 +388,7 @@ export const WalletProvider = ({ children = null as any }) => {
       const account = await stellarRpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
-        fee: txFee,
+        fee: txInclusionFee.fee,
         timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 2 * 60 * 1000 },
       }).addOperation(operation);
       const transaction = tx_builder.build();
@@ -722,7 +730,7 @@ export const WalletProvider = ({ children = null as any }) => {
         const account = await stellarRpc.getAccount(walletAddress);
         const tx_builder = new TransactionBuilder(account, {
           networkPassphrase: network.passphrase,
-          fee: txFee,
+          fee: txInclusionFee.fee,
           timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 2 * 60 * 1000 },
         });
         for (let asset of assets) {
@@ -773,8 +781,7 @@ export const WalletProvider = ({ children = null as any }) => {
         txType,
         walletId: autoConnect,
         isLoading: loading,
-        txFee,
-        txFeeLevel,
+        txInclusionFee,
         connect,
         disconnect,
         clearLastTx,
@@ -792,8 +799,7 @@ export const WalletProvider = ({ children = null as any }) => {
         faucet,
         createTrustlines,
         getNetworkDetails,
-        setTxFee,
-        setTxFeeLevel,
+        setTxInclusionFee,
       }}
     >
       {children}

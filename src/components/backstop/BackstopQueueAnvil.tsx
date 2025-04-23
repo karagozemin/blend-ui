@@ -33,8 +33,15 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus, isLoading, txFee } =
-    useWallet();
+  const {
+    connected,
+    walletAddress,
+    backstopQueueWithdrawal,
+    txType,
+    txStatus,
+    isLoading,
+    txInclusionFee,
+  } = useWallet();
 
   const { data: poolMeta } = usePoolMeta(poolId);
   const { data: backstop } = useBackstop(poolMeta?.version);
@@ -238,7 +245,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
                   </>
                 }
                 value={`${toBalance(
-                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txFee),
+                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txInclusionFee.fee),
                   decimals
                 )} XLM`}
               />

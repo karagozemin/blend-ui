@@ -37,7 +37,7 @@ import { ValueChange } from '../common/ValueChange';
 export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
-  const { connected, walletAddress, backstopDeposit, txStatus, txType, isLoading, txFee } =
+  const { connected, walletAddress, backstopDeposit, txStatus, txType, isLoading, txInclusionFee } =
     useWallet();
 
   const { data: poolMeta } = usePoolMeta(poolId);
@@ -214,7 +214,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
                   </>
                 }
                 value={`${toBalance(
-                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txFee),
+                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txInclusionFee.fee),
                   decimals
                 )} XLM`}
               />

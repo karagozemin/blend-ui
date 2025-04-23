@@ -55,7 +55,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     txType,
     createTrustlines,
     isLoading,
-    txFee,
+    txInclusionFee,
   } = useWallet();
 
   const { data: poolMeta } = usePoolMeta(poolId);
@@ -315,7 +315,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
                     </>
                   }
                   value={`${toBalance(
-                    BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txFee),
+                    BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txInclusionFee.fee),
                     decimals
                   )} XLM`}
                 />

@@ -12,7 +12,6 @@ import { rpc } from '@stellar/stellar-sdk';
 import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import {
-  useFeeStats,
   useHorizonAccount,
   usePool,
   usePoolMeta,
@@ -35,23 +34,13 @@ import { BorrowCapRing } from './BorrowCapRing';
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
-  const {
-    connected,
-    walletAddress,
-    poolClaim,
-    createTrustlines,
-    restore,
-    txFeeLevel,
-    txFee,
-    setTxFee,
-  } = useWallet();
+  const { connected, walletAddress, poolClaim, createTrustlines, restore } = useWallet();
 
   const { data: poolMeta } = usePoolMeta(poolId);
   const { data: account, refetch: refechAccount } = useHorizonAccount();
   const { data: pool } = usePool(poolMeta);
   const { data: poolOracle } = usePoolOracle(pool);
   const { data: userPoolData, refetch: refetchPoolUser } = usePoolUser(pool);
-  const { data: feeStats } = useFeeStats();
 
   const { emissions, claimedTokens } =
     userPoolData && pool
@@ -73,26 +62,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   if (pool === undefined || userPoolData === undefined) {
     return <Skeleton />;
-  }
-
-  if (feeStats !== undefined) {
-    switch (txFeeLevel) {
-      case 'Low':
-        if (txFee !== feeStats.sorobanInclusionFee.p30) {
-          setTxFee(feeStats.sorobanInclusionFee.p30);
-        }
-        break;
-      case 'Medium':
-        if (txFee !== feeStats.sorobanInclusionFee.p70) {
-          setTxFee(feeStats.sorobanInclusionFee.p70);
-        }
-        break;
-      case 'High':
-        if (txFee !== feeStats.sorobanInclusionFee.p95) {
-          setTxFee(feeStats.sorobanInclusionFee.p95);
-        }
-        break;
-    }
   }
 
   const hasBLNDTrustline = !requiresTrustline(account, BLND_ASSET);

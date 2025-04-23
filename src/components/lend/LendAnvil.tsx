@@ -47,7 +47,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading, txFee } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading, txInclusionFee } =
+    useWallet();
 
   const { data: poolMeta } = usePoolMeta(poolId);
   const { data: pool } = usePool(poolMeta);
@@ -247,7 +248,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
                   </>
                 }
                 value={`${toBalance(
-                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txFee),
+                  BigInt((simResponse as any)?.minResourceFee ?? 0) + BigInt(txInclusionFee.fee),
                   decimals
                 )} XLM`}
               />
