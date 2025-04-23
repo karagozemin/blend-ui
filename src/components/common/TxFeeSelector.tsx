@@ -29,16 +29,16 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
 
   return (
     <>
-      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-        <Tooltip
-          title={
-            'The priority fee is the maximum amount you are willing to pay to be included in the next ledger, in stroops.'
-          }
-          placement="top"
-          enterTouchDelay={0}
-          enterDelay={500}
-          leaveTouchDelay={3000}
-        >
+      <Tooltip
+        title={
+          'The priority fee is the maximum amount you are willing to pay to be included in the next ledger, in stroops.'
+        }
+        placement="top"
+        enterTouchDelay={0}
+        enterDelay={500}
+        leaveTouchDelay={3000}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
           <Box
             sx={{
               display: 'flex',
@@ -48,30 +48,30 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             }}
           >
             <Typography variant={'body1'} color={'text.secondary'} align="center">
-              Priority Fee:
+              Priority Fee
             </Typography>
           </Box>
-        </Tooltip>
-        <CustomButton
-          id="fee-dropdown-button"
-          onClick={handleClick}
-          sx={{ padding: '4px', '&:hover': { color: 'white' } }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              color: theme.palette.text.secondary,
-              '&:hover': { color: 'white' },
-            }}
+          <CustomButton
+            id="fee-dropdown-button"
+            onClick={handleClick}
+            sx={{ padding: '4px', '&:hover': { color: 'white' } }}
           >
-            <Typography variant="h5">{`${txInclusionFee.type}`}</Typography>
-            {open ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
-          </Box>
-        </CustomButton>
-      </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                color: theme.palette.text.secondary,
+                '&:hover': { color: 'white' },
+              }}
+            >
+              <Typography variant="body1">{`${txInclusionFee.type}`}</Typography>
+              {open ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+            </Box>
+          </CustomButton>
+        </Box>
+      </Tooltip>
       <Menu
         id="fee-menu"
         anchorEl={anchorEl}
