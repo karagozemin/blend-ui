@@ -1,4 +1,4 @@
-import { PoolEstimate } from '@blend-capital/blend-sdk';
+import { FixedMath, PoolEstimate, PositionsEstimate } from '@blend-capital/blend-sdk';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
@@ -7,7 +7,6 @@ import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositionList } from '../components/borrow/BorrowPositionList';
 import { AllbridgeButton } from '../components/bridge/allbridge';
-import { Banner } from '../components/common/Banner';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
@@ -57,6 +56,16 @@ const Dashboard: NextPage = () => {
   if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
     return <NotPoolBar poolId={safePoolId} />;
   }
+
+  const userTotalEffectiveCollateral =
+    pool && poolOracle && userPoolData
+      ? PositionsEstimate.build(pool, poolOracle, userPoolData.positions).totalEffectiveCollateral
+      : 0;
+
+  const showMinCollateralInfoBar = poolMeta
+    ? !showLend &&
+      userTotalEffectiveCollateral < FixedMath.toFloat(poolMeta.minCollateral, poolOracle?.decimals)
+    : false;
 
   return (
     <>
@@ -153,18 +162,32 @@ const Dashboard: NextPage = () => {
           <Typography variant="body1">{`$${toBalance(marketSize)}`}</Typography>
         </Box>
       </Row>
-      {poolMeta && poolMeta.minCollateral > BigInt(0) && !showLend && (
-        <Banner sx={{ backgroundColor: theme.palette.background.paper }}>
-          <Typography
-            sx={{ display: 'flex', gap: '4px', alignItems: 'center' }}
-            variant="body2"
-            color={theme.palette.text.primary}
-          >
-            <InfoOutlinedIcon sx={{ width: '15px' }} />
+      {showMinCollateralInfoBar && (
+        <Section
+          width={SectionSize.FULL}
+          type="alt"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            margin: '6px',
+            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.background.paper,
+            border: '0px solid red',
+          }}
+        >
+          <InfoOutlinedIcon
+            sx={{
+              height: '16px',
+              width: '16px',
+              marginBottom: '2px',
+              marginRight: '6px',
+            }}
+          />
+          <Typography variant="body2">
             Users must have a collateral value of $
-            {toBalance(poolMeta.minCollateral, poolOracle?.decimals)} to borrow from this pool
+            {toBalance(poolMeta?.minCollateral, poolOracle?.decimals)} to borrow from this pool
           </Typography>
-        </Banner>
+        </Section>
       )}
       <Divider />
       {showLend ? <LendMarketList poolId={safePoolId} /> : <BorrowMarketList poolId={safePoolId} />}
