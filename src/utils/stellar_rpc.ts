@@ -64,7 +64,6 @@ export async function getOraclePrices(
         if (!priceResultMap || priceResultMap.length !== token_ids.length) {
           throw new Error('Invalid number of prices returned from oracle');
         }
-
         let priceMap = new Map<string, PriceData>();
         for (const entry of priceResultMap || []) {
           const assetId = scValToNative(entry.key())[1];
@@ -78,5 +77,5 @@ export async function getOraclePrices(
       }
     }
   }
-  return new Map<string, PriceData>();
+  throw new Error('Price fetcher simulation not successful');
 }

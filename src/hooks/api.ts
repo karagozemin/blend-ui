@@ -232,14 +232,26 @@ export function usePoolOracle(
     queryFn: async () => {
       if (pool !== undefined) {
         if (ORACLE_PRICE_FETCHER !== undefined) {
-          const { decimals, latestLedger } = await getOracleDecimals(network, pool.metadata.oracle);
-          const prices = await getOraclePrices(
-            network,
-            ORACLE_PRICE_FETCHER,
-            pool.metadata.oracle,
-            pool.metadata.reserveList
-          );
-          return new PoolOracle(pool.metadata.oracle, prices, decimals, latestLedger);
+          try {
+            const { decimals, latestLedger } = await getOracleDecimals(
+              network,
+              pool.metadata.oracle
+            );
+            const prices = await getOraclePrices(
+              network,
+              ORACLE_PRICE_FETCHER,
+              pool.metadata.oracle,
+              pool.metadata.reserveList
+            );
+            if (prices.size < pool.metadata.reserveList.length) {
+              throw new Error('Invalid number of prices returned from oracle');
+            }
+            return new PoolOracle(pool.metadata.oracle, prices, decimals, latestLedger);
+          } catch (e: any) {
+            console.error('Price fetcher call failed: ', e);
+            // if the oracle fetcher fails, fallback to default loading method
+            return await pool.loadOracle();
+          }
         } else {
           return await pool.loadOracle();
         }
