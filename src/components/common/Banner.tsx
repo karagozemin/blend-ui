@@ -10,11 +10,11 @@ export function Banner({ children, sx }: BannerProps) {
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
         width: '100%',
-        height: '30px',
+        minHeight: '30px',
         borderRadius: '5px',
         padding: '6px',
         ...sx,

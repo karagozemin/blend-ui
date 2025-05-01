@@ -27,11 +27,15 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
     return <Skeleton />;
   }
 
+  const lowFeeXLM = Number(feeStats.low) / 1e7;
+  const mediumFeeXLM = Number(feeStats.medium) / 1e7;
+  const highFeeXLM = Number(feeStats.high) / 1e7;
+
   return (
     <>
       <Tooltip
         title={
-          'The priority fee is the maximum amount you are willing to pay to be included in the next ledger, in stroops.'
+          'The priority fee is the maximum amount you are willing to pay to be included in the next ledger, in XLM.'
         }
         placement="top"
         enterTouchDelay={0}
@@ -94,7 +98,7 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             borderRadius: '5px',
           }}
         >
-          <Typography variant="body1">{`Low (${feeStats.low} stroops)`}</Typography>
+          <Typography variant="body1">{`Low (${lowFeeXLM} XLM)`}</Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -109,7 +113,7 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             borderRadius: '5px',
           }}
         >
-          <Typography variant="body1">{`Medium (${feeStats.medium} stroops)`}</Typography>
+          <Typography variant="body1">{`Medium (${mediumFeeXLM} XLM)`}</Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -124,7 +128,7 @@ export const TxFeeSelector: React.FC<TxFeeSelectorProps> = () => {
             borderRadius: '5px',
           }}
         >
-          <Typography variant="body1">{`High (${feeStats.high} stroops)`}</Typography>
+          <Typography variant="body1">{`High (${highFeeXLM} XLM)`}</Typography>
         </MenuItem>
       </Menu>
     </>

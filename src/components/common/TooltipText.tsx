@@ -58,9 +58,10 @@ export const TooltipText: React.FC<TooltipTextProps> = ({
           <HelpOutline
             sx={{
               color: helpIconColor,
-              width: '15px',
+              width: '16px',
               marginLeft: '4px',
-              height: '15px',
+              height: '16px',
+              marginBottom: '2px', // account for text baseline
             }}
           />
         </Box>
