@@ -99,7 +99,7 @@ const Withdraw: NextPage = () => {
           >
             <TooltipText
               tooltip={
-                'Supplied funds can be collateralized or not, and represent seperate positions based on the collateral usage. Each position need to be withdrawn separately.'
+                'Supplied funds can be collateralized. A position with collateral enabled is separate from a position with collateral disabled and must be withdrawn separately.'
               }
               width="auto"
               textVariant="body2"
