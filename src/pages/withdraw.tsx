@@ -1,14 +1,18 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { RateDisplay } from '../components/common/RateDisplay';
 import { ReserveDetailsBar } from '../components/common/ReserveDetailsBar';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
+import { ToggleButton } from '../components/common/ToggleButton';
+import { TooltipText } from '../components/common/TooltipText';
 import { NotPoolBar } from '../components/pool/NotPoolBar';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
+import { useSettings, ViewType } from '../contexts';
 import {
   useBackstop,
   usePool,
@@ -23,6 +27,7 @@ import { estimateEmissionsApr } from '../utils/math';
 
 const Withdraw: NextPage = () => {
   const theme = useTheme();
+  const { viewType } = useSettings();
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
@@ -38,7 +43,10 @@ const Withdraw: NextPage = () => {
   const reserve = pool?.reserves.get(safeAssetId);
   const tokenSymbol = tokenMetadata?.symbol ?? toCompactAddress(safeAssetId);
 
-  const currentDeposit = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
+  const [showCollateral, setShowCollateral] = useState(true);
+
+  const currentCollateral = reserve && poolUser ? poolUser.getCollateralFloat(reserve) : undefined;
+  const currentSupply = reserve && poolUser ? poolUser.getSupplyFloat(reserve) : undefined;
   const emissionsPerAsset =
     reserve && reserve.supplyEmissions !== undefined
       ? reserve.supplyEmissions.emissionsPerYearPerToken(
@@ -52,9 +60,23 @@ const Withdraw: NextPage = () => {
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
 
+  const hasSupplyBalance = currentSupply !== undefined && currentSupply > 0;
+
   if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
     return <NotPoolBar poolId={safePoolId} />;
   }
+
+  const handleCollateralClick = () => {
+    if (!showCollateral) {
+      setShowCollateral(true);
+    }
+  };
+
+  const handleNonCollateralClick = () => {
+    if (showCollateral) {
+      setShowCollateral(false);
+    }
+  };
 
   return (
     <>
@@ -63,8 +85,54 @@ const Withdraw: NextPage = () => {
       </Row>
       <ReserveDetailsBar action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
 
-      <Row>
-        <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
+      <Row sx={{ flexDirection: viewType === ViewType.REGULAR ? 'row' : 'column' }}>
+        {hasSupplyBalance && (
+          <Section
+            width={viewType === ViewType.REGULAR ? SectionSize.TILE : SectionSize.FULL}
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px',
+            }}
+          >
+            <TooltipText
+              tooltip={
+                'Supplied funds can be collateralized or not, and represent seperate positions based on the collateral usage. Each position need to be withdrawn separately.'
+              }
+              width="auto"
+              textVariant="body2"
+              textColor={'text.secondary'}
+            >
+              {'Collateral'}
+            </TooltipText>
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+              <ToggleButton
+                active={showCollateral}
+                palette={theme.palette.lend}
+                sx={{ width: '50%', padding: '6px' }}
+                onClick={handleCollateralClick}
+              >
+                Enabled
+              </ToggleButton>
+              <ToggleButton
+                active={!showCollateral}
+                palette={theme.palette.lend}
+                sx={{ width: '50%', padding: '6px' }}
+                onClick={handleNonCollateralClick}
+              >
+                Disabled
+              </ToggleButton>
+            </Box>
+          </Section>
+        )}
+        <Section
+          width={
+            hasSupplyBalance && viewType === ViewType.REGULAR ? SectionSize.TILE : SectionSize.FULL
+          }
+          sx={{ padding: '12px' }}
+        >
           <Box
             sx={{
               width: '100%',
@@ -79,7 +147,10 @@ const Withdraw: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
-                {toBalance(currentDeposit)}
+                {toBalance(
+                  showCollateral ? currentCollateral : currentSupply,
+                  reserve?.config.decimals
+                )}
               </Typography>
             </Box>
             <Box>
@@ -129,7 +200,7 @@ const Withdraw: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <WithdrawAnvil poolId={safePoolId} assetId={safeAssetId} />
+        <WithdrawAnvil poolId={safePoolId} assetId={safeAssetId} isCollateral={showCollateral} />
       </Row>
     </>
   );

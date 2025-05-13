@@ -6,6 +6,7 @@ export enum SectionSize {
   FULL = 'calc(100% - 12px)',
   TILE = 'calc(50% - 12px)',
   THIRD = 'calc(33.33% - 12px)',
+  TWO_THIRD = 'calc(66.67% - 12px)',
   EIGHTY = 'calc(80% - 12px)',
   TWENTY = 'calc(20% - 12px)',
 }
