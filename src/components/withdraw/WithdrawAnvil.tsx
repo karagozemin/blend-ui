@@ -10,7 +10,7 @@ import {
 import { Box, Typography, useTheme } from '@mui/material';
 import { rpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import {
@@ -40,7 +40,11 @@ import { toUSDBalance } from '../common/USDBalance';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
-export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
+export interface WithdrawAnvilProps extends ReserveComponentProps {
+  isCollateral: boolean;
+}
+
+export const WithdrawAnvil: React.FC<WithdrawAnvilProps> = ({ poolId, assetId, isCollateral }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
 
@@ -85,7 +89,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         requests: [
           {
             amount: scaleInputToBigInt(toWithdrawSubmit, decimals),
-            request_type: RequestType.WithdrawCollateral,
+            request_type: isCollateral ? RequestType.WithdrawCollateral : RequestType.Withdraw,
             address: reserve.assetId,
           },
         ],
@@ -106,6 +110,10 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     }
     setLoadingEstimate(false);
   });
+
+  useEffect(() => {
+    setToWithdraw('');
+  }, [isCollateral]);
 
   async function handleAddAssetTrustline() {
     if (connected && tokenMetadata?.asset) {
@@ -171,7 +179,9 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     if (reserve && poolUser) {
-      let curSupplied = poolUser.getCollateralFloat(reserve);
+      let curSupplied = isCollateral
+        ? poolUser.getCollateralFloat(reserve)
+        : poolUser.getSupplyFloat(reserve);
       let realWithdraw = withdrawInput;
       let num_withdraw = Number(withdrawInput);
       if (num_withdraw > curSupplied) {
@@ -188,8 +198,10 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const handleWithdrawMax = () => {
     if (reserve && poolUser) {
-      let curSupplied = poolUser.getCollateralFloat(reserve);
-      if (poolUser.positions.liabilities.size === 0) {
+      let curSupplied = isCollateral
+        ? poolUser.getCollateralFloat(reserve)
+        : poolUser.getSupplyFloat(reserve);
+      if (poolUser.positions.liabilities.size === 0 || isCollateral === false) {
         handleWithdrawAmountChange((curSupplied * 1.005).toFixed(decimals));
       } else if (curPositionsEstimate && assetToBase) {
         let to_bounded_hf =
@@ -303,8 +315,16 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
               />
               <ValueChange
                 title="Your total supplied"
-                curValue={`${toBalance(poolUser?.getCollateralFloat(reserve))} ${symbol}`}
-                newValue={`${toBalance(newPoolUser?.getCollateralFloat(reserve))} ${symbol}`}
+                curValue={`${toBalance(
+                  isCollateral
+                    ? poolUser?.getCollateralFloat(reserve)
+                    : poolUser?.getSupplyFloat(reserve)
+                )} ${symbol}`}
+                newValue={`${toBalance(
+                  isCollateral
+                    ? newPoolUser?.getCollateralFloat(reserve)
+                    : newPoolUser?.getSupplyFloat(reserve)
+                )} ${symbol}`}
               />
               <ValueChange
                 title="Borrow capacity"
