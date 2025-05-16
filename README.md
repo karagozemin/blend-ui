@@ -1,32 +1,45 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Blend UI
+
+An open source UI for interacting with the Blend Protocol.
 
 ## Getting Started
 
-First, run the development server:
+The Blend UI has network specific configurations and build commands, which all export the UI to `out/`.
+
+To run the UI as a dev server, first build the UI to setup the local environment variables then run:
 
 ```bash
-yarn dev
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Testnet
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+The testnet configuration is located at `.env.testnet`. To build the testnet version, run:
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+```bash
+npm run build:testnet
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+#### Mainnet
 
-## Learn More
+The mainnet configuration is located at `.env.production`. To build the mainnet version, run:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build:mainnet
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Standalone
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+It's recommended to edit the `.env.testnet` config file for any local or custom Blend deployment, then run:
 
-## Deploy on Vercel
+```bash
+npm run build:testnet
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## IPFS Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Each release gets deployed to IPFS automatically. To get the latest release, please see the [Releases page](https://github.com/blend-capital/blend-ui/releases).
+
+## Contributing
+
+Contributions are welcome! If you have any ideas, suggestions, or bug fixes, please feel free to open an issue or submit a pull request.
