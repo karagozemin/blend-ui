@@ -77,7 +77,7 @@ export const RateDisplay = ({
               src="/icons/dashboard/pool_emissions_icon.svg.svg"
               height={`${18}px`}
               width={`${18}px`}
-              alt="emzission"
+              alt="emission"
             />
           </Box>
         )}

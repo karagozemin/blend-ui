@@ -23,9 +23,9 @@ export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     return <Skeleton />;
   }
 
-  let collateralCap = 'None';
+  let supplyCap = 'None';
   if (reserve.config instanceof ReserveConfigV2) {
-    collateralCap =
+    supplyCap =
       reserve.config.supply_cap === I128MAX
         ? 'None'
         : toBalance(reserve.config.supply_cap, reserve.config.decimals);
@@ -114,8 +114,8 @@ export const AssetConfig: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           }}
         />
         <StackedText
-          title={'Collateral Cap'}
-          text={collateralCap}
+          title={'Supply Cap'}
+          text={supplyCap}
           sx={{
             display: 'flex',
             flex: flexView,

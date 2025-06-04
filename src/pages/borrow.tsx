@@ -37,7 +37,7 @@ const Borrow: NextPage = () => {
   const maxUtilFloat = reserve ? FixedMath.toFloat(BigInt(reserve.config.max_util), 7) : 1;
   const totalSupplied = reserve ? reserve.totalSupplyFloat() : 0;
   const availableToBorrow = reserve
-    ? totalSupplied * maxUtilFloat - reserve.totalLiabilitiesFloat()
+    ? Math.max(totalSupplied * maxUtilFloat - reserve.totalLiabilitiesFloat(), 0)
     : 0;
   const oraclePrice = reserve ? poolOracle?.getPriceFloat(reserve.assetId) : 0;
   const emissionsPerAsset =
