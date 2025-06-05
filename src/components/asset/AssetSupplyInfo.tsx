@@ -1,5 +1,6 @@
-import { Circle } from '@mui/icons-material';
+import { FixedMath, ReserveConfigV2 } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import Circle from '@mui/icons-material/Circle';
 import { Box, Typography, useTheme } from '@mui/material';
 import {
   useBackstop,
@@ -16,6 +17,7 @@ import { RateDisplay } from '../common/RateDisplay';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { SupplyCapWarning } from './SupplyCapWarning';
 
 export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const { data: poolMeta } = usePoolMeta(poolId);
@@ -39,6 +41,12 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
       : undefined;
   const hasData = pool && poolOracle && reserve && oraclePrice;
   const theme = useTheme();
+  const atSupplyLimit =
+    reserve && reserve.config instanceof ReserveConfigV2
+      ? FixedMath.toFloat(reserve.config.supply_cap, reserve.config.decimals) -
+          reserve.totalSupplyFloat() <=
+        0
+      : false;
 
   return (
     <>
@@ -97,7 +105,16 @@ export const AssetSupplyInfo: React.FC<ReserveComponentProps> = ({ poolId, asset
                 background: theme.palette.background.default,
               }}
             >
-              <Typography sx={{ padding: '6px' }}>Total Supplied</Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography sx={{ padding: '6px' }}>Total Supplied</Typography>
+                {atSupplyLimit && <SupplyCapWarning symbol={tokenSymbol} />}
+              </Box>
               <Typography sx={{ padding: '6px', color: theme.palette.lend.main }}>
                 {toBalance(reserve.totalSupplyFloat())}
               </Typography>

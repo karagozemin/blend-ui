@@ -45,8 +45,6 @@ const Asset: NextPage = () => {
   const assetStatus =
     reserve && reserve.config instanceof ReserveConfigV2 ? reserve.config.enabled : true;
 
-  const hasData = pool && poolOracle && reserve;
-
   if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
     return <NotPoolBar poolId={safePoolId} />;
   }

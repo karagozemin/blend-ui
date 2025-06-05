@@ -1,7 +1,9 @@
+import { FixedMath, ReserveConfigV2 } from '@blend-capital/blend-sdk';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Link, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { SupplyCapWarning } from '../components/asset/SupplyCapWarning';
 import { AllbridgeButton } from '../components/bridge/allbridge';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { RateDisplay } from '../components/common/RateDisplay';
@@ -61,6 +63,13 @@ const Supply: NextPage = () => {
     backstop && emissionsPerAsset > 0 && oraclePrice
       ? estimateEmissionsApr(emissionsPerAsset, backstop.backstopToken, oraclePrice)
       : undefined;
+
+  const atSupplyLimit =
+    reserve && reserve.config instanceof ReserveConfigV2
+      ? FixedMath.toFloat(reserve.config.supply_cap, reserve.config.decimals) -
+          reserve.totalSupplyFloat() <=
+        0
+      : false;
 
   if (poolError?.message === NOT_BLEND_POOL_ERROR_MESSAGE) {
     return <NotPoolBar poolId={safePoolId} />;
@@ -148,16 +157,20 @@ const Supply: NextPage = () => {
           <StackedText
             title="Collateral Factor"
             text={toPercentage(reserve?.getCollateralFactor())}
-            sx={{ width: '100%', padding: '6px' }}
+            sx={{ padding: '6px' }}
             tooltip="The percent of this asset's value added to your borrow capacity."
           ></StackedText>
         </Section>
-        <Section width={SectionSize.THIRD}>
+        <Section
+          width={SectionSize.THIRD}
+          sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <StackedText
             title="Total Supplied"
             text={toBalance(reserve?.totalSupplyFloat())}
-            sx={{ width: '100%', padding: '6px' }}
-          ></StackedText>
+            sx={{ padding: '6px' }}
+          />
+          {atSupplyLimit && <SupplyCapWarning symbol={symbol} sx={{ marginRight: '6px' }} />}
         </Section>
       </Row>
       <LendAnvil poolId={safePoolId} assetId={safeAssetId} />
