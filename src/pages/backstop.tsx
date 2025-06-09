@@ -177,7 +177,7 @@ const Backstop: NextPage = () => {
   };
 
   const renderClaimButton = () => {
-    if (!isRestore && !isError && poolMeta?.version !== Version.V2)
+    if (!isRestore && !isError)
       return (
         <CustomButton
           sx={{
@@ -224,10 +224,6 @@ const Backstop: NextPage = () => {
       if (isRestore) {
         buttonText = 'Restore Data';
         onClick = handleRestore;
-      } else if (poolMeta?.version === Version.V2) {
-        buttonText = 'V2 Claim Disabled';
-        buttonTooltip = 'Claiming is disabled until the backstop swap to V2 is complete';
-        disabled = true;
       } else if (isError) {
         const claimError = parseError(claimSimResult);
         buttonText = 'Error checking claim';

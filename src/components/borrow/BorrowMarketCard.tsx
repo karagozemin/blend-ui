@@ -1,4 +1,4 @@
-import { Reserve } from '@blend-capital/blend-sdk';
+import { FixedMath, Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
@@ -39,7 +39,11 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const { data: tokenMetadata } = useTokenMetadata(reserve.assetId);
   const symbol = tokenMetadata?.symbol ?? formatter.toCompactAddress(reserve.assetId);
 
-  const available = reserve.totalSupplyFloat() - reserve.totalLiabilitiesFloat();
+  const maxUtilFloat = reserve ? FixedMath.toFloat(BigInt(reserve.config.max_util), 7) : 1;
+  const totalSupplied = reserve ? reserve.totalSupplyFloat() : 0;
+  const availableToBorrow = reserve
+    ? Math.max(totalSupplied * maxUtilFloat - reserve.totalLiabilitiesFloat(), 0)
+    : 0;
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -91,7 +95,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toBalance(available)}</Typography>
+            <Typography variant="body1">{formatter.toBalance(availableToBorrow)}</Typography>
           </Box>
 
           <Box
