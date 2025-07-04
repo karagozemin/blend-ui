@@ -1,5 +1,5 @@
 import { Version } from '@blend-capital/blend-sdk';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import Image from 'next/image';
 import { ViewType, useSettings } from '../../contexts';
 import { useBackstop } from '../../hooks/api';
@@ -11,7 +11,15 @@ import { NavMenu } from './NavMenu';
 import { WalletMenu } from './WalletMenu';
 
 export const NavBar = () => {
+  const theme = useTheme();
   const { viewType, lastPool } = useSettings();
+  
+  // Mobile screen detection ile override
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallScreen = useMediaQuery('(max-width:900px)');
+  
+  // Force compact view on mobile
+  const effectiveViewType = (isMobile || isSmallScreen) ? ViewType.COMPACT : viewType;
 
   const { data: backstop } = useBackstop(Version.V1, lastPool == undefined);
   const poolId = (lastPool ? lastPool.id : backstop?.config?.rewardZone[0]) ?? '';
@@ -25,7 +33,8 @@ export const NavBar = () => {
           </IconButton>
         </a>
       </SectionBase>
-      {viewType === ViewType.REGULAR && (
+      
+      {effectiveViewType === ViewType.REGULAR && (
         <Box
           sx={{
             width: '762px',
@@ -36,16 +45,21 @@ export const NavBar = () => {
           }}
         >
           <Section width={SectionSize.LARGE}>
-            <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '33%' }} />
+            <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '25%' }} />
             <NavItem
               to={{ pathname: '/dashboard', query: { poolId } }}
               title="Dashboard"
-              sx={{ width: '33%' }}
+              sx={{ width: '25%' }}
             />
             <NavItem
               to={{ pathname: '/backstop', query: { poolId } }}
               title="Backstop"
-              sx={{ width: '33%' }}
+              sx={{ width: '25%' }}
+            />
+            <NavItem
+              to={{ pathname: '/sentinel' }}
+              title="Sentinel"
+              sx={{ width: '25%' }}
             />
           </Section>
           <Section width={SectionSize.SMALL}>
@@ -53,7 +67,7 @@ export const NavBar = () => {
           </Section>
         </Box>
       )}
-      {viewType !== ViewType.REGULAR && (
+      {effectiveViewType !== ViewType.REGULAR && (
         <SectionBase sx={{ width: 'calc(100% - 124px)', padding: '6px', margin: '6px' }}>
           <WalletMenu />
         </SectionBase>

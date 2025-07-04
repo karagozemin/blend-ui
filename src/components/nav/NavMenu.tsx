@@ -56,6 +56,11 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
+          <Link href={{ pathname: '/sentinel' }}>
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Sentinel
+            </MenuItem>
+          </Link>
           <Link href={{ pathname: '/auction', query: { poolId: safePoolId } }}>
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Auctions
@@ -114,30 +119,6 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <NavItem
-            onClick={handleClose}
-            to={{ pathname: '/' }}
-            title="Markets"
-            sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
-          />
-          <NavItem
-            onClick={handleClose}
-            to={{ pathname: '/dashboard', query: { poolId: poolId } }}
-            title="Dashboard"
-            sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
-          />
-          <NavItem
-            onClick={handleClose}
-            to={{ pathname: '/backstop', query: { poolId: poolId } }}
-            title="Backstop"
-            sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
-          />
-          <NavItem
-            onClick={handleClose}
-            to={{ pathname: '/auction', query: { poolId: poolId } }}
-            title="Auctions"
-            sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
-          />
           <a href="https://core.allbridge.io/" target="_blank" rel="noreferrer">
             <MenuItem
               onClick={handleClose}
