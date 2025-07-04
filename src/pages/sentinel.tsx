@@ -8,11 +8,11 @@ import { Section, SectionSize } from '../components/common/Section';
 import { useWallet } from '../contexts/wallet';
 import { useBackstop, usePool, usePoolMeta, usePoolOracle, usePoolUser } from '../hooks/api';
 
-// Bilinen pool'ların listesi - gerçek projenizde bu API'den gelir
+// List of known pools - in real project this comes from API
 const KNOWN_POOLS = [
-  'CCOZDRWN6T7EPVJFMZ7S3C4NPJR26BB745GVB46RJDKVNZGBQYBDX5PA', // Ana USDC pool
-  'CB7ABQD5M3XJOXS2NNVMHH5JKPMM4XPZRXJF2PJJNKMGCUEJ7BSQAACC', // XLM pool (örnek)
-  'CDMLPNYTJPTQKTL5QNXMV7B2ELYKTNZTPWN7FGHBTWK7VN5C2JEMW5B5'  // AQUA pool (örnek)
+  'CCOZDRWN6T7EPVJFMZ7S3C4NPJR26BB745GVB46RJDKVNZGBQYBDX5PA', // Main USDC pool
+  'CB7ABQD5M3XJOXS2NNVMHH5JKPMM4XPZRXJF2PJJNKMGCUEJ7BSQAACC', // XLM pool (example)
+  'CDMLPNYTJPTQKTL5QNXMV7B2ELYKTNZTPWN7FGHBTWK7VN5C2JEMW5B5'  // AQUA pool (example)
 ];
 
 interface PositionData {
@@ -34,7 +34,7 @@ const Sentinel: NextPage = () => {
   const [telegramNotification, setTelegramNotification] = useState<string>('');
   const [showNotification, setShowNotification] = useState(false);
 
-  // Her pool için veri çek
+  // Fetch data for each pool
   const poolQueries = KNOWN_POOLS.map(poolId => {
     const { data: poolMeta } = usePoolMeta(poolId, connected);
     const { data: pool } = usePool(poolMeta, connected);
@@ -52,25 +52,25 @@ const Sentinel: NextPage = () => {
     };
   });
 
-  // Pozisyon verilerini hesapla
+  // Calculate position data
   const positionData = useMemo(() => {
     if (!connected) return [];
     
     return poolQueries
       .filter(query => query.pool && query.poolOracle && query.poolUser && query.poolMeta)
       .map(({ poolId, pool, poolOracle, poolUser, poolMeta }) => {
-                 const positionsEst = PositionsEstimate.build(pool!, poolOracle!, poolUser!.positions);
+         const positionsEst = PositionsEstimate.build(pool!, poolOracle!, poolUser!.positions);
          
          const collateral = positionsEst.totalEffectiveCollateral;
          const debt = positionsEst.totalBorrowed;
          const ltv = debt > 0 ? (debt / collateral) * 100 : 0;
          
-         // Health Factor hesaplama
-         const liquidationThreshold = 0.82; // Ortalama liquidation threshold
+         // Health Factor calculation
+         const liquidationThreshold = 0.82; // Average liquidation threshold
          const healthFactor = debt > 0 ? (collateral * liquidationThreshold) / debt : 999;
          
-         // Risk skoru hesaplama (LTV + düşük health factor risk)
-         let riskScore = ltv * 0.8; // LTV'nin %80'i
+         // Risk score calculation (LTV + low health factor risk)
+         let riskScore = ltv * 0.8; // 80% of LTV
          if (healthFactor < 1.2) riskScore += 30;
          if (healthFactor < 1.1) riskScore += 20;
          riskScore = Math.min(Math.max(riskScore, 0), 100);
@@ -86,28 +86,28 @@ const Sentinel: NextPage = () => {
           healthFactor: healthFactor
         };
       })
-      .filter(pos => pos.debt > 0 || pos.collateral > 0); // Sadece aktif pozisyonları göster
+      .filter(pos => pos.debt > 0 || pos.collateral > 0); // Show only active positions
   }, [poolQueries, connected]);
 
-  // Risk uyarısını kontrol et
+  // Check risk alert
   useEffect(() => {
     if (positionData.length > 0) {
       const highRiskPositions = positionData.filter(pos => pos.riskScore >= 80);
       
       if (highRiskPositions.length > 0) {
-        // Demo Telegram bildirimi
-        const message = `🚨 YÜKSEK RİSK UYARISI! ${highRiskPositions.length} pozisyonunuz risk skoru 80+ seviyesinde. Acil aksiyona geçin!`;
+        // Demo Telegram notification
+        const message = `🚨 HIGH RISK WARNING! ${highRiskPositions.length} of your positions have risk score 80+ level. Take immediate action!`;
         setTelegramNotification(message);
         setShowNotification(true);
         
-        // Gerçek implementasyonda burada Telegram API'si çağrılır
+        // In real implementation, Telegram API would be called here
         console.log('Telegram Bot Message:', message);
         sendTelegramNotification(message, highRiskPositions);
       }
     }
   }, [positionData]);
 
-  // Telegram bildirimi fonksiyonu
+  // Telegram notification function
   const sendTelegramNotification = async (message: string, highRiskPositions: PositionData[]) => {
     try {
       const BOT_API_URL = process.env.NEXT_PUBLIC_BOT_API_URL || 'http://localhost:3001';
@@ -141,7 +141,7 @@ const Sentinel: NextPage = () => {
     }
   };
 
-  // Overall Health Factor hesaplama
+  // Overall Health Factor calculation
   const totalCollateral = positionData.reduce((sum, pos) => sum + pos.collateral, 0);
   const totalDebt = positionData.reduce((sum, pos) => sum + pos.debt, 0);
   const weightedLiquidationThreshold = positionData.reduce((sum, pos) => 
@@ -151,7 +151,7 @@ const Sentinel: NextPage = () => {
     (totalCollateral * weightedLiquidationThreshold) / totalDebt : 999;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('tr-TR', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -172,9 +172,9 @@ const Sentinel: NextPage = () => {
   };
 
   const getRiskLabel = (riskScore: number) => {
-    if (riskScore < 30) return { label: 'Düşük Risk', color: 'success' };
-    if (riskScore < 70) return { label: 'Orta Risk', color: 'warning' };
-    return { label: 'Yüksek Risk', color: 'error' };
+    if (riskScore < 30) return { label: 'Low Risk', color: 'success' };
+    if (riskScore < 70) return { label: 'Medium Risk', color: 'warning' };
+    return { label: 'High Risk', color: 'error' };
   };
 
   if (!connected) {
@@ -197,15 +197,15 @@ const Sentinel: NextPage = () => {
                 Blend Sentinel
               </Typography>
               <Typography variant="h6" sx={{ color: theme.palette.text.secondary }}>
-                Risk Analiz & Monitör Sistemi
+                Risk Analysis & Monitoring System
               </Typography>
               
               <Card sx={{ padding: '24px', maxWidth: '500px' }}>
                 <Typography variant="h6" sx={{ marginBottom: '16px' }}>
-                  Wallet Bağlantısı Gerekli
+                  Wallet Connection Required
                 </Typography>
                 <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                  Pozisyonlarınızı analiz etmek ve risk skorunuzu hesaplamak için lütfen wallet'ınızı bağlayın.
+                  Please connect your wallet to analyze your positions and calculate your risk score.
                 </Typography>
               </Card>
             </Box>
@@ -246,7 +246,7 @@ const Sentinel: NextPage = () => {
                   color: theme.palette.text.secondary,
                 }}
               >
-                Risk Analiz & Monitör Sistemi
+                Risk Analysis & Monitoring System
               </Typography>
               <Typography
                 variant="body2"
@@ -263,39 +263,31 @@ const Sentinel: NextPage = () => {
             {positionData.length > 0 && (
               <Card
                 sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-                  border: `2px solid ${getHealthFactorColor(overallHealthFactor)}`,
-                  borderRadius: '16px',
                   padding: '24px',
                   textAlign: 'center',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}15)`,
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    marginBottom: '12px',
-                    fontWeight: 'medium'
-                  }}
-                >
+                <Typography variant="h5" sx={{ marginBottom: '16px', fontWeight: 'bold' }}>
                   Overall Health Factor
                 </Typography>
+                
                 <Typography
                   variant="h2"
                   sx={{
                     color: getHealthFactorColor(overallHealthFactor),
                     fontWeight: 'bold',
                     marginBottom: '16px',
-                    fontSize: { xs: '3rem', md: '4rem' }
                   }}
                 >
                   {overallHealthFactor > 99 ? '∞' : overallHealthFactor.toFixed(2)}
                 </Typography>
+
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: '32px', flexWrap: 'wrap' }}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      Toplam Teminat
+                      Total Collateral
                     </Typography>
                     <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>
                       {formatCurrency(totalCollateral)}
@@ -303,7 +295,7 @@ const Sentinel: NextPage = () => {
                   </Box>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      Toplam Borç
+                      Total Debt
                     </Typography>
                     <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>
                       {formatCurrency(totalDebt)}
@@ -311,7 +303,7 @@ const Sentinel: NextPage = () => {
                   </Box>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                      Genel LTV
+                      Overall LTV
                     </Typography>
                     <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>
                       {totalCollateral > 0 ? ((totalDebt / totalCollateral) * 100).toFixed(1) : '0'}%
@@ -331,7 +323,7 @@ const Sentinel: NextPage = () => {
                 marginBottom: '16px',
               }}
             >
-              Aktif Pozisyonlar ({positionData.length})
+              Active Positions ({positionData.length})
             </Typography>
 
             {/* Positions Grid */}
@@ -339,7 +331,7 @@ const Sentinel: NextPage = () => {
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', md: 'repeat(auto-fit, minmax(350px, 1fr))' },
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
                   gap: '20px',
                 }}
               >
@@ -350,26 +342,20 @@ const Sentinel: NextPage = () => {
                     <Card
                       key={position.poolId}
                       sx={{
-                        backgroundColor: theme.palette.background.paper,
-                        borderRadius: '12px',
-                        border: `1px solid ${theme.palette.divider}`,
+                        padding: '0',
+                        border: `2px solid ${getRiskColor(position.riskScore)}20`,
+                        boxShadow: `0 4px 12px ${getRiskColor(position.riskScore)}15`,
                         transition: 'all 0.3s ease',
                         '&:hover': {
                           transform: 'translateY(-4px)',
-                          boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+                          boxShadow: `0 8px 24px ${getRiskColor(position.riskScore)}25`,
                         },
                       }}
                     >
                       <CardContent sx={{ padding: '24px' }}>
-                        {/* Pool Name & Risk Badge */}
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              color: theme.palette.text.primary,
-                              fontWeight: 'bold',
-                            }}
-                          >
+                        {/* Pool Header */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>
                             {position.poolName}
                           </Typography>
                           <Chip
@@ -381,8 +367,8 @@ const Sentinel: NextPage = () => {
                         </Box>
 
                         {/* Health Factor */}
-                        <Box sx={{ marginBottom: '20px', textAlign: 'center' }}>
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, marginBottom: '8px' }}>
+                        <Box sx={{ textAlign: 'center', marginBottom: '20px' }}>
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, marginBottom: '4px' }}>
                             Health Factor
                           </Typography>
                           <Typography
@@ -396,11 +382,11 @@ const Sentinel: NextPage = () => {
                           </Typography>
                         </Box>
 
-                        {/* Financial Details */}
+                        {/* Position Details */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                              Teminat:
+                              Collateral:
                             </Typography>
                             <Typography variant="body1" sx={{ color: theme.palette.success.main, fontWeight: 'bold' }}>
                               {formatCurrency(position.collateral)}
@@ -409,7 +395,7 @@ const Sentinel: NextPage = () => {
 
                           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                              Borç:
+                              Debt:
                             </Typography>
                             <Typography variant="body1" sx={{ color: theme.palette.error.main, fontWeight: 'bold' }}>
                               {formatCurrency(position.debt)}
@@ -430,7 +416,7 @@ const Sentinel: NextPage = () => {
                         <Box sx={{ marginTop: '20px' }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                              Risk Skoru
+                              Risk Score
                             </Typography>
                             <Typography variant="body2" sx={{ color: getRiskColor(position.riskScore), fontWeight: 'bold' }}>
                               {position.riskScore.toFixed(0)}/100
@@ -458,10 +444,10 @@ const Sentinel: NextPage = () => {
             ) : (
               <Card sx={{ padding: '24px', textAlign: 'center' }}>
                 <Typography variant="h6" sx={{ marginBottom: '16px' }}>
-                  Aktif Pozisyon Bulunamadı
+                  No Active Positions Found
                 </Typography>
                 <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                  Bu wallet'ta aktif Blend pozisyonu bulunmuyor. Borçlanma veya ödünç verme işlemi yaptıktan sonra pozisyonlarınız burada görünecek.
+                  No active Blend positions found in this wallet. Your positions will appear here after borrowing or lending operations.
                 </Typography>
               </Card>
             )}
@@ -480,7 +466,7 @@ const Sentinel: NextPage = () => {
                   {positionData.length}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                  Aktif Pozisyon
+                  Active Positions
                 </Typography>
               </Card>
 
@@ -489,7 +475,7 @@ const Sentinel: NextPage = () => {
                   {positionData.filter(p => p.riskScore >= 80).length}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                  Yüksek Risk
+                  High Risk
                 </Typography>
               </Card>
 
@@ -498,7 +484,7 @@ const Sentinel: NextPage = () => {
                   24/7
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                  Kesintisiz Takip
+                  Continuous Monitoring
                 </Typography>
               </Card>
 
@@ -507,7 +493,7 @@ const Sentinel: NextPage = () => {
                   {positionData.length > 0 ? (positionData.reduce((sum, p) => sum + p.riskScore, 0) / positionData.length).toFixed(0) : '0'}
                 </Typography>
                 <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                  Ortalama Risk
+                  Average Risk
                 </Typography>
               </Card>
             </Box>
