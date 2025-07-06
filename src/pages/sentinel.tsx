@@ -10,14 +10,25 @@ import {
   LinearProgress,
   Chip,
   Button,
-  Alert
+  Alert,
+  TextField,
+  IconButton,
+  Divider
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import Image from 'next/image';
 import { CustomButton } from '../components/common/CustomButton';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
-import { FixedMath, PositionsEstimate } from '@blend-capital/blend-sdk';
-import { useBackstop, usePool, usePoolMeta, usePoolOracle, usePoolUser } from '../hooks/api';
+import { FixedMath, PositionsEstimate, parseResult, PoolContractV1, RequestType, SubmitArgs } from '@blend-capital/blend-sdk';
+import { useBackstop, usePool, usePoolMeta, usePoolOracle, usePoolUser, useTokenBalance, useTokenMetadata, useHorizonAccount } from '../hooks/api';
+import { TxStatus, TxType } from '../contexts/wallet';
+import { scaleInputToBigInt } from '../utils/scval';
+import { rpc } from '@stellar/stellar-sdk';
+import { getErrorFromSim } from '../utils/txSim';
+import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../hooks/debounce';
+import { toBalance, toCompactAddress } from '../utils/formatter';
 import dynamic from 'next/dynamic';
 
 // Disable SSR for this component
@@ -41,6 +52,8 @@ interface PositionData {
   riskScore: number;
   liquidationThreshold: number;
   healthFactor: number;
+  assetId?: string;
+  reserveData?: any;
 }
 
 interface TelegramSubscription {
@@ -49,6 +62,295 @@ interface TelegramSubscription {
   riskThreshold: number;
   isActive: boolean;
 }
+
+// Supply/Repay Component for position cards
+// TODO: Enable this component when position data includes assetId and pool information
+// This component provides supply increase and debt repayment functionality
+interface PositionActionsProps {
+  poolId: string;
+  assetId: string;
+  collateral: number;
+  debt: number;
+  onTransactionComplete?: () => void;
+}
+
+const PositionActions: React.FC<PositionActionsProps> = ({ 
+  poolId, 
+  assetId, 
+  collateral, 
+  debt, 
+  onTransactionComplete 
+}) => {
+  const theme = useTheme();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
+  
+  const { data: poolMeta } = usePoolMeta(poolId);
+  const { data: pool } = usePool(poolMeta);
+  const { data: poolOracle } = usePoolOracle(pool);
+  const { data: poolUser } = usePoolUser(pool);
+  const { data: tokenMetadata } = useTokenMetadata(assetId);
+  const { data: horizonAccount } = useHorizonAccount();
+  const { data: tokenBalance } = useTokenBalance(assetId, tokenMetadata?.asset, horizonAccount, true);
+  
+  const [supplyAmount, setSupplyAmount] = useState<string>('');
+  const [repayAmount, setRepayAmount] = useState<string>('');
+  const [showSupplyInput, setShowSupplyInput] = useState(false);
+  const [showRepayInput, setShowRepayInput] = useState(false);
+  const [loadingSupply, setLoadingSupply] = useState(false);
+  const [loadingRepay, setLoadingRepay] = useState(false);
+  
+  const reserve = pool?.reserves.get(assetId);
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = tokenMetadata?.symbol ?? toCompactAddress(assetId);
+  const userTokenBalance = FixedMath.toFloat(tokenBalance ?? BigInt(0), decimals);
+  const currentDebt = reserve ? poolUser?.getLiabilitiesFloat(reserve) ?? 0 : 0;
+  
+  // Clear inputs on successful transaction
+  useEffect(() => {
+    if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT) {
+      setSupplyAmount('');
+      setRepayAmount('');
+      setShowSupplyInput(false);
+      setShowRepayInput(false);
+      onTransactionComplete?.();
+    }
+  }, [txStatus, txType, onTransactionComplete]);
+  
+  const handleSupplyTransaction = async () => {
+    if (supplyAmount && connected && poolMeta && reserve) {
+      setLoadingSupply(true);
+      try {
+        let submitArgs: SubmitArgs = {
+          from: walletAddress,
+          spender: walletAddress,
+          to: walletAddress,
+          requests: [
+            {
+              amount: scaleInputToBigInt(supplyAmount, decimals),
+              request_type: RequestType.SupplyCollateral,
+              address: assetId,
+            },
+          ],
+        };
+        await poolSubmit(poolMeta, submitArgs, false);
+      } catch (error) {
+        console.error('Supply transaction failed:', error);
+      } finally {
+        setLoadingSupply(false);
+      }
+    }
+  };
+  
+  const handleRepayTransaction = async () => {
+    if (repayAmount && connected && poolMeta && reserve) {
+      setLoadingRepay(true);
+      try {
+        let submitArgs: SubmitArgs = {
+          from: walletAddress,
+          to: walletAddress,
+          spender: walletAddress,
+          requests: [
+            {
+              amount: scaleInputToBigInt(repayAmount, decimals),
+              request_type: RequestType.Repay,
+              address: assetId,
+            },
+          ],
+        };
+        await poolSubmit(poolMeta, submitArgs, false);
+      } catch (error) {
+        console.error('Repay transaction failed:', error);
+      } finally {
+        setLoadingRepay(false);
+      }
+    }
+  };
+  
+  const handleSupplyMax = () => {
+    if (userTokenBalance > 0) {
+      setSupplyAmount(userTokenBalance.toFixed(decimals));
+    }
+  };
+  
+  const handleRepayMax = () => {
+    if (currentDebt > 0) {
+      const maxRepay = Math.min(userTokenBalance, currentDebt * 1.005);
+      setRepayAmount(maxRepay.toFixed(decimals));
+    }
+  };
+  
+  if (!connected || !reserve) {
+    return null;
+  }
+  
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Divider sx={{ my: 2 }} />
+      
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        {/* Supply Section */}
+        <Box sx={{ flex: 1, minWidth: '250px' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mr: 1 }}>
+              Supply Balance:
+            </Typography>
+            <Typography variant="body2" sx={{ color: theme.palette.success.main, fontWeight: 'bold' }}>
+              {toBalance(userTokenBalance, decimals)} {symbol}
+            </Typography>
+          </Box>
+          
+          {!showSupplyInput ? (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => setShowSupplyInput(true)}
+              sx={{
+                borderColor: theme.palette.success.main,
+                color: theme.palette.success.main,
+                '&:hover': {
+                  borderColor: theme.palette.success.dark,
+                  backgroundColor: theme.palette.success.main + '10',
+                }
+              }}
+            >
+              Increase Supply
+            </Button>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  size="small"
+                  value={supplyAmount}
+                  onChange={(e) => setSupplyAmount(e.target.value)}
+                  placeholder="0.00"
+                  type="number"
+                  InputProps={{
+                    endAdornment: (
+                      <Button
+                        size="small"
+                        onClick={handleSupplyMax}
+                        sx={{ minWidth: 'auto', p: 0.5 }}
+                      >
+                        MAX
+                      </Button>
+                    ),
+                  }}
+                  sx={{ flex: 1 }}
+                />
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSupplyTransaction}
+                  disabled={!supplyAmount || loadingSupply || isLoading}
+                  sx={{
+                    backgroundColor: theme.palette.success.main,
+                    '&:hover': {
+                      backgroundColor: theme.palette.success.dark,
+                    }
+                  }}
+                >
+                  {loadingSupply ? 'Loading...' : 'Supply'}
+                </Button>
+              </Box>
+              <Button
+                size="small"
+                onClick={() => {
+                  setShowSupplyInput(false);
+                  setSupplyAmount('');
+                }}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Cancel
+              </Button>
+            </Box>
+          )}
+        </Box>
+        
+        {/* Repay Section */}
+        {debt > 0 && (
+          <Box sx={{ flex: 1, minWidth: '250px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mr: 1 }}>
+                Current Debt:
+              </Typography>
+              <Typography variant="body2" sx={{ color: theme.palette.error.main, fontWeight: 'bold' }}>
+                {toBalance(currentDebt, decimals)} {symbol}
+              </Typography>
+            </Box>
+            
+            {!showRepayInput ? (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<RemoveIcon />}
+                onClick={() => setShowRepayInput(true)}
+                sx={{
+                  borderColor: theme.palette.error.main,
+                  color: theme.palette.error.main,
+                  '&:hover': {
+                    borderColor: theme.palette.error.dark,
+                    backgroundColor: theme.palette.error.main + '10',
+                  }
+                }}
+              >
+                Repay Debt
+              </Button>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField
+                    size="small"
+                    value={repayAmount}
+                    onChange={(e) => setRepayAmount(e.target.value)}
+                    placeholder="0.00"
+                    type="number"
+                    InputProps={{
+                      endAdornment: (
+                        <Button
+                          size="small"
+                          onClick={handleRepayMax}
+                          sx={{ minWidth: 'auto', p: 0.5 }}
+                        >
+                          MAX
+                        </Button>
+                      ),
+                    }}
+                    sx={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleRepayTransaction}
+                    disabled={!repayAmount || loadingRepay || isLoading}
+                    sx={{
+                      backgroundColor: theme.palette.error.main,
+                      '&:hover': {
+                        backgroundColor: theme.palette.error.dark,
+                      }
+                    }}
+                  >
+                    {loadingRepay ? 'Loading...' : 'Repay'}
+                  </Button>
+                </Box>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setShowRepayInput(false);
+                    setRepayAmount('');
+                  }}
+                  sx={{ alignSelf: 'flex-start' }}
+                >
+                  Cancel
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+};
 
 const Sentinel: NextPage = () => {
   const theme = useTheme();
@@ -324,21 +626,21 @@ const Sentinel: NextPage = () => {
         poolId: 'DEMO_FIXED_USDC',
         poolName: 'Fixed Protocol USDC Pool',
         collateral: 15000,
-        debt: 12500,
-        ltv: 83.3,
-        riskScore: 89,
+        debt: 16200,
+        ltv: 108.0,
+        riskScore: 95,
         liquidationThreshold: 0.85,
-        healthFactor: 1.02
+        healthFactor: 0.78  // RED - High Risk < 1.0
       },
       {
         poolId: 'DEMO_YIELDBLOX_USDC', 
         poolName: 'YieldBlox USDC Pool',
         collateral: 8200,
-        debt: 5800,
-        ltv: 70.7,
-        riskScore: 75,
+        debt: 6500,
+        ltv: 79.3,
+        riskScore: 68,
         liquidationThreshold: 0.82,
-        healthFactor: 1.16
+        healthFactor: 1.30  // YELLOW - Medium Risk 1.0-1.5
       },
       {
         poolId: 'DEMO_NATIVE_USDC',
@@ -348,17 +650,17 @@ const Sentinel: NextPage = () => {
         ltv: 32.0,
         riskScore: 25,
         liquidationThreshold: 0.80,
-        healthFactor: 2.50
+        healthFactor: 2.50  // GREEN - Low Risk > 1.5
       },
       {
         poolId: 'DEMO_BLND_POOL',
         poolName: 'BLND Governance Pool',
         collateral: 45000,
-        debt: 38000,
-        ltv: 84.4,
-        riskScore: 92,
+        debt: 48000,
+        ltv: 106.7,
+        riskScore: 98,
         liquidationThreshold: 0.85,
-        healthFactor: 1.01
+        healthFactor: 0.80  // RED - High Risk < 1.0
       }
     ];
 
@@ -407,34 +709,36 @@ const Sentinel: NextPage = () => {
       pool3Data, pool3Oracle, pool3User, pool3Meta
   ]);
 
-  // Check risk alert
+  // Check risk alert - Only trigger on significant changes, not every position update
   useEffect(() => {
     if (positionData.length > 0 && telegramConnected) {
       const highRiskPositions = positionData.filter(pos => pos.riskScore >= 80);
       
       if (highRiskPositions.length > 0) {
-        // Demo Telegram notification
-        const message = `🚨 HIGH RISK WARNING! ${highRiskPositions.length} of your positions have risk score 80+ level. Take immediate action!`;
+        // Only show notification banner, don't auto-send Telegram notifications
         setShowNotification(true);
         
-        // In real implementation, Telegram API would be called here
-        console.log('Telegram Bot Message:', message);
-        sendTelegramNotification(message, highRiskPositions);
+        // Log for demo purposes but don't spam Telegram
+        console.log('High Risk Positions Detected:', highRiskPositions.length);
+        
+        // Don't automatically send notifications - let user trigger them manually
+        // This prevents spam and gives users control over when to send alerts
       }
     }
-  }, [positionData, telegramConnected]);
+  }, [positionData.length, telegramConnected]); // Only trigger when number of positions changes, not on every update
 
   // Telegram notification function
   const sendTelegramNotification = async (message: string, highRiskPositions: PositionData[]) => {
     if (!telegramConnected) return;
     
-    // Client-side rate limiting (5 minutes cooldown)
-    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+    // Enhanced client-side rate limiting (10 minutes cooldown)
+    const COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes in milliseconds (matching backend)
     const now = Date.now();
     
     if (lastNotificationTime && (now - lastNotificationTime) < COOLDOWN_MS) {
       const remainingTime = Math.ceil((COOLDOWN_MS - (now - lastNotificationTime)) / 1000 / 60);
       console.log(`⏱️ [CLIENT RATE LIMIT] Notification blocked. Cooldown remaining: ${remainingTime} minutes`);
+      alert(`⏱️ Rate limit active. Please wait ${remainingTime} minutes before sending another notification.`);
       return;
     }
     
@@ -719,7 +1023,7 @@ const Sentinel: NextPage = () => {
                         }}
                       >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.13-.31-1.09-.65.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.13-.31-1.09-.65.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
                         </svg>
                         {telegramDisplayName || 'Connected'}
                       </button>
@@ -833,6 +1137,80 @@ const Sentinel: NextPage = () => {
                 </Box>
               </Card>
             )}
+
+            {/* Health Factor Mechanism Explanation */}
+            <Card
+              sx={{
+                padding: '24px',
+                marginTop: '24px',
+                background: `linear-gradient(135deg, ${theme.palette.info.main}08, ${theme.palette.primary.main}08)`,
+                border: `1px solid ${theme.palette.info.main}20`,
+                borderRadius: '16px',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    background: `linear-gradient(135deg, ${theme.palette.info.main}, ${theme.palette.primary.main})`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    ❤️
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.text.primary, mb: 1 }}>
+                    Health Factor Mechanism
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary, lineHeight: 1.6 }}>
+                    The health factor is a number that shows how safe your assets are in the protocol. 
+                    It&apos;s calculated by comparing the value of what you&apos;ve deposited to what you&apos;ve borrowed. 
+                    A higher health factor means your deposited assets are worth more (or you&apos;ve borrowed less), 
+                    lowering the chance of liquidating your assets. <strong style={{ color: theme.palette.error.main }}>
+                    Your position will be liquidated if the health factor is lower than 1.</strong>
+                  </Typography>
+                  
+                  <Box sx={{ 
+                    mt: 3, 
+                    p: 2, 
+                    borderRadius: '12px', 
+                    background: theme.palette.background.default,
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: theme.palette.text.primary }}>
+                      Safety Guidelines:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: theme.palette.success.main }} />
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                          <strong>Health Factor {'>'} 1.5:</strong> Safe position, low liquidation risk
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: theme.palette.warning.main }} />
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                          <strong>Health Factor 1.0 - 1.5:</strong> Monitor closely, consider reducing debt
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: theme.palette.error.main }} />
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                          <strong>Health Factor {'<'} 1.0:</strong> Liquidation risk - add collateral or repay debt immediately
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Card>
 
             {/* Positions Title */}
             <Typography
@@ -956,6 +1334,59 @@ const Sentinel: NextPage = () => {
                               },
                             }}
                           />
+                        </Box>
+
+                        {/* Position Actions */}
+                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                          {/* Supply Button */}
+                          <Box
+                            sx={{
+                              background: 'linear-gradient(90deg, #9C27B0, #E91E63)',
+                              borderRadius: '8px',
+                              px: 2,
+                              py: 1,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'scale(1.02)',
+                                boxShadow: '0 4px 12px rgba(156, 39, 176, 0.3)',
+                              }
+                            }}
+                            onClick={() => {
+                              console.log('Supply button clicked for position:', position.poolId);
+                              alert(`🚀 Supply functionality will be available when connected to pool: ${position.poolName}`);
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ color: 'white', fontWeight: '500' }}>
+                              Increase supply
+                            </Typography>
+                          </Box>
+
+                          {/* Repay Button */}
+                          {position.debt > 0 && (
+                            <Box
+                              sx={{
+                                background: 'linear-gradient(90deg, #9C27B0, #E91E63)',
+                                borderRadius: '8px',
+                                px: 2,
+                                py: 1,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.02)',
+                                  boxShadow: '0 4px 12px rgba(156, 39, 176, 0.3)',
+                                }
+                              }}
+                              onClick={() => {
+                                console.log('Repay button clicked for position:', position.poolId);
+                                alert(`💰 Repay functionality will be available when connected to pool: ${position.poolName}`);
+                              }}
+                            >
+                              <Typography variant="body2" sx={{ color: 'white', fontWeight: '500' }}>
+                                Repay Borrow
+                              </Typography>
+                            </Box>
+                          )}
                         </Box>
                       </CardContent>
                     </Card>
