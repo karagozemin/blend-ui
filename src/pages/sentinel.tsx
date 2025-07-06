@@ -317,53 +317,56 @@ const Sentinel: NextPage = () => {
 
   // Calculate position data
   const positionData = useMemo(() => {
+    // Always show demo data for video demonstration
+    const demoPositions = [
+      {
+        poolId: 'DEMO_USDC_POOL',
+        poolName: 'USDC Lending Pool',
+        collateral: 15000,
+        debt: 12500,
+        ltv: 83.3,
+        riskScore: 89,
+        liquidationThreshold: 0.85,
+        healthFactor: 1.02
+      },
+      {
+        poolId: 'DEMO_XLM_POOL', 
+        poolName: 'XLM Volatile Pool',
+        collateral: 8200,
+        debt: 5800,
+        ltv: 70.7,
+        riskScore: 75,
+        liquidationThreshold: 0.82,
+        healthFactor: 1.16
+      },
+      {
+        poolId: 'DEMO_AQUA_POOL',
+        poolName: 'AQUA DeFi Pool',
+        collateral: 25000,
+        debt: 8000,
+        ltv: 32.0,
+        riskScore: 25,
+        liquidationThreshold: 0.80,
+        healthFactor: 2.50
+      },
+      {
+        poolId: 'DEMO_BTC_POOL',
+        poolName: 'BTC Collateral Pool',
+        collateral: 45000,
+        debt: 38000,
+        ltv: 84.4,
+        riskScore: 92,
+        liquidationThreshold: 0.85,
+        healthFactor: 1.01
+      }
+    ];
+
     if (!connected) {
-      // Demo data for video when wallet is not connected
-      return [
-        {
-          poolId: 'DEMO_USDC_POOL',
-          poolName: 'USDC Lending Pool',
-          collateral: 15000,
-          debt: 12500,
-          ltv: 83.3,
-          riskScore: 89,
-          liquidationThreshold: 0.85,
-          healthFactor: 1.02
-        },
-        {
-          poolId: 'DEMO_XLM_POOL', 
-          poolName: 'XLM Volatile Pool',
-          collateral: 8200,
-          debt: 5800,
-          ltv: 70.7,
-          riskScore: 75,
-          liquidationThreshold: 0.82,
-          healthFactor: 1.16
-        },
-        {
-          poolId: 'DEMO_AQUA_POOL',
-          poolName: 'AQUA DeFi Pool',
-          collateral: 25000,
-          debt: 8000,
-          ltv: 32.0,
-          riskScore: 25,
-          liquidationThreshold: 0.80,
-          healthFactor: 2.50
-        },
-        {
-          poolId: 'DEMO_BTC_POOL',
-          poolName: 'BTC Collateral Pool',
-          collateral: 45000,
-          debt: 38000,
-          ltv: 84.4,
-          riskScore: 92,
-          liquidationThreshold: 0.85,
-          healthFactor: 1.01
-        }
-      ];
+      return demoPositions;
     }
     
-    return poolData
+    // Get real positions from connected wallet
+    const realPositions = poolData
       .filter(query => query.pool && query.poolOracle && query.poolUser && query.poolMeta)
       .map(({ poolId, pool, poolOracle, poolUser, poolMeta }) => {
          const positionsEst = PositionsEstimate.build(pool!, poolOracle!, poolUser!.positions);
@@ -394,6 +397,9 @@ const Sentinel: NextPage = () => {
         };
       })
       .filter(pos => pos.debt > 0 || pos.collateral > 0); // Show only active positions
+
+    // If no real positions, show demo positions for demonstration
+    return realPositions.length > 0 ? realPositions : demoPositions;
   }, [connected, 
       pool1Data, pool1Oracle, pool1User, pool1Meta,
       pool2Data, pool2Oracle, pool2User, pool2Meta,
