@@ -25,11 +25,11 @@ export default dynamic(() => Promise.resolve(Sentinel), {
   ssr: false,
 });
 
-// List of known pools - in real project this comes from API
+// List of known pools - Mainnet Pool IDs (updated for production)
 const KNOWN_POOLS = [
-  'CCOZDRWN6T7EPVJFMZ7S3C4NPJR26BB745GVB46RJDKVNZGBQYBDX5PA', // Main USDC pool
-  'CB7ABQD5M3XJOXS2NNVMHH5JKPMM4XPZRXJF2PJJNKMGCUEJ7BSQAACC', // XLM pool (example)
-  'CDMLPNYTJPTQKTL5QNXMV7B2ELYKTNZTPWN7FGHBTWK7VN5C2JEMW5B5'  // AQUA pool (example)
+  'CA7HQOWQCUEHFM23LFDNWMQ5BUPNQM3WP3WFXBX2QZWBKSMNJ43P26SF', // Main USDC Lending Pool (Fixed Protocol)
+  'CCKSJCQHCACWVK2EPWN7T73OFY74VQL6OEWDCZZXTGZFGFWXKJM5M6JD', // YieldBlox USDC Pool  
+  'CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75'  // USDC Token Contract
 ];
 
 interface PositionData {
@@ -62,6 +62,7 @@ const Sentinel: NextPage = () => {
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [telegramChatId, setTelegramChatId] = useState<string>('');
   const [telegramDisplayName, setTelegramDisplayName] = useState<string>('');
+  const [lastNotificationTime, setLastNotificationTime] = useState<number | null>(null);
 
   // Load Telegram user from localStorage on component mount
   useEffect(() => {
@@ -317,11 +318,11 @@ const Sentinel: NextPage = () => {
 
   // Calculate position data
   const positionData = useMemo(() => {
-    // Always show demo data for video demonstration
+    // Always show demo data for video demonstration - Updated for Mainnet
     const demoPositions = [
       {
-        poolId: 'DEMO_USDC_POOL',
-        poolName: 'USDC Lending Pool',
+        poolId: 'DEMO_FIXED_USDC',
+        poolName: 'Fixed Protocol USDC Pool',
         collateral: 15000,
         debt: 12500,
         ltv: 83.3,
@@ -330,8 +331,8 @@ const Sentinel: NextPage = () => {
         healthFactor: 1.02
       },
       {
-        poolId: 'DEMO_XLM_POOL', 
-        poolName: 'XLM Volatile Pool',
+        poolId: 'DEMO_YIELDBLOX_USDC', 
+        poolName: 'YieldBlox USDC Pool',
         collateral: 8200,
         debt: 5800,
         ltv: 70.7,
@@ -340,8 +341,8 @@ const Sentinel: NextPage = () => {
         healthFactor: 1.16
       },
       {
-        poolId: 'DEMO_AQUA_POOL',
-        poolName: 'AQUA DeFi Pool',
+        poolId: 'DEMO_NATIVE_USDC',
+        poolName: 'Native USDC Pool',
         collateral: 25000,
         debt: 8000,
         ltv: 32.0,
@@ -350,8 +351,8 @@ const Sentinel: NextPage = () => {
         healthFactor: 2.50
       },
       {
-        poolId: 'DEMO_BTC_POOL',
-        poolName: 'BTC Collateral Pool',
+        poolId: 'DEMO_BLND_POOL',
+        poolName: 'BLND Governance Pool',
         collateral: 45000,
         debt: 38000,
         ltv: 84.4,
@@ -427,6 +428,16 @@ const Sentinel: NextPage = () => {
   const sendTelegramNotification = async (message: string, highRiskPositions: PositionData[]) => {
     if (!telegramConnected) return;
     
+    // Client-side rate limiting (5 minutes cooldown)
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const now = Date.now();
+    
+    if (lastNotificationTime && (now - lastNotificationTime) < COOLDOWN_MS) {
+      const remainingTime = Math.ceil((COOLDOWN_MS - (now - lastNotificationTime)) / 1000 / 60);
+      console.log(`⏱️ [CLIENT RATE LIMIT] Notification blocked. Cooldown remaining: ${remainingTime} minutes`);
+      return;
+    }
+    
     try {
       const BOT_API_URL = process.env.NEXT_PUBLIC_BOT_API_URL || 'http://localhost:3002';
       
@@ -447,6 +458,15 @@ const Sentinel: NextPage = () => {
       
       if (result.success) {
         console.log('✅ Telegram notification sent successfully!', result);
+        // Update last notification time only on success
+        setLastNotificationTime(now);
+      } else if (response.status === 429) {
+        // Rate limit exceeded
+        const cooldownTime = result.cooldownRemaining || result.retryAfter || 5;
+        console.log(`⏱️ [RATE LIMIT] Notification blocked. Cooldown: ${cooldownTime} minutes`);
+      } else if (response.status === 409) {
+        // Duplicate message
+        console.log('🔄 [DUPLICATE] Same notification already sent recently');
       } else {
         console.log('⚠️ Telegram notification result:', result);
       }
