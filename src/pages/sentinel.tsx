@@ -317,7 +317,51 @@ const Sentinel: NextPage = () => {
 
   // Calculate position data
   const positionData = useMemo(() => {
-    if (!connected) return [];
+    if (!connected) {
+      // Demo data for video when wallet is not connected
+      return [
+        {
+          poolId: 'DEMO_USDC_POOL',
+          poolName: 'USDC Lending Pool',
+          collateral: 15000,
+          debt: 12500,
+          ltv: 83.3,
+          riskScore: 89,
+          liquidationThreshold: 0.85,
+          healthFactor: 1.02
+        },
+        {
+          poolId: 'DEMO_XLM_POOL', 
+          poolName: 'XLM Volatile Pool',
+          collateral: 8200,
+          debt: 5800,
+          ltv: 70.7,
+          riskScore: 75,
+          liquidationThreshold: 0.82,
+          healthFactor: 1.16
+        },
+        {
+          poolId: 'DEMO_AQUA_POOL',
+          poolName: 'AQUA DeFi Pool',
+          collateral: 25000,
+          debt: 8000,
+          ltv: 32.0,
+          riskScore: 25,
+          liquidationThreshold: 0.80,
+          healthFactor: 2.50
+        },
+        {
+          poolId: 'DEMO_BTC_POOL',
+          poolName: 'BTC Collateral Pool',
+          collateral: 45000,
+          debt: 38000,
+          ltv: 84.4,
+          riskScore: 92,
+          liquidationThreshold: 0.85,
+          healthFactor: 1.01
+        }
+      ];
+    }
     
     return poolData
       .filter(query => query.pool && query.poolOracle && query.poolUser && query.poolMeta)
@@ -658,6 +702,57 @@ const Sentinel: NextPage = () => {
                 )}
               </Box>
             </Box>
+
+            {/* Demo Risk Alert Test Button */}
+            {positionData.length > 0 && (
+              <Box sx={{ textAlign: 'center', marginBottom: '24px' }}>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  size="large"
+                  onClick={() => {
+                    // Find high risk positions for demo
+                    const highRiskPositions = positionData.filter(pos => pos.riskScore >= 80);
+                    
+                    if (highRiskPositions.length > 0) {
+                      const message = `🚨 DEMO ALERT: ${highRiskPositions.length} high-risk positions detected!`;
+                      console.log('Demo Alert Triggered:', message);
+                      
+                      // Show notification
+                      setShowNotification(true);
+                      
+                      // Send Telegram notification for demo
+                      if (telegramConnected) {
+                        sendTelegramNotification(message, highRiskPositions);
+                      } else {
+                        alert('💡 Demo: Connect Telegram first to receive alerts!');
+                      }
+                    } else {
+                      alert('📊 No high-risk positions found (Risk Score < 80)');
+                    }
+                  }}
+                  sx={{
+                    background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    padding: '12px 24px',
+                    borderRadius: '25px',
+                    boxShadow: '0 4px 15px rgba(255, 107, 53, 0.3)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #e55a2b, #e8851a)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 20px rgba(255, 107, 53, 0.4)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  🔥 Test Risk Alert (Demo)
+                </Button>
+                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: theme.palette.text.secondary }}>
+                  For demonstration purposes
+                </Typography>
+              </Box>
+            )}
 
             {/* Overall Health Factor Card */}
             {positionData.length > 0 && (
