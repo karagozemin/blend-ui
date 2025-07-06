@@ -36,7 +36,7 @@ export default dynamic(() => Promise.resolve(Sentinel), {
   ssr: false,
 });
 
-// List of known pools - Mainnet Pool IDs (updated for production)
+// Known pool IDs
 const KNOWN_POOLS = [
   'CA7HQOWQCUEHFM23LFDNWMQ5BUPNQM3WP3WFXBX2QZWBKSMNJ43P26SF', // Main USDC Lending Pool (Fixed Protocol)
   'CCKSJCQHCACWVK2EPWN7T73OFY74VQL6OEWDCZZXTGZFGFWXKJM5M6JD', // YieldBlox USDC Pool  
@@ -64,7 +64,6 @@ interface TelegramSubscription {
 }
 
 // Supply/Repay Component for position cards
-// TODO: Enable this component when position data includes assetId and pool information
 // This component provides supply increase and debt repayment functionality
 interface PositionActionsProps {
   poolId: string;
@@ -620,7 +619,7 @@ const Sentinel: NextPage = () => {
 
   // Calculate position data
   const positionData = useMemo(() => {
-    // Always show demo data for video demonstration - Updated for Mainnet
+    // Demo position data
     const demoPositions = [
       {
         poolId: 'DEMO_FIXED_USDC',
@@ -701,7 +700,7 @@ const Sentinel: NextPage = () => {
       })
       .filter(pos => pos.debt > 0 || pos.collateral > 0); // Show only active positions
 
-    // If no real positions, show demo positions for demonstration
+    // Show demo positions if no real positions
     return realPositions.length > 0 ? realPositions : demoPositions;
   }, [connected, 
       pool1Data, pool1Oracle, pool1User, pool1Meta,
